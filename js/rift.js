@@ -55,10 +55,12 @@ function populateRift() {
   const sp = { x: Math.floor(W.spawn.x / TILE), y: Math.floor(W.spawn.y / TILE) };
   const cand = floorTiles(W).filter(([x, y]) => isOpen(W, x, y) && Math.hypot(x - sp.x, y - sp.y) > 11);
   const centers = [];
-  let pts = 0, tries = 0, packId = 0;
-  while (pts < goal && tries++ < 600 && cand.length) {
+  let pts = 0, tries = 0, packId = 0, gap = 7;
+  // na malé mapě se skupiny nevejdou s rozestupem 7 dlaždic – rozestup se postupně zmenšuje, dokud není dost nepřátel
+  while (pts < goal && cand.length && gap >= 3) {
+    if (tries++ >= 600) { tries = 0; gap--; continue; }
     const [cx, cy] = cand[rnd(cand.length)];
-    if (centers.some(([x, y]) => Math.hypot(x - cx, y - cy) < 7)) continue;
+    if (centers.some(([x, y]) => Math.hypot(x - cx, y - cy) < gap)) continue;
     centers.push([cx, cy]);
     const type = pick(T.monsters), def = MONSTERS[type];
     const elite = Math.random() < RIFT.eliteChance(L);
@@ -102,6 +104,15 @@ function updateShrines() {
     sfx('levelup'); beamFx(s.x, s.y, S.color, 0.8, 16); burst(s.x, s.y - 8, S.color, 40, 90, { glow: true });
     G.bannerBig = { text: S.name, sub: S.desc, t: 0.4, color: S.color };
   });
+}
+
+// Pojistka: když už v riftu nezbývá nikdo, kdo dává postup, objeví se strážce i tak
+function checkRiftStuck() {
+  const R = G.rift;
+  if (R.done || R.bossSpawned) return;
+  if (G.monsters.some(m => !m.dead && m.pts > 0)) return;
+  R.progress = RIFT.progressGoal;
+  spawnBoss();
 }
 
 function addProgress(p) {

@@ -52,6 +52,7 @@ Město (obchodník, kovář, truhla, obelisk) → rift zvolené úrovně → pln
 - `PROJEKT.md` a `docs/` – dokumentace pro další vývoj
 
 ## Verze
+- **1.6.1** – oprava: na malých mapách bylo občas málo nepřátel na 100 % postupu a boss se neobjevil; teď se nepřátelé vždy rozmístí a když přesto dojdou, boss se objeví i tak.
 - **1.6.0** – předělaní bossové: 3 fáze, velké útoky s varováním (část poškození v % života), vyčerpání (+50 % poškození), přerušitelná kouzla, běsnění po 2 minutách; každý boss má vlastní mechaniku a animace (kamenný štít, fylakterie, pekelné brány, vajíčka, garda, ledové přeludy, hák, tma a prokletí); 3 noví bossové: Ledová vědma Ysolda, Hnilobný Gorgul a Xal'Vor, Pán stínů; stejný boss se neopakuje 3 rifty po sobě.
 - **1.5.0** – vysoké hodnoty afixů jsou vzácné (legendárky mají nejlepší šanci), procenta celkově menší; vzácné rarity vzácnější; bonus riftu ke kořisti roste se zpomalením místo bez omezení.
 - **1.4.0** – atribut Duch přejmenován na Moudrost; rebalanc odolností: nejvýš 10 % proti jednomu živlu na předmět (i u legendárek), nižší odolnosti z lehké zbroje, plášťů a afixů, intelekt +0,2 % za bod; starší předměty se při načtení upraví.

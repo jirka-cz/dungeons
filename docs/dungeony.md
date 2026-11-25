@@ -89,8 +89,9 @@ Náhodně v riftu, dotykem dají dočasný bonus:
 - `js/bosses.js` – bossové (fáze, mechaniky, útoky, animace, HUD texty);
 - `js/entities.js` – AI nepřátel, elitní afixy, nebezpečné zóny, kořist.
 
-## Známé problémy
-- Generátor mapy občas rozmístí nepřátele za méně než 100 % postupu (cca 1 z 20 map), pak se boss neobjeví. Zatím neopraveno.
+## Postup a pojistka (v1.6.1)
+- `populateRift` rozmisťuje skupiny s rozestupem 7 dlaždic; když se na malou mapu nevejde dost nepřátel (cíl je 145 % postupu), rozestup se postupně zmenší až na 3.
+- `checkRiftStuck` (jednou za sekundu): když v riftu nezbývá nikdo, kdo dává postup, a boss ještě nebyl, postup se doplní na 100 % a boss se objeví.
 
 ## Otevřené nápady
 - Odměny navíc za porážku bosse bez smrti, žebříček časů, bossové vázaní na téma mapy.

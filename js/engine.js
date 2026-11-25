@@ -221,6 +221,8 @@ function update(dt) {
     G.monsters = G.monsters.filter(m => !m.dead);
     updateProjectiles(dt); updateZones(dt); updateTraps(dt); updateHazards(dt);
     updateShrines();
+    G.stuckT = (G.stuckT || 0) - dt;
+    if (G.stuckT <= 0) { G.stuckT = 1; checkRiftStuck(); }
     if (G.portal && !h.dead && dist(G.portal, h) < 12) { goTown(); return; }
   }
   updatePets(dt);
