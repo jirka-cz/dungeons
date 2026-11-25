@@ -5,6 +5,7 @@
 - Dlaždice 16 px, světelná vrstva (pochodně, tma podle tématu).
 - Pohyb nepřátel přes BFS flow field (`flowField`), hledání cest pro hrdinu (`findPath`).
 - Herní smyčka `update(dt)` v `js/engine.js`. Režim `G.headless` slouží pro testy.
+- Seznamy, do kterých během zpracování přibývají nové položky (střely, nebezpečí, plochy), se procházejí přes `filterKeepNew(key, fn)` – jinak se nově vzniklé položky ztratí (chyba úlomků Ledové koule do 1.7.0).
 - Více hrdinů (od 1.7.0): `G.heroes`, `G.me`, přepínání kontextu `withHero(h, fn)` – podrobně v `docs/kooperace.md`. Při úpravách kódu: nové střely, plochy, pasti a mazlíčky hrdiny označit `owner: G.hero`; co zasahuje hrdinu plošně, projít přes `eachHero`.
 - Zvuky se syntetizují přes WebAudio (`js/sfx.js`), žádné zvukové soubory.
 

@@ -7,7 +7,7 @@ Tohle je hlavní vstupní bod pro každý nový chat s Claudem. Popisuje, co hra
 - Hraje se na počítači i na mobilu (na výšku i na šířku).
 - Zdarma pro kamarády. Každý má vlastní uložené postavy v prohlížeči (localStorage) a může je přenést exportním kódem.
 - Autor (Jirka) neprogramuje. Všechno vzniká přes zadání v češtině, Claude píše kód, testuje ho a vysvětluje změny srozumitelně.
-- Aktuální verze: **1.7.0** (konstanta `GAME_VERSION` v `js/data.js`).
+- Aktuální verze: **1.7.1** (konstanta `GAME_VERSION` v `js/data.js`).
 
 ## Kde hra běží
 | Co | Kde |
@@ -35,7 +35,7 @@ Každé větší téma má vlastní dokument a vlastní chat (viz `docs/CHATY.md
 | Kooperace | `docs/kooperace.md` | hra více hráčů: etapy, pravidla družiny, více hrdinů v kódu |
 
 ## Struktura kódu
-Čisté HTML + JavaScript + CSS, bez knihoven a bez sestavování. Skripty jsou globální (bez modulů) a načítají se v tomto pořadí (`index.html`):
+Čisté HTML + JavaScript + CSS, bez knihoven a bez sestavování. Výjimka (schválená): pro hru více hráčů se použije knihovna PeerJS na spojení přes kód místnosti. Skripty jsou globální (bez modulů) a načítají se v tomto pořadí (`index.html`):
 
 `data → classes → talents → icons → items → sprites → world → fx → sfx → save → entities → skills → rift → bosses → inventory → ui → hud → engine`
 
@@ -71,12 +71,12 @@ Každé větší téma má vlastní dokument a vlastní chat (viz `docs/CHATY.md
 - **Česká klávesnice:** číselné klávesy se čtou přes `e.code` (Digit/Numpad), ne přes `e.key`.
 - **Omezení rasa/třída:** člověk bez černokněžníka a druida; trpaslík bez mága, černokněžníka a druida; elf bez černokněžníka a válečníka; ork bez druida a mága; nemrtvý bez lovce a druida.
 - **Na mobilu se útočí automaticky na nejbližšího nepřítele.**
-- **Kooperace:** každý další hráč = +10 % nepřátel, jejich života a poškození. Postava se vyexpí sólo a stejná se použije ve společné hře.
+- **Kooperace:** 2–4 hráči. Každý další hráč = +10 % nepřátel, jejich života a poškození. Postava se vyexpí sólo a stejná se použije ve společné hře. Kořist každý svoje. Po bossovi portál do města (žádný přesun dál) a další úroveň se odemkne všem v riftu.
 - **Texty ve hře jsou česky** a stručné. V okně talentů nepsat zbytečné nápovědy („Odemyká“, „Nejkratší cesta“ apod.).
 
 ## Jak pracovat (pro Clauda)
 1. Na začátku chatu si stáhnout repozitář a přečíst `PROJEKT.md` a dokument tématu.
-2. Měnit jen to, co Jirka zadal. Když je zadání nejasné nebo má víc rozumných řešení, krátce se zeptat.
+2. Měnit jen to, co Jirka zadal. Když je zadání nejasné nebo má víc rozumných řešení, krátce se zeptat. Nalezené chyby (něco nedělá, co má) rovnou opravit bez schvalování, pokud oprava nemění fungování něčeho jiného – a napsat o tom.
 3. Po změně spustit testy, které se změny týkají (`docs/technika.md`), a u vizuálních změn udělat snímky obrazovky (počítač, mobil na výšku i na šířku).
 4. Zvýšit `GAME_VERSION` v `js/data.js` a doplnit řádek do sekce Verze v `README.md`. Když se mění struktura uložení, přidat migraci v `js/save.js`.
 5. Pokud se změnilo něco, co dokumenty popisují, aktualizovat příslušný `docs/*.md`.

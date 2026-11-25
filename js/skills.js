@@ -202,7 +202,7 @@ function doSkill(S, tx, ty, ang, target) {
 // Plošné efekty hrdiny (meteor, vánice, mor, hvězdopád…)
 // Každá plocha i past se počítá v kontextu hrdiny, který ji vytvořil
 function updateZones(dt) {
-  G.zones = G.zones.filter(z => isHero(z.owner) ? withHero(z.owner, () => stepZone(z, dt)) : false);
+  filterKeepNew('zones', z => isHero(z.owner) ? withHero(z.owner, () => stepZone(z, dt)) : false);
 }
 function stepZone(z, dt) {
   const st = G.st;

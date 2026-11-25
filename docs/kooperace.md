@@ -11,11 +11,13 @@ Hráč si postavu vyexpí sám (jako dnes) a stejnou postavu pak použije ve spo
 | 3 | Společný rift po síti: pohyb, souboj, XP a kořist každému zvlášť, zápis do uložení každého hráče | čeká |
 | 4 | Doladění: oživování spoluhráče, ukazatele spoluhráčů v HUD, odchod/příchod během riftu | čeká |
 
-### Navržený způsob spojení (zatím neschváleno)
-- Jeden hráč je **hostitel**: u něj běží celá hra (nepřátelé, bossové, kořist). Ostatní posílají vstup (pohyb, sesílání) a dostávají stav.
-- Spojení prohlížečů napřímo (WebRTC) – zdarma, bez vlastního serveru. Pro kód místnosti návrh knihovny PeerJS a jejího bezplatného zprostředkovacího serveru – **čeká na souhlas** (PROJEKT.md říká „bez knihoven“).
-- Prodleva se schová předbíháním: vlastní pohyb a kouzla se ukážou hned, výsledek (poškození, smrt nepřítele) přijde od hostitele. O zásahu hráče rozhoduje jeho vlastní hra (spravedlivé uhýbání).
-- Otevřené otázky: max. počet hráčů (návrh 2–4), coop jen v riftech (návrh), kořist každý svoje (zatím tak naprogramováno).
+### Rozhodnuto (25. 11. 2026)
+- **2–4 hráči.**
+- **Spojení:** jeden hráč je **hostitel**, u něj běží celá hra (nepřátelé, bossové, kořist). Ostatní posílají vstup (pohyb, sesílání) a dostávají stav. Prohlížeče se spojí napřímo (WebRTC) přes knihovnu **PeerJS** a její bezplatný zprostředkovací server (schválená výjimka z „bez knihoven“). Zdarma, bez vlastního serveru.
+- **Prodleva** se schová předbíháním: vlastní pohyb a kouzla se ukážou hned, výsledek (poškození, smrt nepřítele) přijde od hostitele. O zásahu hráče rozhoduje jeho vlastní hra (spravedlivé uhýbání).
+- **Kořist každý svoje.**
+- **Po zabití bosse** se otevře portál do města (nikdo se nepřesouvá do další úrovně). Další úroveň u obelisku se odemkne všem hrdinům v riftu.
+- **Společné město** je žádoucí – zařadit do etapy 2/3 (hráči se vidí ve městě, obchod/kovář/truhla zůstávají každému zvlášť, rift spouští hostitel u obelisku).
 
 ## Pravidla (platí od 1.7.0)
 - **Obtížnost:** každý další hráč přidá **+10 %** nepřátel (větší skupiny), jejich života (i bosse a objektů bosse) a poškození. 2 hráči = ×1,1, 3 = ×1,2, 4 = ×1,3. (`partyMulFor` v `js/engine.js`, uloženo v `G.partyMul`.)

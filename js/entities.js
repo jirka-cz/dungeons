@@ -593,6 +593,14 @@ function dust(x, y) { if (Math.random() < 0.5) particle(x + rand(-3, 3), y, { vx
 
 // ---------- Nebezpečné zóny nepřátel (s varováním na zemi) ----------
 
+// Projde seznam G[key] a nechá jen položky, pro které fn vrátí true. Co během toho nově vznikne
+// (úlomky Ledové koule, louže po dechu bosse…), se zachová – dřív se to ztrácelo.
+function filterKeepNew(key, fn) {
+  const cur = G[key]; G[key] = [];
+  const kept = cur.filter(fn);
+  G[key] = kept.concat(G[key]);
+}
+
 function hazard(o) { const z = Object.assign({ t: 0, dur: 0, tickT: 0 }, o); G.hazards.push(z); return z; }
 function hazardLine(x, y, ang, len, delay) { G.hazards.push({ line: true, x, y, ang, len, t: 0, delay, dur: 0, dmg: 0 }); }
 
@@ -600,7 +608,7 @@ function hazardLine(x, y, ang, len, delay) { G.hazards.push({ line: true, x, y, 
 function updateHazards(dt) {
   const inside = (z, h) => dist(z, h) < z.r + h.r;
   const A = () => G.st.areaTaken;
-  G.hazards = G.hazards.filter(z => {
+  filterKeepNew('hazards', z => {
     z.t += dt;
     if (z.line) return z.t < z.delay;
     if (z.wave) {   // rozpínající se vlna (otřes)
@@ -671,7 +679,7 @@ function slowHero(p, t) { G.hero.slowP = p; G.hero.slowT = t * (1 - (G.st.ccRed 
 
 function updateProjectiles(dt) {
   // střely hrdinů a mazlíčků se počítají v kontextu majitele (jeho staty, jeho zásahy)
-  G.projs = G.projs.filter(p => p.friendly && isHero(p.owner) ? withHero(p.owner, () => stepProjectile(p, dt)) : stepProjectile(p, dt));
+  filterKeepNew('projs', p => p.friendly && isHero(p.owner) ? withHero(p.owner, () => stepProjectile(p, dt)) : stepProjectile(p, dt));
 }
 
 function stepProjectile(p, dt) {
