@@ -1,6 +1,6 @@
 # Postavy
 
-## Jak to funguje teď (v1.3.0)
+## Jak to funguje teď (v1.4.0)
 - Hráč má víc postav. Zlato a truhla jsou sdílené, výbava a talenty patří postavě.
 - Postava = jméno + rasa + třída. Vzhled je pixelový sprite, obarvený podle třídy.
 
@@ -42,9 +42,9 @@ Povolené kombinace: `RACE_CLASSES` a `raceAllows()` v `js/data.js`. Obrazovka t
 |---|---|---|
 | Síla | +0,5 obrany za bod | válečník |
 | Obratnost | +0,1 % krit. šance za bod | lovec, druid |
-| Intelekt | +0,3 % všech odolností za bod | mág, černokněžník, druid |
+| Intelekt | +0,2 % všech odolností za bod | mág, černokněžník, druid |
 | Výdrž | +1 % života za bod | – |
-| Duch | +1,5 % rychlosti obnovy zdroje za bod (mana, soustředění, duch); válečníkovi +1 % generování zuřivosti | – |
+| Moudrost | +1,5 % rychlosti obnovy zdroje za bod (mana, soustředění, duch); válečníkovi +1 % generování zuřivosti | – |
 
 - Hlavní atribut je `main` v `CLASSES`. Druid bere vyšší z intelektu a obratnosti (Rovnováha i Divočina).
 - Atributy jsou jen z výbavy. V okně postavy je pět políček, hlavní atribut má hvězdičku.

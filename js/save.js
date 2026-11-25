@@ -8,6 +8,7 @@ function newSave() {
     v: SAVE_VERSION,
     chars: [], current: -1,
     gold: 0, stash: [], nextUid: 1,
+    resCap14: true,
     settings: { autoSell: { gray: false, green: false, purple: false, orange: false, diamond: false }, dmgNumbers: true, sound: true, autoAttack: false, sellFix103: true },
     lastSeen: Date.now()
   };
@@ -15,7 +16,7 @@ function newSave() {
 
 function newChar(name, race, cls, save) {
   const ch = { id: Date.now() + Math.floor(Math.random() * 1000), name, race, cls, level: 1, xp: 0, talents: {}, equip: {}, inv: [], maxRift: 1,
-               bar: [CLASSES[cls].base[0], CLASSES[cls].base[1], null, null, null, null], talentVer: 2, classItems12: true, created: Date.now() };
+               bar: [CLASSES[cls].base[0], CLASSES[cls].base[1], null, null, null, null], talentVer: 2, classItems12: true, resCap14: true, created: Date.now() };
   const w = starterWeapon(cls, save.nextUid++);
   ch.equip[w.slot === 'weapon' ? 'main' : 'off'] = w;
   return ch;
@@ -36,6 +37,13 @@ function migrateSave(s) {
   if (!(s.settings || {}).sellFix103) { for (const r in out.settings.autoSell) out.settings.autoSell[r] = false; out.settings.sellFix103 = true; }
   out.chars.forEach(ch => {
     ch.bar = ch.bar || [null, null, null, null, null, null]; ch.talents = ch.talents || {}; ch.inv = ch.inv || []; ch.equip = ch.equip || {};
+    // v1.4: odolnosti na předmětech max 10 % na živel (rebalanc), jednou pro všechny předměty postavy
+    if (!ch.resCap14) {
+      let n = 0;
+      Object.values(ch.equip).concat(ch.inv).forEach(it => { if (it && capItemRes(it)) n++; });
+      ch.resCap14 = true;
+      if (n) out._resNotice = true;
+    }
     // v1.2: legendárky a sety jsou jen pro určité třídy – nevhodné nasazené kusy se přesunou do batohu (nebo do truhly)
     if (!ch.classItems12) {
       const moved = [];
@@ -57,6 +65,8 @@ function migrateSave(s) {
       if (had) out._notice = 'Talentové stromy jsou úplně nové (strom třídy + 2 specializace). Všechny body ti byly vráceny – rozděl je znovu v Talentech (K).';
     }
   });
+  if (!s.resCap14) { out.stash.forEach(it => { if (capItemRes(it)) out._resNotice = true; }); out.resCap14 = true; }
+  if (out._resNotice) { out._notice = (out._notice ? out._notice + ' ' : '') + 'Odolnosti na předmětech byly vyváženy: nejvýš 10 % proti jednomu živlu na předmět.'; delete out._resNotice; }
   return out;
 }
 

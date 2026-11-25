@@ -10,7 +10,7 @@ const ITEM_KINDS = {
   gloves:  { name: 'Rukavice',   weight: 1,   types: ['gloves', 'gauntlets'], base: [['atk', 1.5, 0, true]] },
   legs:    { name: 'Kalhoty',    weight: 1,   types: ['pants', 'greaves'], base: [['hp', 10, 0, true]] },
   boots:   { name: 'Boty',       weight: 1,   types: ['boots', 'sandals'], base: [['hp', 8, 0, true]] },
-  cloak:   { name: 'Plášť',      weight: 1,   types: ['cloak', 'mantle'], base: [['resAll', 0.03, 0.0006, false, 0.15]] },
+  cloak:   { name: 'Plášť',      weight: 1,   types: ['cloak', 'mantle'], base: [['resAll', 0.01, 0.0002, false, 0.03]] },
   neck:    { name: 'Náhrdelník', weight: 0.7, types: ['amulet', 'talisman'], base: [['critDmg', 0.08, 0.003, false, 0.5]] },
   ring:    { name: 'Prsten',     weight: 1.2, types: ['ring', 'signet'], base: [['crit', 0.01, 0.0005, false, 0.08]] }
 };
@@ -51,19 +51,22 @@ const ITEM_TYPES = {
 // Váha zbroje: těžká přidá obranu (válečník), lehká odolnosti (kouzelníci). Nosit smí každý.
 const ARMOR_WEIGHT = {
   heavy: { name: 'Těžká zbroj', extra: [['def', 1, 0.12]] },
-  light: { name: 'Lehká zbroj', extra: [['resAll', 0.03, 0.0005, false, 0.12]] }
+  light: { name: 'Lehká zbroj', extra: [['resAll', 0.01, 0.0002, false, 0.03]] }
 };
+// Odolnost proti jednomu živlu na jednom předmětu (všechny odolnosti + konkrétní) je nejvýš 10 %, i u nejlepších kusů
+const RES_ITEM_CAP = 0.10;
+const RES_ELEMS = ['Fire', 'Frost', 'Shadow', 'Nature', 'Arcane'];
 
 // Základní atributy. Hlavní atribut třídy (CLASSES[].main) dává navíc +1 % útoku za bod.
 const ATTRS = {
   str: { name: 'Síla',      short: 'SÍL', desc: '+0,5 obrany za bod. Hlavní atribut válečníka.' },
   agi: { name: 'Obratnost', short: 'OBR', desc: '+0,1 % krit. šance za bod. Hlavní atribut lovce a druida v Divočině.' },
-  int: { name: 'Intelekt',  short: 'INT', desc: '+0,3 % všech odolností za bod. Hlavní atribut mága, černokněžníka a druida.' },
+  int: { name: 'Intelekt',  short: 'INT', desc: '+0,2 % všech odolností za bod. Hlavní atribut mága, černokněžníka a druida.' },
   sta: { name: 'Výdrž',     short: 'VÝD', desc: '+1 % života za bod. Užitečná pro všechny.' },
-  spi: { name: 'Duch',      short: 'DUC', desc: '+1,5 % rychlosti obnovy many, soustředění a ducha za bod. Válečníkovi +1 % generování zuřivosti.' }
+  spi: { name: 'Moudrost',  short: 'MOU', desc: '+1,5 % rychlosti obnovy many, soustředění a ducha za bod. Válečníkovi +1 % generování zuřivosti.' }
 };
 const ATTR_ORDER = ['str', 'agi', 'int', 'sta', 'spi'];
-const ATTR_FX = { mainAtk: 0.01, strDef: 0.5, agiCrit: 0.001, intRes: 0.003, staHp: 0.01, spiRegen: 0.015, spiGen: 0.01 };
+const ATTR_FX = { mainAtk: 0.01, strDef: 0.5, agiCrit: 0.001, intRes: 0.002, staHp: 0.01, spiRegen: 0.015, spiGen: 0.01 };
 
 // Druhy nepřátel pro bonusy „poškození nemrtvým/šelmám/démonům“ (fam v MONSTERS a BOSSES)
 const MONSTER_FAMS = { undead: 'nemrtvým', beast: 'šelmám', demon: 'démonům' };
@@ -105,14 +108,14 @@ const RARITY_ORDER = ['gray', 'green', 'purple', 'orange', 'diamond'];
 
 // Náhodné afixy (inspirace Diablo 3, WoW, Grim Dawn).
 // v0 = hodnota na úrovni 1 (roste do úrovně 100), w = váha (jak často padá, výchozí 1), slots = jen na těchto druzích,
-// attr/int = celé číslo, family = rodina konkrétních klíčů (zbraň → "axe_atkPct", dovednost → "skd_fireball").
+// cap = strop hodnoty, attr/int = celé číslo, family = rodina konkrétních klíčů (zbraň → "axe_atkPct", dovednost → "skd_fireball").
 const AFFIXES = {
   // Atributy
   str:       { v0: 3, attr: true, w: 1.3, suf: 'síly' },
   agi:       { v0: 3, attr: true, w: 1.3, suf: 'obratnosti' },
-  int:       { v0: 3, attr: true, w: 1.3, suf: 'moudrosti' },
+  int:       { v0: 3, attr: true, w: 1.3, suf: 'rozumu' },
   sta:       { v0: 3, attr: true, w: 1.3, suf: 'výdrže' },
-  spi:       { v0: 3, attr: true, w: 1.1, suf: 'ducha' },
+  spi:       { v0: 3, attr: true, w: 1.1, suf: 'moudrosti' },
   // Útok
   atkPct:    { v0: 0.03,   suf: 'moci' },
   wpnPct:    { v0: 0.06,   family: 'weapon', w: 0.9, slots: ['weapon', 'offhand', 'gloves', 'neck', 'ring'] },
@@ -156,12 +159,12 @@ const AFFIXES = {
   healPct:   { v0: 0.05,   suf: 'uzdravení' },
   killHeal:  { v0: 0.005,  w: 0.6, suf: 'krve' },
   thorns:    { v0: 0.03,   suf: 'trnů' },
-  resFire:   { v0: 0.05,   suf: 'ohnivzdornosti' },
-  resFrost:  { v0: 0.05,   suf: 'zimy' },
-  resShadow: { v0: 0.05,   suf: 'světla' },
-  resNature: { v0: 0.05,   suf: 'protijedu' },
-  resArcane: { v0: 0.05,   suf: 'rozptylu' },
-  resAll:    { v0: 0.025,  suf: 'živlů' },
+  resFire:   { v0: 0.018, cap: 0.06, suf: 'ohnivzdornosti' },
+  resFrost:  { v0: 0.018, cap: 0.06, suf: 'zimy' },
+  resShadow: { v0: 0.018, cap: 0.06, suf: 'světla' },
+  resNature: { v0: 0.018, cap: 0.06, suf: 'protijedu' },
+  resArcane: { v0: 0.018, cap: 0.06, suf: 'rozptylu' },
+  resAll:    { v0: 0.012, cap: 0.04, suf: 'živlů' },
   eliteRed:  { v0: 0.03,   w: 0.7, suf: 'štítonoše' },
   rangedRed: { v0: 0.04,   w: 0.7, suf: 'šípové stěny' },
   areaRed:   { v0: 0.04,   w: 0.7, suf: 'úkrytu' },
@@ -182,24 +185,24 @@ const LEGENDARIES = [
   { id: 'bloodmoon',   cls: ['warrior'],                     slot: 'weapon',  type: 'axe',     name: 'Sekera Krvavého měsíce',  stats: { ls: 0.05, doubleChance: 0.2 } },
   { id: 'vigil',       cls: ['warrior'],                     slot: 'offhand', type: 'shield',  name: 'Štít Věčné hlídky',       stats: { block: 0.1, thorns: 0.15 } },
   { id: 'phoenix',     cls: ['warrior', 'druid'],            slot: 'chest',   type: 'plate',   name: 'Fénixova zbroj',          stats: { regen: 0.004, rebirth: 1 } },
-  { id: 'stoneskin',   cls: ['warrior', 'druid'],            slot: 'legs',    type: 'greaves', name: 'Nohavice Kamenné kůže',   stats: { dmgRed: 0.08, resAll: 0.08 } },
+  { id: 'stoneskin',   cls: ['warrior', 'druid'],            slot: 'legs',    type: 'greaves', name: 'Nohavice Kamenné kůže',   stats: { dmgRed: 0.08, resAll: 0.05 } },
   { id: 'headsman',    cls: ['warrior', 'hunter'],           slot: 'neck',    type: 'amulet',  name: 'Amulet Popravčího',       stats: { critDmg: 0.25, execPct: 0.5 } },
   // Mág
   { id: 'eternalfire', cls: ['mage'],                        slot: 'weapon',  type: 'staff',   name: 'Hůl věčného plamene',     stats: { firePct: 0.3, resPen: 0.1 } },
   { id: 'frostking',   cls: ['mage'],                        slot: 'head',    type: 'circlet', name: 'Koruna Mrazivého krále',  stats: { hpPct: 0.10, slowAura: 0.2, freezeChance: 0.05 } },
   { id: 'starfall',    cls: ['mage'],                        slot: 'offhand', type: 'orb',     name: 'Ohnisko Hvězdného prachu', stats: { arcanePct: 0.25, skillCd: 1 } },
-  { id: 'runerobe',    cls: ['mage', 'warlock'],             slot: 'chest',   type: 'robe',    name: 'Róba Tisíce run',         stats: { resAll: 0.12, skillPct: 0.15, castPct: 0.12 } },
+  { id: 'runerobe',    cls: ['mage', 'warlock'],             slot: 'chest',   type: 'robe',    name: 'Róba Tisíce run',         stats: { resAll: 0.05, skillPct: 0.15, castPct: 0.12 } },
   // Černokněžník
   { id: 'void',        cls: ['warlock'],                     slot: 'ring',    type: 'signet',  name: 'Prsten Prázdnoty',        stats: { shadowPct: 0.25, dotPct: 0.25 } },
   { id: 'soulreaper',  cls: ['warlock'],                     slot: 'weapon',  type: 'wand',    name: 'Hůlka Žnece duší',        stats: { shadowPct: 0.2, ls: 0.03, dotDur: 2 } },
-  { id: 'shadowwalk',  cls: ['hunter', 'warlock'],           slot: 'cloak',   type: 'cloak',   name: 'Plášť Stínochodce',       stats: { dodge: 0.06, resShadow: 0.2 } },
+  { id: 'shadowwalk',  cls: ['hunter', 'warlock'],           slot: 'cloak',   type: 'cloak',   name: 'Plášť Stínochodce',       stats: { dodge: 0.06, resShadow: 0.08 } },
   // Lovec
   { id: 'windrunner',  cls: ['hunter'],                      slot: 'boots',   type: 'boots',   name: 'Boty Větrného běžce',     stats: { spdPct: 0.15, dodge: 0.05 } },
   { id: 'eagleeye',    cls: ['hunter'],                      slot: 'weapon',  type: 'bow',     name: 'Luk Orlího oka',          stats: { crit: 0.06, armorPen: 0.2 } },
   { id: 'summoner',    cls: ['hunter', 'warlock', 'druid'],  slot: 'ring',    type: 'ring',    name: 'Prsten Vyvolávače',       stats: { petPct: 0.30, petCount: 1 } },
   // Druid
   { id: 'oakheart',    cls: ['druid'],                       slot: 'weapon',  type: 'staff',   name: 'Hůl Srdce dubu',          stats: { naturePct: 0.25, healPct: 0.25 } },
-  { id: 'antlers',     cls: ['druid'],                       slot: 'head',    type: 'circlet', name: 'Koruna z parohů',         stats: { hpPct: 0.08, dodge: 0.04, resNature: 0.2 } }
+  { id: 'antlers',     cls: ['druid'],                       slot: 'head',    type: 'circlet', name: 'Koruna z parohů',         stats: { hpPct: 0.08, dodge: 0.04, resNature: 0.08 } }
 ];
 
 // Sety: 6 dílů, bonusy za 1, 3 a 6 nasazených dílů. pieces: druh → [jméno, typ]. cls = kdo je smí nosit.
@@ -226,13 +229,13 @@ const SETS = {
     name: 'Pakt Prázdnoty', cls: ['warlock'],
     pieces: { weapon: ['Dýka Paktu', 'dagger'], head: ['Kápě Paktu', 'hood'], chest: ['Róba Paktu', 'robe'],
               gloves: ['Rukavice Paktu', 'gloves'], legs: ['Kalhoty Paktu', 'pants'], ring: ['Pečeť Paktu', 'signet'] },
-    bonus: { 1: { shadowPct: 0.15 }, 3: { dotPct: 0.30, resAll: 0.10 }, 6: { atkPct: 0.30, ls: 0.05, petPct: 0.40 } }
+    bonus: { 1: { shadowPct: 0.15 }, 3: { dotPct: 0.30, resAll: 0.05 }, 6: { atkPct: 0.30, ls: 0.05, petPct: 0.40 } }
   },
   grove: {
     name: 'Strážce Hvozdu', cls: ['druid'],
     pieces: { weapon: ['Hůl Strážce', 'staff'], head: ['Parohy Strážce', 'circlet'], chest: ['Vesta Strážce', 'vest'],
               gloves: ['Rukavice Strážce', 'gloves'], boots: ['Sandály Strážce', 'sandals'], neck: ['Talisman Strážce', 'talisman'] },
-    bonus: { 1: { naturePct: 0.15 }, 3: { healPct: 0.30, regen: 0.003, resNature: 0.20 }, 6: { atkPct: 0.30, petPct: 0.40, hpPct: 0.20 } }
+    bonus: { 1: { naturePct: 0.15 }, 3: { healPct: 0.30, regen: 0.003, resNature: 0.10 }, 6: { atkPct: 0.30, petPct: 0.40, hpPct: 0.20 } }
   }
 };
 
@@ -241,7 +244,7 @@ const STAT_LABELS = {
   agi:          v => `+${Math.round(v)} obratnost`,
   int:          v => `+${Math.round(v)} intelekt`,
   sta:          v => `+${Math.round(v)} výdrž`,
-  spi:          v => `+${Math.round(v)} duch`,
+  spi:          v => `+${Math.round(v)} moudrost`,
   castPct:      v => `+${pct(v)} % rychlost sesílání`,
   wpnSpd:       v => `+${pct(v)} % rychlost útoku zbraní`,
   eliteDmg:     v => `+${pct(v)} % poškození elitám a strážcům`,
@@ -385,7 +388,27 @@ function rollKind() {
 function rollAffixValue(k, ilvl) {
   const a = affixDef(k);
   const v = (a.vl !== undefined ? a.v0 + a.vl * ilvl : a.v0 * (1 + Math.min(ilvl, 100) / 40)) * (0.7 + Math.random() * 0.3);
-  return (k === 'def' || a.attr || a.int) ? Math.max(1, Math.round(v)) : +v.toFixed(4);
+  if (k === 'def' || a.attr || a.int) return Math.max(1, Math.round(v));
+  return +(a.cap ? Math.min(a.cap, v) : v).toFixed(4);
+}
+
+// Ořízne odolnosti předmětu na RES_ITEM_CAP pro každý živel (nejdřív afixy, pak základ). Vrací true, když něco změnil.
+function capItemRes(it) {
+  const leg = it.leg ? LEGENDARIES.find(l => l.id === it.leg) : null, L = leg ? leg.stats : {};
+  const get = (o, k) => (o && o[k]) || 0;
+  let changed = false;
+  RES_ELEMS.forEach(E => {
+    const k = 'res' + E;
+    let over = get(it.base, 'resAll') + get(it.affixes, 'resAll') + get(it.base, k) + get(it.affixes, k) + get(L, 'resAll') + get(L, k) - RES_ITEM_CAP;
+    for (const [obj, key] of [[it.affixes, k], [it.affixes, 'resAll'], [it.base, k], [it.base, 'resAll']]) {
+      if (over <= 1e-6) break;
+      if (!obj || !obj[key]) continue;
+      const cut = Math.min(obj[key], over);
+      obj[key] = +(obj[key] - cut).toFixed(4); over -= cut; changed = true;
+      if (obj[key] <= 0.001) delete obj[key];
+    }
+  });
+  return changed;
 }
 
 // Z rodiny afixu udělá konkrétní klíč podle předmětu a třídy (chytrá kořist)
@@ -513,6 +536,7 @@ function makeItem(ilvl, rarity, uid, forceKind, cls) {
   }
   item.name = name;
   item.maxDur = item.dur = r.dur;
+  capItemRes(item);
   return item;
 }
 

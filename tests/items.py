@@ -63,6 +63,12 @@ CHECKS = r"""(()=>{
   // náhodné (nechytré) legendárky musí jít padnout pro všechny
   let anyCls = new Set(); for (let i = 0; i < 400; i++) { const a = makeItem(20, 'orange', 1, null, null); itemClasses(a).forEach(c => anyCls.add(c)); }
   if (anyCls.size !== clsIds.length) E('náhodné legendárky nepokrývají všechny třídy');
+  // 2b) strop odolností na předmět
+  let resMax = 0;
+  clsIds.forEach(c => { for (let i = 0; i < 2000; i++) { const it = makeItem([10, 40, 100, 200][i % 4], ['green', 'purple', 'orange', 'diamond'][i % 4], 1, null, c); const st = itemStats(it);
+    RES_ELEMS.forEach(E => { resMax = Math.max(resMax, (st.resAll || 0) + (st['res' + E] || 0)); }); } });
+  out.resMaxPerItem = +resMax.toFixed(3);
+  if (resMax > RES_ITEM_CAP + 1e-6) E('odolnost na předmětu nad 10 %: ' + resMax);
   // 3) váha zbroje
   const heavy = makeItem(40, 'gray', 1, 'chest'); heavy.type = 'plate'; heavy.base = rollBase(baseDefsFor('chest', 'plate'), 40, 1);
   const light = { base: rollBase(baseDefsFor('chest', 'robe'), 40, 1) };
@@ -83,6 +89,7 @@ async def main():
         print('smart', json.dumps(res['smart']))
         print('armor', json.dumps(res['armor']))
         print('affix kinds rolled', res['affixKinds'], 'wrong weapon bonus (smart)', res.get('wrongWeapon', 0))
+        print('max resist per item', res['resMaxPerItem'])
         print('data errors', res['errors'])
 
         # 4) účinek atributů: válečník vs mág se stejným prstenem +20 síly / +20 intelektu
@@ -99,7 +106,7 @@ async def main():
           return r; })()""")
         print('attr effects', json.dumps(eff))
         w, m = eff['warrior'], eff['mage']
-        ok = w['defGain'] == 10 and abs(w['critGain'] - 0.02) < 1e-6 and abs(w['resGain'] - 0.06) < 1e-6 and abs(w['hpGain'] - 0.2) < 0.01
+        ok = w['defGain'] == 10 and abs(w['critGain'] - 0.02) < 1e-6 and abs(w['resGain'] - 0.04) < 1e-6 and abs(w['hpGain'] - 0.2) < 0.01
         print('attr effects ok', ok and w['atkGain'] > 0.15 and m['atkGain'] > 0.15)
         sel = await pg.evaluate("""(()=>{ const r = {};
           for (const cls of ['warrior', 'mage', 'hunter', 'druid']) {
@@ -145,6 +152,21 @@ async def main():
         mig = await pg.evaluate("(()=>{ const ch = G.save.chars[0]; return { head: !!ch.equip.head, inv: ch.inv.map(i => i.name), flag: ch.classItems12 }; })()")
         print('migration', json.dumps(mig, ensure_ascii=False), 'ok', (not mig['head']) and 'Titánova helma' in mig['inv'] and mig['flag'])
 
+        # 5b) migrace odolností: starý předmět s 30 % odolností v batohu a v truhle
+        await pg.evaluate("""(()=>{ const s = newSave(); delete s.resCap14; const ch = newChar('Res', 'human', 'mage', s); delete ch.resCap14;
+          const it = makeItem(40, 'purple', s.nextUid++, 'chest', 'mage'); it.base.resAll = 0.12; it.affixes = { resFire: 0.17, int: 5 }; ch.inv.push(it);
+          const st2 = makeItem(40, 'green', s.nextUid++, 'cloak', null); st2.base.resAll = 0.15; s.stash.push(st2);
+          s.chars.push(ch); writeSave(s); })()""")
+        await pg.reload(); await pg.wait_for_timeout(400)
+        rm = await pg.evaluate("(()=>{ const it = G.save.chars[0].inv[0], c = G.save.stash[0]; return { fire: +((it.base.resAll||0)+(it.affixes.resFire||0)).toFixed(3), int: it.affixes.int, cloak: c.base.resAll, flag: G.save.resCap14 }; })()")
+        print('res migration', json.dumps(rm), 'ok', rm['fire'] <= 0.1 and rm['int'] == 5 and rm['cloak'] <= 0.1)
+        # 5c) celkové odolnosti mága v plné fialové výbavě (úroveň 35 a 100)
+        tot = await pg.evaluate("""(()=>{ const r = {}; for (const il of [35, 100]) { let sum = 0;
+          for (let k = 0; k < 30; k++) { const ch = newChar('M', 'human', 'mage', G.save); ch.level = il; G.save.chars.push(ch); G.save.current = G.save.chars.length - 1; playChar();
+            ['head','chest','gloves','legs','boots','ring1','ring2','neck','cloak'].forEach(sl => ch.equip[sl] = makeItem(il, il > 50 ? 'orange' : 'purple', G.save.nextUid++, sl.startsWith('ring') ? 'ring' : sl, 'mage'));
+            invalidate(); const st = heroStats(); sum += (st.res.fire + st.res.frost + st.res.shadow + st.res.nature + st.res.arcane) / 5; }
+          r[il] = +(sum / 30).toFixed(3); } return r; })()""")
+        print('mage avg resist (full gear)', json.dumps(tot))
         # 6) snímky: okno postavy s vybranou legendárkou (počítač, mobil na výšku i na šířku)
         setup = """(()=>{ const ch = newChar('Jirka', 'dwarf', 'warrior', G.save); ch.level = 30; ch.maxRift = 20; G.save.chars.push(ch); G.save.current = G.save.chars.length - 1; playChar();
           ['head','chest','gloves','legs','boots','ring1','neck'].forEach(sl => { const it = makeItem(30, sl === 'chest' ? 'orange' : 'purple', G.save.nextUid++, sl === 'ring1' ? 'ring' : sl, 'warrior'); ch.equip[sl] = it; });

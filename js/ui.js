@@ -219,7 +219,7 @@ function charStatsHtml(st) {
   const basic = statRows([
     caster ? ['Rychlost sesílání', `${(st.spd * st.castMul).toFixed(2)} / s`, 'Kolikrát za sekundu sešleš základní kouzlo.']
            : ['Rychlost útoku', `${(st.spd * st.wpnSpdMul).toFixed(2)} / s`],
-    [C.res.name, `max ${fmt(st.resMax)} · ${st.resRegen > 0 ? regenTxt : 'generují útoky'}`, st.resRegen > 0 ? 'Maximum a obnova za sekundu. Obnovu zrychluje Duch.' : 'Zuřivost generují útoky a sama klesá. Duch zrychluje generování.'],
+    [C.res.name, `max ${fmt(st.resMax)} · ${st.resRegen > 0 ? regenTxt : 'generují útoky'}`, st.resRegen > 0 ? 'Maximum a obnova za sekundu. Obnovu zrychluje Moudrost.' : 'Zuřivost generují útoky a sama klesá. Moudrost zrychluje generování.'],
     ['Kritická šance', P(st.crit)], ['Kritické poškození', `×${st.critMult.toFixed(2)}`],
     st.dodge && ['Úhyb', P(st.dodge)], st.block && ['Blok', P(st.block), 'Šance zablokovat polovinu poškození.'],
     st.dmgTaken < 1 && ['Snížení poškození', P(1 - st.dmgTaken)], st.ls && ['Vysávání života', P(st.ls)],

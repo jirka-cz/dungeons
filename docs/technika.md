@@ -15,6 +15,7 @@
   - verze < 5 (idle 0.x) začíná nově, zlato zůstane;
   - `talentVer 2` vrátí body po přestavbě stromů;
   - `sellFix103` jednou vypne automatický prodej;
+  - `resCap14` (u postavy i u uložení) jednou ořízne odolnosti předmětů na 10 % na živel;
   - `classItems12` (u postavy) přesune nasazené legendárky a sety, které třída už nesmí nosit, do batohu (nebo truhly).
 - Když se mění struktura uložení, vždy přidat migraci, aby kamarádům nezmizely postavy.
 

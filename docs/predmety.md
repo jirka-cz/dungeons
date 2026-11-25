@@ -1,6 +1,6 @@
 # Předměty a kořist
 
-## Jak to funguje teď (v1.3.0)
+## Jak to funguje teď (v1.4.0)
 - **Sloty výbavy:** hlavní ruka, druhá ruka, hlava, krk, plášť, hruď, rukavice, nohy, boty, 2 prsteny (`EQUIP_ORDER` v `js/items.js`).
 - **Zbraně:** obouruční zbraň dává ≈ 1,9× útoku jednoruční. Zbraň v druhé ruce dává 70 % útoku (dvě zbraně).
 - Třída smí nosit jen své typy zbraní a jen legendárky a sety určené pro ni (`canClassUse`).
@@ -20,19 +20,26 @@
 |---|---|---|
 | Síla | +0,5 obrany za bod | +1 % útoku za bod (válečník) |
 | Obratnost | +0,1 % krit. šance za bod | +1 % útoku za bod (lovec, druid) |
-| Intelekt | +0,3 % všech odolností za bod | +1 % útoku za bod (mág, černokněžník, druid) |
+| Intelekt | +0,2 % všech odolností za bod | +1 % útoku za bod (mág, černokněžník, druid) |
 | Výdrž | +1 % života za bod | – |
-| Duch | +1,5 % obnovy zdroje za bod (válečník +1 % generování zuřivosti) | – |
+| Moudrost | +1,5 % obnovy zdroje za bod (válečník +1 % generování zuřivosti) | – |
 
 - Afix atributu: 3 body × (1 + úroveň/40), strop na úrovni 100 (≈ 2–3 body na začátku, 4–6 na úrovni 40, 7–10 na 100). Stejná křivka jako „% útok“, takže hlavní atribut je pro svou třídu o kousek lepší než obecný útok a pro ostatní je slabší.
 - Legendárky a sety mají hlavní atribut své třídy vždy jako základní stat (≈ 1,6× afixu).
 - Afix „% života“ (vitalita) z náhodných afixů nahradila Výdrž. Staré předměty s ním fungují dál.
 
+### Odolnosti na předmětech (v1.4, `RES_ITEM_CAP`)
+- **Na jednom předmětu je nejvýš 10 % proti jednomu živlu** (všechny odolnosti + konkrétní živel dohromady), i u legendárek a setů. Hlídá to `capItemRes` při vzniku předmětu.
+- Zdroje: lehká zbroj a plášť max 3 % všech odolností, afix „všechny odolnosti“ max 4 %, afix jednoho živlu max 6 %, legendárky max 8 %.
+- Intelekt +0,2 % všech odolností za bod. Strop postavy zůstává 60 %.
+- Orientačně: mág ve fialové výbavě na úrovni 35 ≈ 17 %, v samých legendárkách na úrovni 100 ≈ 50 %.
+- Starší předměty se jednou při načtení ořežou na 10 % (migrace `resCap14`).
+
 ### Váha zbroje (`ARMOR_WEIGHT`, `armor` v `ITEM_TYPES`)
 | Váha | Typy | Navíc k základu slotu |
 |---|---|---|
 | Těžká | helma, kyrys, kroužková zbroj, kovové rukavice, nohavice, boty | obrana (1 + 0,12 za úroveň) |
-| Lehká | kápě, čelenka, róba, kožená vesta, rukavice, kalhoty, sandály | všechny odolnosti (3 % + 0,05 % za úroveň, max 12 %) |
+| Lehká | kápě, čelenka, róba, kožená vesta, rukavice, kalhoty, sandály | všechny odolnosti (1 % + 0,02 % za úroveň, max 3 %) |
 
 - Róba a vesta mají na hrudi méně obrany než kyrys (róba nejméně).
 - Nosit smí každý cokoli. Popisek ukazuje „těžká zbroj“ / „lehká zbroj“.
@@ -43,7 +50,7 @@ Každý afix má `v0` (hodnota na úrovni 1, roste do úrovně 100), `w` (jak č
 
 | Skupina | Afixy |
 |---|---|
-| Atributy | síla, obratnost, intelekt, výdrž, duch |
+| Atributy | síla, obratnost, intelekt, výdrž, moudrost |
 | Útok | % útok, síla dovedností, rychlost útoku a sesílání, **rychlost sesílání**\*, **rychlost útoku zbraní**\*, krit. šance, krit. poškození, poškození 6 elementů, **poškození elitám a strážcům**, **poškození nemrtvým / šelmám / démonům**, poškození oslabeným (pod 30 %), poškození v čase, ignoruje zbroj, ignoruje odolnosti, šance zaútočit dvakrát, šance omráčit, síla mazlíčků |
 | Rodina „zbraň“\* | **+% poškození se sekerou / s mečem / s holí…** (platí, jen když zbraň držíš; na zbrani vždy její typ, chytrá kořist bere zbraně tvé třídy) |
 | Rodina „dovednost“ | **+% poškození konkrétní dovednosti** (např. Ohnivá koule); chytrá kořist bere dovednosti tvé třídy včetně talentových |
@@ -87,7 +94,7 @@ Nepřátelé mají druh `fam` v `MONSTERS` a `BOSSES`: nemrtví (zombie, kostliv
 - WoW: těžká zbroj má víc obrany, látková ji má malou a kouzelníci spoléhají na intelekt. Převzato zjednodušeně na 2 váhy bez zákazu nošení.
 - Chytrá kořist 85/15 % podle Diabla 3, aby legendárky pro jiné třídy nebyly otravně časté.
 - Válečník: síla, výdrž, obrana (těžká zbroj, štít). Kouzelníci: intelekt, odolnosti (lehká zbroj), síla elementu, přebíjení, rychlost sesílání, léčení.
-- v1.3 (Grim Dawn, D3, WoW): Duch jako ve WoW a Grim Dawnu zrychluje obnovu many. Rychlost sesílání je oddělená od rychlosti útoku (WoW spell haste vs. attack haste, Grim Dawn casting speed). Bonusy k typu zbraně a ke konkrétní dovednosti podle Diabla 3/4, poškození elitám a od elit podle D3, poškození proti druhům nepřátel podle Grim Dawnu, rychlost pohybu jen na botách podle D3.
+- v1.3 (Grim Dawn, D3, WoW): Moudrost (ve WoW a Grim Dawnu „Spirit“) jako ve WoW a Grim Dawnu zrychluje obnovu many. Rychlost sesílání je oddělená od rychlosti útoku (WoW spell haste vs. attack haste, Grim Dawn casting speed). Bonusy k typu zbraně a ke konkrétní dovednosti podle Diabla 3/4, poškození elitám a od elit podle D3, poškození proti druhům nepřátel podle Grim Dawnu, rychlost pohybu jen na botách podle D3.
 
 ### Automatický prodej
 - Nastavuje se po raritách v Nastavení i v okně postavy.
