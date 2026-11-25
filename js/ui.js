@@ -391,7 +391,7 @@ function showRiftSelect() {
   for (let L = max; L >= 1; L--) {
     rows.push(`<button class="rift-row ${L === max ? 'top' : ''}" onclick="hideModal();startRift(${L})">
       <b>Rift ${L}</b><span>Nepřátelé: život ×${riftMult(RIFT.hp, L).toFixed(1)}, poškození ×${riftMult(RIFT.atk, L).toFixed(1)}</span>
-      <span class="loot">Kořist +${Math.round(RIFT.mfPerLevel * L * 100)} %, předměty úr. ${riftIlvl(L)}</span></button>`);
+      <span class="loot">Kořist +${Math.round(riftMf(L) * 100)} %, předměty úr. ${riftIlvl(L)}</span></button>`);
     if (rows.length > 30) break;
   }
   showModal(`<h2>Obelisk riftů</h2>

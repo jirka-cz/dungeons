@@ -41,7 +41,7 @@ Náhodně v riftu, dotykem dají dočasný bonus:
 
 ### Obtížnost a odměny (`RIFT` v `js/data.js`)
 - Za každou úroveň: život nepřátel ×1,24, útok ×1,15, XP ×1,13, zlato ×1,12, +3 % nepřátel.
-- Kořist: +4 % lepší kořist a +1 % šance na předmět za úroveň. Úroveň předmětů = 2 × úroveň riftu + 1.
+- Kořist: lepší kořist roste se zpomalením (`riftMf`: rift 10 ≈ +37 %, 20 ≈ +64 %, 50 ≈ +110 %, 100 ≈ +142 %, strop +200 %) a +1 % šance na předmět za úroveň. Úroveň předmětů = 2 × úroveň riftu + 1. Podrobná tabulka v `docs/predmety.md`.
 - Bot testy (v1.1.x): všechny třídy a specializace projdou rifty 1–6 bez problémů, od riftu 7 obtížnost znatelně roste (smrti, delší časy). To je záměr.
 
 ## Kde v kódu

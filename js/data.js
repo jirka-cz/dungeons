@@ -1,6 +1,6 @@
 // Herní data a balanc. Změna čísla = jiná obtížnost.
 
-const GAME_VERSION = '1.4.0';
+const GAME_VERSION = '1.5.0';
 const TILE = 16;                 // velikost dlaždice v px
 const VIEW_W = 460, VIEW_H = 260; // logické rozlišení světa (zvětšuje se pixelově)
 
@@ -105,7 +105,7 @@ const BOSSES = {
 const RIFT = {
   hp: 1.24, atk: 1.15, xp: 1.13, gold: 1.12,   // násobky za úroveň
   density: 0.03,                                // +3 % nepřátel za úroveň
-  mfPerLevel: 0.04,                             // +4 % lepší kořist za úroveň
+  mfMax: 2.0, mfHalf: 40,                       // lepší kořist z riftu: roste se zpomalením, v riftu 41 polovina z max. +200 %
   dropPerLevel: 0.01,                           // +1 % šance na předmět za úroveň
   progressGoal: 100,
   dropChance: 0.08, eliteDrop: 0.45, globeChance: 0.06,
@@ -114,6 +114,8 @@ const RIFT = {
 };
 function riftMult(base, lvl) { return Math.pow(base, lvl - 1); }
 function riftIlvl(lvl) { return 2 * lvl + 1; }
+// Bonus „lepší kořist“ z úrovně riftu (rift 1 = 0, rift 10 ≈ +37 %, 20 ≈ +64 %, 40 ≈ +99 %, 100 ≈ +142 %, strop +200 %)
+function riftMf(lvl) { return RIFT.mfMax * (lvl - 1) / (lvl - 1 + RIFT.mfHalf); }
 
 // Zlato
 const GOLD_GROWTH = 1.06;   // za úroveň předmětu (ilvl)

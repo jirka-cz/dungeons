@@ -97,12 +97,14 @@ const EQUIP_ORDER = ['main', 'off', 'head', 'neck', 'cloak', 'chest', 'gloves', 
 const ITEM_GROWTH = 1.06;
 
 // minRift = od které úrovně riftu může rarita padnout; dur = odolnost
+// weight = váha při losování rarity (lepší kořist násobí všechny kromě šedé)
+// q = „kvalita“ hodu afixu: vyšší číslo = vysoké hodnoty vzácnější (legendárky mají nejlepší šanci na vysoký hod)
 const RARITIES = {
-  gray:    { name: 'Běžný',      color: '#9d9d9d', weight: 70,  minRift: 1,  mult: 1.00, aff: 0, sell: 1,  price: 0,   dur: 30 },
-  green:   { name: 'Neobvyklý',  color: '#4fd05a', weight: 25,  minRift: 1,  mult: 1.15, aff: 1, sell: 5,  price: 150, dur: 40 },
-  purple:  { name: 'Epický',     color: '#b75cff', weight: 5,   minRift: 4,  mult: 1.35, aff: 2, sell: 18, price: 600, dur: 50 },
-  orange:  { name: 'Legendární', color: '#ff9a1f', weight: 1,   minRift: 10, mult: 1.60, aff: 3, sell: 60, price: 2000, dur: 60 },
-  diamond: { name: 'Diamantový', color: '#5ff0ff', weight: 0.3, minRift: 16, mult: 1.50, aff: 2, sell: 70, price: 0,   dur: 60 }
+  gray:    { name: 'Běžný',      color: '#9d9d9d', weight: 100, minRift: 1,  mult: 1.00, aff: 0, q: 3, sell: 1,  price: 0,   dur: 30 },
+  green:   { name: 'Neobvyklý',  color: '#4fd05a', weight: 30,  minRift: 1,  mult: 1.15, aff: 1, q: 3, sell: 5,  price: 150, dur: 40 },
+  purple:  { name: 'Epický',     color: '#b75cff', weight: 6,   minRift: 4,  mult: 1.35, aff: 2, q: 2.2, sell: 18, price: 600, dur: 50 },
+  orange:  { name: 'Legendární', color: '#ff9a1f', weight: 1,   minRift: 10, mult: 1.60, aff: 3, q: 1.3, sell: 60, price: 2000, dur: 60 },
+  diamond: { name: 'Diamantový', color: '#5ff0ff', weight: 0.3, minRift: 16, mult: 1.50, aff: 2, q: 1.3, sell: 70, price: 0,   dur: 60 }
 };
 const RARITY_ORDER = ['gray', 'green', 'purple', 'orange', 'diamond'];
 
@@ -118,8 +120,8 @@ const AFFIXES = {
   spi:       { v0: 3, attr: true, w: 1.1, suf: 'moudrosti' },
   // Útok
   atkPct:    { v0: 0.03,   suf: 'moci' },
-  wpnPct:    { v0: 0.06,   family: 'weapon', w: 0.9, slots: ['weapon', 'offhand', 'gloves', 'neck', 'ring'] },
-  skillDmg:  { v0: 0.10,   family: 'skill',  w: 0.9, suf: 'mistrovství' },
+  wpnPct:    { v0: 0.05,   family: 'weapon', w: 0.9, slots: ['weapon', 'offhand', 'gloves', 'neck', 'ring'] },
+  skillDmg:  { v0: 0.08,   family: 'skill',  w: 0.9, suf: 'mistrovství' },
   skillPct:  { v0: 0.03,   suf: 'umění' },
   spdPct:    { v0: 0.02,   suf: 'rychlosti' },
   castPct:   { v0: 0.03,   suf: 'čarodějnictví', slots: ['weapon', 'offhand', 'gloves', 'neck', 'ring', 'head'] },
@@ -385,9 +387,12 @@ function rollKind() {
   return 'ring';
 }
 
-function rollAffixValue(k, ilvl) {
+// Hod afixu: úroveň předmětu zvedá strop (do úrovně 100 až 3×), hod 50–100 % stropu je vychýlený k nízkým hodnotám.
+// Šance na hod nad 90 % stropu: zelený ≈ 7 %, epický ≈ 10 %, legendární/diamantový ≈ 16 %. Průměr 63 / 66 / 72 % stropu.
+function affixRoll(rarity) { return 0.5 + 0.5 * Math.pow(Math.random(), (RARITIES[rarity] || RARITIES.green).q); }
+function rollAffixValue(k, ilvl, rarity) {
   const a = affixDef(k);
-  const v = (a.vl !== undefined ? a.v0 + a.vl * ilvl : a.v0 * (1 + Math.min(ilvl, 100) / 40)) * (0.7 + Math.random() * 0.3);
+  const v = (a.vl !== undefined ? a.v0 + a.vl * ilvl : a.v0 * (1 + Math.min(ilvl, 100) / 50)) * affixRoll(rarity);
   if (k === 'def' || a.attr || a.int) return Math.max(1, Math.round(v));
   return +(a.cap ? Math.min(a.cap, v) : v).toFixed(4);
 }
@@ -438,7 +443,7 @@ function rollAffixes(n, ilvl, exclude, ctx = {}) {
     pool = pool.filter(k => k !== pick);
     const key = AFFIXES[pick].family ? resolveFamily(AFFIXES[pick].family, ctx) : pick;
     if (!key || exclude.includes(key) || out[key] !== undefined) continue;
-    out[key] = rollAffixValue(key, ilvl);
+    out[key] = rollAffixValue(key, ilvl, ctx.rarity);
   }
   return out;
 }
@@ -515,14 +520,14 @@ function makeItem(ilvl, rarity, uid, forceKind, cls) {
   const mains = forCls ? classMainStats(forCls) : [];
   const mainKey = mains.length ? mains[Math.floor(Math.random() * mains.length)] : null;
   // legendárky a sety mají vždy hlavní atribut své třídy (silnější než afix)
-  if ((item.leg || item.set) && mainKey) item.base[mainKey] = Math.max(2, Math.round(rollAffixValue(mainKey, ilvl) * 1.6));
+  if ((item.leg || item.set) && mainKey) item.base[mainKey] = Math.max(2, Math.round(rollAffixValue(mainKey, ilvl, rarity) * 1.6));
   const legDef = item.leg ? LEGENDARIES.find(l => l.id === item.leg) : null;
-  item.affixes = rollAffixes(r.aff, ilvl, Object.keys(item.base).concat(legDef ? Object.keys(legDef.stats) : []), { kind, type, cls: forCls });
+  item.affixes = rollAffixes(r.aff, ilvl, Object.keys(item.base).concat(legDef ? Object.keys(legDef.stats) : []), { kind, type, cls: forCls, rarity });
   // chytrá kořist: běžné předměty občas dostanou hlavní atribut třídy místo náhodného afixu
   const ak = Object.keys(item.affixes);
   if (cls && mainKey && ak.length && !item.base[mainKey] && !ak.some(k => mains.includes(k)) && Math.random() < SMART_ATTR) {
     delete item.affixes[ak[0]];
-    item.affixes = Object.assign({ [mainKey]: rollAffixValue(mainKey, ilvl) }, item.affixes);
+    item.affixes = Object.assign({ [mainKey]: rollAffixValue(mainKey, ilvl, rarity) }, item.affixes);
   }
   if (!name) {
     const [noun, gender] = ITEM_TYPES[type].noun.split(':');

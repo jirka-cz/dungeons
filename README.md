@@ -51,6 +51,7 @@ Město (obchodník, kovář, truhla, obelisk) → rift zvolené úrovně → pln
 - `PROJEKT.md` a `docs/` – dokumentace pro další vývoj
 
 ## Verze
+- **1.5.0** – vysoké hodnoty afixů jsou vzácné (legendárky mají nejlepší šanci), procenta celkově menší; vzácné rarity vzácnější; bonus riftu ke kořisti roste se zpomalením místo bez omezení.
 - **1.4.0** – atribut Duch přejmenován na Moudrost; rebalanc odolností: nejvýš 10 % proti jednomu živlu na předmět (i u legendárek), nižší odolnosti z lehké zbroje, plášťů a afixů, intelekt +0,2 % za bod; starší předměty se při načtení upraví.
 - **1.3.0** – atribut Duch (obnova many a zdroje), rychlost sesílání a rychlost útoku zbraní, velká sada náhodných bonusů (poškození se zbraní, dovednosti, proti elitám, nemrtvým, šelmám a démonům, cena a obnova zdroje, obrana proti střelám a plošným útokům…), přehled zdroje v okně postavy.
 - **1.2.0** – atributy Síla, Obratnost, Intelekt a Výdrž; těžká zbroj dává obranu, lehká odolnosti; legendárky a sety jen pro určité třídy (+ 6 nových legendárek, sety pro černokněžníka a druida); chytrá kořist podle třídy.

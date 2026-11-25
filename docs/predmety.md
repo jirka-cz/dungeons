@@ -1,6 +1,6 @@
 # Předměty a kořist
 
-## Jak to funguje teď (v1.4.0)
+## Jak to funguje teď (v1.5.0)
 - **Sloty výbavy:** hlavní ruka, druhá ruka, hlava, krk, plášť, hruď, rukavice, nohy, boty, 2 prsteny (`EQUIP_ORDER` v `js/items.js`).
 - **Zbraně:** obouruční zbraň dává ≈ 1,9× útoku jednoruční. Zbraň v druhé ruce dává 70 % útoku (dvě zbraně).
 - Třída smí nosit jen své typy zbraní a jen legendárky a sety určené pro ni (`canClassUse`).
@@ -24,7 +24,7 @@
 | Výdrž | +1 % života za bod | – |
 | Moudrost | +1,5 % obnovy zdroje za bod (válečník +1 % generování zuřivosti) | – |
 
-- Afix atributu: 3 body × (1 + úroveň/40), strop na úrovni 100 (≈ 2–3 body na začátku, 4–6 na úrovni 40, 7–10 na 100). Stejná křivka jako „% útok“, takže hlavní atribut je pro svou třídu o kousek lepší než obecný útok a pro ostatní je slabší.
+- Afix atributu: 3 body × (1 + úroveň/50), strop na úrovni 100 (viz Hody afixů níže). Stejná křivka jako „% útok“, takže hlavní atribut je pro svou třídu o kousek lepší než obecný útok a pro ostatní je slabší.
 - Legendárky a sety mají hlavní atribut své třídy vždy jako základní stat (≈ 1,6× afixu).
 - Afix „% života“ (vitalita) z náhodných afixů nahradila Výdrž. Staré předměty s ním fungují dál.
 
@@ -95,6 +95,54 @@ Nepřátelé mají druh `fam` v `MONSTERS` a `BOSSES`: nemrtví (zombie, kostliv
 - Chytrá kořist 85/15 % podle Diabla 3, aby legendárky pro jiné třídy nebyly otravně časté.
 - Válečník: síla, výdrž, obrana (těžká zbroj, štít). Kouzelníci: intelekt, odolnosti (lehká zbroj), síla elementu, přebíjení, rychlost sesílání, léčení.
 - v1.3 (Grim Dawn, D3, WoW): Moudrost (ve WoW a Grim Dawnu „Spirit“) jako ve WoW a Grim Dawnu zrychluje obnovu many. Rychlost sesílání je oddělená od rychlosti útoku (WoW spell haste vs. attack haste, Grim Dawn casting speed). Bonusy k typu zbraně a ke konkrétní dovednosti podle Diabla 3/4, poškození elitám a od elit podle D3, poškození proti druhům nepřátel podle Grim Dawnu, rychlost pohybu jen na botách podle D3.
+
+### Padání kořisti (v1.5)
+**Kolik předmětů padá**
+- Běžný nepřítel: 8 % × (1 + 0,01 × rift), elita: 45 % × (1 + 0,01 × rift), vynásobeno „šancí na předmět“ z výbavy.
+- Strážce riftu (boss): 3–5 předmětů, nikdy šedý, epický a lepší mají dvojnásobnou váhu.
+- Za dokončený rift (jen do 100 % postupu + boss) padne zhruba 12 předmětů v riftu 1, 15 v riftu 10–20, 20 v riftu 50 a 24 v riftu 100.
+
+**Jak se losuje rarita** – váhy: šedá 100, zelená 30, fialová 6, oranžová 1, diamantová 0,3. Všechny kromě šedé se násobí (1 + lepší kořist). Lepší kořist = bonus riftu (`riftMf`) + výbava (afix štěstí, člověk +10 %). Fialová padá od riftu 4, oranžová od 10, diamantová od 16.
+
+| Rift | Úr. předmětů | Lepší kořist z riftu | Šedá | Zelená | Fialová | Oranžová | Diamant |
+|---|---|---|---|---|---|---|---|
+| 1 | 3 | 0 % | 76,9 % | 23,1 % | – | – | – |
+| 4 | 9 | +14 % | 70,9 % | 24,2 % | 4,9 % | – | – |
+| 10 | 21 | +37 % | 66,4 % | 27,2 % | 5,5 % | 0,9 % | – |
+| 16 | 33 | +55 % | 63,4 % | 29,4 % | 5,9 % | 1,0 % | 0,3 % |
+| 20 | 41 | +64 % | 62,0 % | 30,6 % | 6,1 % | 1,0 % | 0,3 % |
+| 30 | 61 | +84 % | 59,3 % | 32,7 % | 6,6 % | 1,1 % | 0,3 % |
+| 50 | 101 | +110 % | 56,1 % | 35,3 % | 7,1 % | 1,2 % | 0,4 % |
+| 100 | 201 | +142 % | 52,5 % | 38,2 % | 7,6 % | 1,3 % | 0,4 % |
+
+Boss (od riftu 16): zelená 67 %, fialová 27 %, oranžová 4,5 %, diamant 1,3 %.
+
+**Průměrně za jeden dokončený rift** (bez bonusů z výbavy):
+
+| Rift | Šedé | Zelené | Fialové | Legendární | Diamantové |
+|---|---|---|---|---|---|
+| 1 | 6,1 | 5,8 | – | – | – |
+| 10 | 7,2 | 5,7 | 1,7 | 0,28 (1 za ~3,5 riftu) | – |
+| 20 | 7,3 | 6,3 | 1,8 | 0,30 (1 za ~3,3) | 0,09 (1 za ~11) |
+| 50 | 8,7 | 8,2 | 2,2 | 0,36 (1 za ~2,8) | 0,11 (1 za ~9) |
+| 100 | 10,5 | 10,4 | 2,6 | 0,43 (1 za ~2,3) | 0,13 (1 za ~8) |
+
+Většinu vzácných předmětů dává boss. Čísla jsou spočítaná z herních funkcí (`rollRarity`, `populateRift`); při změně vah je přepočítat.
+
+**Co roste s vyšším riftem:** úroveň předmětů (vyšší základní staty a strop afixů do úrovně 100), šance na předmět (+1 % za úroveň), lepší kořist (`riftMf`, zpomaluje se), odemykání rarit (4 / 10 / 16).
+
+### Hody afixů (v1.5)
+- Hodnota = základ × (1 + úroveň/50, strop na úrovni 100 → max 3×) × hod 50–100 %.
+- Hod je vychýlený k nízkým hodnotám (`affixRoll`, `q` v `RARITIES`). Vysoké hodnoty jsou vzácné a nejčastěji je mají legendárky:
+
+| Rarita | Průměrný hod | Šance na hod nad 90 % |
+|---|---|---|
+| Zelená | 62 % | 7 % |
+| Fialová | 66 % | 10 % |
+| Legendární, diamantová | 72 % | 16 % |
+
+- Příklad „% útok“: úroveň 41 průměr 3,4–3,9 %, max 5,5 % (dřív průměr 5,2 %, max 6,1 %); úroveň 100 průměr 5,6–6,5 %, max 9 % (dřív průměr 8,9 %, max 10,5 %).
+- Starší předměty si hodnoty nechávají.
 
 ### Automatický prodej
 - Nastavuje se po raritách v Nastavení i v okně postavy.

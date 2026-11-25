@@ -721,7 +721,7 @@ function dropGold(x, y, amount) {
 }
 function dropItem(x, y, boss) {
   const st = G.st, L = G.rift.level;
-  const rar = rollRarity(st.mf + RIFT.mfPerLevel * L, boss, L);
+  const rar = rollRarity(st.mf + riftMf(L), boss, L);
   const it = makeItem(riftIlvl(L), rar, G.save.nextUid++, null, Math.random() < 0.8 ? G.char.cls : null);
   G.loot.push({ kind: 'item', item: it, x: x + rand(-10, 10), y: y + rand(-8, 8), t: 0 });
   if (RARITY_ORDER.indexOf(rar) >= 2) { sfx('rare'); burst(x, y, RARITIES[rar].color, 20, 60, { glow: true }); }
