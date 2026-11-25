@@ -7,7 +7,7 @@ Tohle je hlavní vstupní bod pro každý nový chat s Claudem. Popisuje, co hra
 - Hraje se na počítači i na mobilu (na výšku i na šířku).
 - Zdarma pro kamarády. Každý má vlastní uložené postavy v prohlížeči (localStorage) a může je přenést exportním kódem.
 - Autor (Jirka) neprogramuje. Všechno vzniká přes zadání v češtině, Claude píše kód, testuje ho a vysvětluje změny srozumitelně.
-- Aktuální verze: **1.6.1** (konstanta `GAME_VERSION` v `js/data.js`).
+- Aktuální verze: **1.7.0** (konstanta `GAME_VERSION` v `js/data.js`).
 
 ## Kde hra běží
 | Co | Kde |
@@ -32,6 +32,7 @@ Každé větší téma má vlastní dokument a vlastní chat (viz `docs/CHATY.md
 | Předměty | `docs/predmety.md` | rarity, atributy, zbroj, afixy, legendárky a sety podle tříd, chytrá kořist, automatický prodej |
 | Rozhraní | `docs/rozhrani.md` | ovládání PC/mobil, HUD, okna, nastavení, celá obrazovka |
 | Technika | `docs/technika.md` | engine, ukládání a migrace, testy, nasazení, verze |
+| Kooperace | `docs/kooperace.md` | hra více hráčů: etapy, pravidla družiny, více hrdinů v kódu |
 
 ## Struktura kódu
 Čisté HTML + JavaScript + CSS, bez knihoven a bez sestavování. Skripty jsou globální (bez modulů) a načítají se v tomto pořadí (`index.html`):
@@ -56,7 +57,7 @@ Každé větší téma má vlastní dokument a vlastní chat (viz `docs/CHATY.md
 | `js/inventory.js` | výbava, batoh, truhla, obchod, oprava |
 | `js/ui.js` | okna (menu, postava, talenty, obchod, nastavení…) |
 | `js/hud.js` | HUD, lišta dovedností, dotykové ovládání |
-| `js/engine.js` | herní smyčka, ovládání, kamera, vykreslování |
+| `js/engine.js` | herní smyčka, více hrdinů (`withHero`, `G.heroes`, `G.me`), ovládání, kamera, vykreslování |
 | `css/style.css` | veškerý vzhled |
 | `kalkulacka/index.html` | samostatná kalkulačka talentů, používá `../js/classes.js`, `talents.js`, `icons.js` |
 | `tests/` | automatické testy (viz `docs/technika.md`) |
@@ -70,6 +71,7 @@ Každé větší téma má vlastní dokument a vlastní chat (viz `docs/CHATY.md
 - **Česká klávesnice:** číselné klávesy se čtou přes `e.code` (Digit/Numpad), ne přes `e.key`.
 - **Omezení rasa/třída:** člověk bez černokněžníka a druida; trpaslík bez mága, černokněžníka a druida; elf bez černokněžníka a válečníka; ork bez druida a mága; nemrtvý bez lovce a druida.
 - **Na mobilu se útočí automaticky na nejbližšího nepřítele.**
+- **Kooperace:** každý další hráč = +10 % nepřátel, jejich života a poškození. Postava se vyexpí sólo a stejná se použije ve společné hře.
 - **Texty ve hře jsou česky** a stručné. V okně talentů nepsat zbytečné nápovědy („Odemyká“, „Nejkratší cesta“ apod.).
 
 ## Jak pracovat (pro Clauda)

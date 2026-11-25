@@ -6,8 +6,40 @@ const G = {
   flow: null, flowT: 0, exploreT: 0, saveT: 0, uiT: 0,
   rift: { level: 0 }, cam: { x: 0, y: 0 }, vw: VIEW_W, vh: VIEW_H, scale: 3, time: 0,
   input: { mx: 0, my: 0, l: false, r: false, lDownT: 0, keys: new Set(), joy: { x: 0, y: 0, on: false }, atk: false, shift: false },
-  portal: null, banner: null, bannerBig: null, touch: false, headless: false, mapBig: false
+  portal: null, banner: null, bannerBig: null, touch: false, headless: false, mapBig: false,
+  // více hrdinů: heroes = všichni v riftu, me = hrdina tohoto hráče, party = další členové družiny pro příští rift
+  heroes: [], me: null, party: [], partyMul: 1, remoteCtx: false
 };
+
+// ---------- Více hrdinů ----------
+// Herní kód pracuje s „aktuálním hrdinou“ (G.hero, G.char, G.st, G.mods). Mimo herní smyčku je to vždy
+// hrdina tohoto hráče (G.me). withHero(h, fn) dočasně přepne kontext na jiného hrdinu (útoky nepřátel
+// na spoluhráče, jeho dovednosti, mazlíčci, kořist) a pak ho vrátí zpět.
+function withHero(h, fn) {
+  if (!h || G.hero === h) return fn();
+  const prev = { hero: G.hero, char: G.char, st: G.st, mods: G.mods, remote: G.remoteCtx };
+  if (prev.hero) { prev.hero.st = G.st; prev.hero.mods = G.mods; }
+  G.hero = h; G.char = h.char; G.st = h.st; G.mods = h.mods; G.remoteCtx = h !== G.me;
+  try { return fn(); }
+  finally {
+    h.st = G.st; h.mods = G.mods;
+    G.hero = prev.hero; G.char = prev.char; G.st = prev.st; G.mods = prev.mods; G.remoteCtx = prev.remote;
+  }
+}
+// Spustí fn(h) pro každého hrdinu v jeho kontextu (alive = jen živí)
+function eachHero(fn, alive) {
+  for (const h of G.heroes.slice()) { if (alive && h.dead) continue; withHero(h, () => fn(h)); }
+}
+function heroSt(h) { return h === G.hero ? G.st : h.st; }
+function isHero(h) { return !!h && G.heroes.includes(h); }
+function nearestHero(x, y, alive = true) {
+  let best = null, bd = 1e9;
+  for (const h of G.heroes) { if (alive && h.dead) continue; const d = Math.hypot(h.x - x, h.y - y); if (d < bd) { bd = d; best = h; } }
+  return best;
+}
+function heroSave() { return (G.hero && G.hero.save) || G.save; }
+// +10 % nepřátel, jejich života a poškození za každého dalšího hráče
+function partyMulFor(n) { return 1 + 0.1 * Math.max(0, n - 1); }
 
 let canvas, ctx, wc, wg, lc, lg;
 
@@ -193,26 +225,17 @@ function usePotion() {
 
 function update(dt) {
   G.time += dt;
-  const h = G.hero, st = G.st;
-  h.castLock -= dt; h.atkCd = (h.atkCd || 0) - dt; h.moveLock = (h.moveLock || 0) - dt; h.invuln -= dt; h.potionCd -= dt; h.frozen -= dt; h.hitT -= dt; h.atkAnim -= dt; h.slowT = (h.slowT || 0) - dt; h.resWarn = (h.resWarn || 0) - dt;
-  for (const k in h.cds) h.cds[k] -= dt;
-  if (h.dead) {
-    h.recall = null;
-    h.deadT -= dt;
-    if (h.deadT <= 0) reviveHero();
-  } else {
-    h.hp = Math.min(st.maxHp, h.hp + st.maxHp * (st.regen + (G.scene === 'town' ? 0.1 : 0)) * dt);
-    h.res = clamp(h.res + st.resRegen * dt, 0, st.resMax);
-    heroControl(dt);
-    updateHeroSkills(dt);
-  }
+  const me = G.me || G.hero;
+  // každý hrdina ve svém kontextu (místní hráč se ovládá vstupem, ostatní přes h.control)
+  for (const h of G.heroes.slice()) withHero(h, () => updateHero(h, dt));
   if (G.scene === 'rift') {
     G.rift.time += dt;
     G.flowT -= dt;
-    if (G.flowT <= 0) { G.flowT = 0.35; G.flow = flowField(G.world, h.x, h.y, 34); }
+    if (G.flowT <= 0) { G.flowT = 0.35; G.flow = flowFieldMulti(G.world, G.heroes.filter(x => !x.dead).concat(G.heroes.length ? [] : [me]), 34); }
+    const near = m => G.heroes.some(x => Math.abs(m.x - x.x) <= 260 || Math.abs(m.y - x.y) <= 200);
     for (const m of G.monsters) {
       if (m.dead) continue;
-      if (!m.aggro && Math.abs(m.x - h.x) > 260 && Math.abs(m.y - h.y) > 200) continue;
+      if (!m.aggro && !near(m)) continue;
       updateMonster(m, dt);
     }
     G.offstage.slice().forEach(m => { if (!m.dead) updateMonster(m, dt); });   // boss ve vzduchu / ve stínu
@@ -223,7 +246,7 @@ function update(dt) {
     updateShrines();
     G.stuckT = (G.stuckT || 0) - dt;
     if (G.stuckT <= 0) { G.stuckT = 1; checkRiftStuck(); }
-    if (G.portal && !h.dead && dist(G.portal, h) < 12) { goTown(); return; }
+    if (G.portal && !me.dead && dist(G.portal, me) < 12) { goTown(); return; }
   }
   updatePets(dt);
   updateLoot(dt);
@@ -235,6 +258,24 @@ function update(dt) {
   G.lootLog.forEach(l => l.t += dt); G.lootLog = G.lootLog.filter(l => l.t < 8);
   G.saveT -= dt;
   if (G.saveT <= 0) { G.saveT = 15; persist(); }
+}
+
+// Časovače, život, zdroj, ovládání a dovednosti jednoho hrdiny (běží v jeho kontextu)
+function updateHero(h, dt) {
+  const st = G.st;
+  h.castLock -= dt; h.atkCd = (h.atkCd || 0) - dt; h.moveLock = (h.moveLock || 0) - dt; h.invuln -= dt; h.potionCd -= dt; h.frozen -= dt; h.hitT -= dt; h.atkAnim -= dt; h.slowT = (h.slowT || 0) - dt; h.resWarn = (h.resWarn || 0) - dt;
+  for (const k in h.cds) h.cds[k] -= dt;
+  if (h.dead) {
+    h.recall = null;
+    h.deadT -= dt;
+    if (h.deadT <= 0) reviveHero();
+  } else {
+    h.hp = Math.min(st.maxHp, h.hp + st.maxHp * (st.regen + (G.scene === 'town' ? 0.1 : 0)) * dt);
+    h.res = clamp(h.res + st.resRegen * dt, 0, st.resMax);
+    if (h === G.me) heroControl(dt);
+    else if (h.control) h.control(dt);
+    updateHeroSkills(dt);
+  }
 }
 
 function heroControl(dt) {
@@ -314,7 +355,7 @@ function moveToward(tx, ty, dt, pathfind) {
 
 // Nepřátelé se navzájem odstrkují, aby se nepřekrývali
 function separate() {
-  const ms = G.monsters, h = G.hero;
+  const ms = G.monsters;
   for (let i = 0; i < ms.length; i++) {
     const a = ms[i];
     if (a.dead || !a.aggro || a.boss || a.obj) continue;
@@ -328,8 +369,11 @@ function separate() {
         moveEntity(G.world, a, -dx * push, -dy * push);
       }
     }
-    const dx = a.x - h.x, dy = a.y - h.y, d = Math.hypot(dx, dy), min = a.r + h.r - 1;
-    if (d > 0 && d < min) moveEntity(G.world, a, dx / d * (min - d), dy / d * (min - d));
+    for (const h of G.heroes) {
+      if (h.dead) continue;
+      const dx = a.x - h.x, dy = a.y - h.y, d = Math.hypot(dx, dy), min = a.r + h.r - 1;
+      if (d > 0 && d < min) moveEntity(G.world, a, dx / d * (min - d), dy / d * (min - d));
+    }
   }
 }
 
@@ -445,6 +489,7 @@ function drawGroundLayer(g) {
   });
   // kořist
   G.loot.forEach(l => {
+    if (l.owner && l.owner !== G.hero) return;   // kořist spoluhráčů vidí jen oni
     const bob = Math.sin(G.time * 4 + l.x) * 1;
     const drop = Math.max(0, 1 - l.t * 4) * 10;
     if (l.kind === 'gold') { g.fillStyle = '#e0b030'; g.fillRect(l.x - 2, l.y - 2 - drop, 4, 3); g.fillStyle = '#fff0a0'; g.fillRect(l.x - 1, l.y - 2 - drop, 1, 1); }
@@ -486,10 +531,11 @@ function drawEntities(g) {
   G.offstage.forEach(m => { if (inView(m.x, m.y, 80)) list.push(m); });
   G.pets.forEach(p => { if (inView(p.x, p.y)) list.push(p); });
   if (G.scene === 'town') G.world.npcs.forEach(n => { if (!n.obj) list.push(n); });
-  list.push(h);
+  const heroes = G.heroes.length ? G.heroes : [h];
+  heroes.forEach(x => list.push(x));
   list.sort((a, b) => a.y - b.y);
   list.forEach(e => {
-    if (e === h) return drawHero(g);
+    if (heroes.includes(e)) return drawHero(g, e);
     if (e.kind === 'pet') {
       const bob = e.walk > 0 ? Math.floor(t * 10) % 2 : 0;
       drawShadow(g, e.x, e.y, 5 * e.scale);
@@ -536,8 +582,9 @@ function drawMonster(g, m) {
   if (m.slowT > 0) { g.fillStyle = '#bfe8ff'; g.fillRect(m.x - 4 + Math.sin(t * 3) * 3, m.y - 2, 1, 1); }
 }
 
-function drawHero(g) {
-  const h = G.hero, t = G.time, ch = G.char;
+function drawHero(g, h) {
+  h = h || G.hero;
+  const t = G.time, ch = h.char || G.char;
   if (h.dead) { g.globalAlpha = 0.3; }
   const bob = h.walk > 0 ? (Math.floor(t * 9) % 2) : 0;
   const form = (h.buffs.find(b => b.form) || {}).form;
@@ -564,8 +611,7 @@ function drawChain(g, x0, y0, x1, y1) {
   for (let i = 1; i < n; i++) g.fillRect(Math.round(x0 + (x1 - x0) * i / n) - 1, Math.round(y0 + (y1 - y0) * i / n) - 1, 2, 2);
 }
 function drawProjectiles(g) {
-  const hk = G.hero && G.hero.hooked;
-  if (hk && !hk.m.dead) drawChain(g, hk.m.x, hk.m.y - 14, G.hero.x, G.hero.y - 8);
+  G.heroes.forEach(h => { const hk = h.hooked; if (hk && !hk.m.dead) drawChain(g, hk.m.x, hk.m.y - 14, h.x, h.y - 8); });
   G.projs.forEach(q => {
     if (q.chain && !q.chain.dead) drawChain(g, q.chain.x, q.chain.y - 14, q.x, q.y - 7);
     if (!inView(q.x, q.y)) return;
@@ -602,6 +648,7 @@ function drawLighting(g, camX, camY) {
   };
   const h = G.hero;
   hole(h.x, h.y - 6, town ? 160 : 125 * (1 - dark * 0.6), 1);
+  G.heroes.forEach(o => { if (o !== h) hole(o.x, o.y - 6, 70 * (1 - dark * 0.6), 0.9); });   // spoluhráči svítí slaběji
   FX.lights.forEach(l => hole(l.x, l.y, l.r, 0.85));
   g.drawImage(lc, 0, 0);
   // barevná záře
@@ -662,6 +709,13 @@ function drawOverlay(camX, camY) {
     const tx = `Návrat do města ${(RECALL_TIME - h.recall.t).toFixed(1)} s`;
     ctx.strokeText(tx, sx(h.x), y0 - 4 * d); ctx.fillText(tx, sx(h.x), y0 - 4 * d);
   }
+  // jména spoluhráčů
+  G.heroes.forEach(o => {
+    if (o === G.hero || !inView(o.x, o.y, 0)) return;
+    ctx.font = `600 ${10 * d}px system-ui`; ctx.lineWidth = 3 * d; ctx.strokeStyle = '#000'; ctx.fillStyle = o.dead ? '#a08080' : '#8fe0ff';
+    const nm = (o.name || (o.char && o.char.name) || '') + (o.dead ? ' †' : '');
+    ctx.strokeText(nm, sx(o.x), sy(o.y - 22)); ctx.fillText(nm, sx(o.x), sy(o.y - 22));
+  });
   // jména svatyní
   (G.shrines || []).forEach(s => {
     if (s.used || !inView(s.x, s.y, 0) || dist(s, G.hero) > 70) return;
@@ -671,7 +725,7 @@ function drawOverlay(camX, camY) {
   // popisky kořisti
   ctx.font = `600 ${10 * d}px system-ui`;
   G.loot.forEach(l => {
-    if (l.kind !== 'item' || !inView(l.x, l.y, 0)) return;
+    if (l.kind !== 'item' || !inView(l.x, l.y, 0) || (l.owner && l.owner !== G.hero)) return;
     const it = l.item;
     if (it.rarity === 'gray' && Math.hypot(l.x - G.hero.x, l.y - G.hero.y) > 50) return;
     ctx.lineWidth = 3 * d; ctx.strokeStyle = '#000'; ctx.fillStyle = RARITIES[it.rarity].color;
@@ -735,6 +789,7 @@ function drawMinimap() {
   if (G.portal) dot(G.portal.x, G.portal.y, '#4a8aff', sz * 3);
   (G.shrines || []).forEach(s => { if (!s.used && W.explored[Math.floor(s.y / TILE) * W.w + Math.floor(s.x / TILE)]) dot(s.x, s.y, SHRINES[s.type].color, sz * 2); });
   if (W.kind === 'town') W.npcs.forEach(n => dot(n.x, n.y, '#ffe080', sz * 2));
+  G.heroes.forEach(o => { if (o !== G.hero) dot(o.x, o.y, '#5ad0ff', sz * 2); });
   dot(G.hero.x, G.hero.y, '#ffffff', sz * 2);
 }
 

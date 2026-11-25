@@ -45,8 +45,13 @@ function castSkill(id, tx, ty, target) {
   }
   sfx(S.type === 'melee' || S.type === 'whirl' ? 'swing' : S.arrow ? 'arrow' : S.type === 'nova' ? 'nova' : S.type === 'teleport' ? 'blink' : S.type === 'heal' ? 'potion' : S.type === 'buff' ? 'levelup' : ELEM_SFX[S.elem] || 'shoot');
   // dvojitý útok u primárních útoků
-  if (S.primary && st.double && Math.random() < st.double) setTimeout(() => { if (G.hero && !G.hero.dead && G.scene === 'rift') doSkill(S, tx, ty, ang, target); }, 120);
+  if (S.primary && st.double && Math.random() < st.double) later(h, 120, () => doSkill(S, tx, ty, ang, target));
   return true;
+}
+
+// Odložená akce hrdiny (dvojitý útok, nova se zpožděním) – proběhne v jeho kontextu, pokud je pořád v riftu a živý
+function later(h, ms, fn) {
+  setTimeout(() => { if (isHero(h) && !h.dead && G.scene === 'rift') withHero(h, fn); }, ms);
 }
 
 function doSkill(S, tx, ty, ang, target) {
@@ -68,7 +73,7 @@ function doSkill(S, tx, ty, ang, target) {
         if (S.stun && !m.dead) stunMonster(m, S.stun + st.stunDur, 'stun');
         hit++;
       });
-      if (S.hits > 1) for (let i = 1; i < S.hits; i++) setTimeout(() => G.hero && arcFx(G.hero.x, G.hero.y - 6, ang + rand(-0.4, 0.4), S.arc * Math.PI / 180, S.range + 4, S.color, 0.12), i * 70);
+      if (S.hits > 1) for (let i = 1; i < S.hits; i++) setTimeout(() => arcFx(h.x, h.y - 6, ang + rand(-0.4, 0.4), S.arc * Math.PI / 180, S.range + 4, S.color, 0.12), i * 70);
       if (hit) sparks(h.x + Math.cos(ang) * 14, oy + Math.sin(ang) * 14, '#ffffff', 4);
       break;
     }
@@ -80,7 +85,7 @@ function doSkill(S, tx, ty, ang, target) {
           x: gx, y: gyy, vx: Math.cos(a), vy: Math.sin(a), speed: S.speed, dmg: S.dmg, elem: S.elem,
           size: S.size || 2, color: S.color, friendly: true, range: S.range || 260, traveled: 0, hits: new Set(), pierce: S.pierce || 0,
           homing: S.homing, explode: S.explode, dot: S.dot, crit: S.crit, armorPen: S.armorPen, arrow: S.arrow, skill: S.id, trail: !S.arrow,
-          exec: S.exec, vuln: S.vuln, slow: S.slow, shards: S.shards
+          exec: S.exec, vuln: S.vuln, slow: S.slow, shards: S.shards, owner: h
         });
       }
       if (!S.arrow) sparks(ox + Math.cos(ang) * 8, oy + Math.sin(ang) * 8, S.color, 3);
@@ -90,12 +95,12 @@ function doSkill(S, tx, ty, ang, target) {
       const d = Math.min(200, Math.hypot(tx - h.x, ty - h.y)), a = Math.atan2(ty - h.y, tx - h.x);
       const zx = h.x + Math.cos(a) * d, zy = h.y + Math.sin(a) * d;
       G.zones.push({ x: zx, y: zy, r: S.r, delay: S.delay || 0, dur: S.dur || 0, tick: S.tick || 0.5, tickT: 0, dmg: S.dmg, elem: S.elem,
-        slow: S.slow, stun: S.stun, dot: S.dot, pool: S.pool, rain: S.rain, meteor: S.meteor, beam: S.beam, color: S.color, skill: S.id, t: 0 });
+        slow: S.slow, stun: S.stun, dot: S.dot, pool: S.pool, rain: S.rain, meteor: S.meteor, beam: S.beam, color: S.color, skill: S.id, t: 0, owner: h });
       break;
     }
     case 'nova': {
       const fire = () => {
-        if (!G.hero || G.scene !== 'rift') return;
+        if (G.scene !== 'rift') return;
         const hx = G.hero.x, hy = G.hero.y;
         ringFx(hx, hy, S.r, S.color, 0.4, 3); ringFx(hx, hy, S.r * 0.6, '#ffffff', 0.3, 1);
         burst(hx, hy, S.color, 40, S.r * 2.2, { glow: true });
@@ -108,7 +113,7 @@ function doSkill(S, tx, ty, ang, target) {
           if (S.stun) stunMonster(m, S.stun + st.stunDur, 'stun');
         });
       };
-      if (S.delay) { h.channel = S.delay; for (let i = 0; i < 16; i++) particle(h.x + rand(-40, 40), h.y + rand(-30, 30), { vx: 0, vy: 0, life: S.delay, color: S.color, size: 1, glow: true }); setTimeout(fire, S.delay * 1000); }
+      if (S.delay) { h.channel = S.delay; for (let i = 0; i < 16; i++) particle(h.x + rand(-40, 40), h.y + rand(-30, 30), { vx: 0, vy: 0, life: S.delay, color: S.color, size: 1, glow: true }); later(h, S.delay * 1000, fire); }
       else fire();
       break;
     }
@@ -152,7 +157,7 @@ function doSkill(S, tx, ty, ang, target) {
     }
     case 'summon': {
       if (S.max) {
-        const cap = S.max + (S.pet === 'imp' ? (st.petCount || 0) : 0), mine = G.pets.filter(p => p.type === S.pet && p.life === Infinity && !p.classPet);
+        const cap = S.max + (S.pet === 'imp' ? (st.petCount || 0) : 0), mine = G.pets.filter(p => p.owner === h && p.type === S.pet && p.life === Infinity && !p.classPet);
         if (mine.length >= cap) { const old = mine[0]; G.pets.splice(G.pets.indexOf(old), 1); smoke(old.x, old.y, 4); }
         spawnPet(S.pet);
       } else for (let i = 0; i < (S.count || 1); i++) spawnPet(S.pet, S.dur);
@@ -170,16 +175,16 @@ function doSkill(S, tx, ty, ang, target) {
     case 'petstrike': {
       const t = nearestMonster(tx, ty, 120) || nearestMonster(h.x, h.y, 160);
       if (!t) { floatText(h.x, h.y - 30, 'Žádný cíl', '#aaa', 0.8); break; }
-      G.pets.forEach(p => { p.forceTarget = t; p.strike = S.mult; p.cd = 0; });
+      G.pets.forEach(p => { if (p.owner === h) { p.forceTarget = t; p.strike = S.mult; p.cd = 0; } });
       burst(t.x, t.y - 6, S.color, 12, 50);
       break;
     }
     case 'trap': {
-      const mine = G.traps.filter(t => t.skill === S.id);
+      const mine = G.traps.filter(t => t.skill === S.id && t.owner === h);
       if (mine.length >= S.max + (st.mods.trapMax || 0)) G.traps.splice(G.traps.indexOf(mine[0]), 1);
       const d = Math.min(110, Math.hypot(tx - h.x, ty - h.y)), a = Math.atan2(ty - h.y, tx - h.x);
       const p = nearestFree(W, h.x + Math.cos(a) * d, h.y + Math.sin(a) * d, 3);
-      G.traps.push({ x: p.x, y: p.y, r: S.r, dmg: S.dmg, elem: S.elem, arm: S.arm, life: S.life, color: S.color, freeze: S.freeze, skill: S.id });
+      G.traps.push({ x: p.x, y: p.y, r: S.r, dmg: S.dmg, elem: S.elem, arm: S.arm, life: S.life, color: S.color, freeze: S.freeze, skill: S.id, owner: h });
       break;
     }
     case 'drain': {
@@ -195,9 +200,13 @@ function doSkill(S, tx, ty, ang, target) {
 }
 
 // Plošné efekty hrdiny (meteor, vánice, mor, hvězdopád…)
+// Každá plocha i past se počítá v kontextu hrdiny, který ji vytvořil
 function updateZones(dt) {
+  G.zones = G.zones.filter(z => isHero(z.owner) ? withHero(z.owner, () => stepZone(z, dt)) : false);
+}
+function stepZone(z, dt) {
   const st = G.st;
-  G.zones = G.zones.filter(z => {
+  {
     z.t += dt;
     if (z.meteor && z.t < z.delay) {
       const p = z.t / z.delay;
@@ -251,12 +260,15 @@ function updateZones(dt) {
       light(z.x, z.y, z.r, z.color);
     }
     return z.t < z.delay + (z.dur || 0) + 0.05;
-  });
+  }
 }
 
 // Pasti
 function updateTraps(dt) {
-  G.traps = G.traps.filter(t => {
+  G.traps = G.traps.filter(t => isHero(t.owner) ? withHero(t.owner, () => stepTrap(t, dt)) : false);
+}
+function stepTrap(t, dt) {
+  {
     t.arm -= dt; t.life -= dt;
     if (t.life <= 0) return false;
     if (t.arm > 0) return true;
@@ -268,7 +280,7 @@ function updateTraps(dt) {
       return false;
     }
     return true;
-  });
+  }
 }
 
 // Pohybové dovednosti a průběžné efekty hrdiny

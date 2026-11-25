@@ -250,7 +250,7 @@ function heroHit(m, mult, elem, o = {}) {
   return dmg;
 }
 
-function applyDot(m, key, elem, dps, dur) { if (!m.dead) m.dots[key] = { elem, dps, t: dur, tick: 1 }; }
+function applyDot(m, key, elem, dps, dur) { if (!m.dead) m.dots[key] = { elem, dps, t: dur, tick: 1, owner: G.hero }; }
 function slowMonster(m, pct, dur) {
   m.slowPct = Math.max(m.slowT > 0 ? m.slowPct : 0, Math.min(0.7, pct));
   m.slowT = Math.max(m.slowT, dur);
@@ -283,6 +283,7 @@ function hurtHero(raw, elem, src, pctHp) {
   const res = elem === 'phys' ? 0 : (st.res[elem] || 0);
   let dmg = raw * rand(0.9, 1.1) * (k / (k + def)) * (1 - res) * st.dmgTaken;
   if (pctHp) dmg += st.maxHp * pctHp * (1 - res) * st.dmgTaken;
+  dmg *= G.partyMul || 1;   // víc hráčů = silnější nepřátelé
   if (src && (src.elite || src.boss)) dmg *= st.eliteTaken;
   let blocked = false;
   if (Math.random() < st.block) { dmg *= 0.5; blocked = true; }
@@ -296,7 +297,7 @@ function hurtHero(raw, elem, src, pctHp) {
   h.hitT = 0.15;
   sfx('hurt');
   floatText(h.x, h.y - 22, (blocked ? 'Blok ' : '') + fmt(dmg), elem === 'phys' ? '#ff6b6b' : ELEMENTS[elem].color, 1);
-  if (dmg > st.maxHp * 0.15) shake(3);
+  if (dmg > st.maxHp * 0.15 && !G.remoteCtx) shake(3);
   if (src && src.elite && src.elite.includes('vampire')) { src.hp = Math.min(src.maxHp, src.hp + dmg * 0.5); }
   if (src && st.thorns > 0 && !src.dead) dealDamage(src, dmg * st.thorns / (st.elemMul.phys || 1), 'phys', { noProc: true });
   wearArmor();
@@ -335,7 +336,7 @@ function spawnMonster(typeId, x, y, o = {}) {
   const m = {
     kind: 'monster', type: typeId, def, name: def.name, sprite: def.sprite, pal: def.pal || null, scale: o.scale || 1,
     x, y, r: def.r * (o.scale || 1), fly: def.fly,
-    maxHp: Math.round(def.hp * riftMult(RIFT.hp, L) * (o.hpMul || 1)), atk: def.atk * riftMult(RIFT.atk, L) * (o.atkMul || 1),
+    maxHp: Math.round(def.hp * riftMult(RIFT.hp, L) * (o.hpMul || 1) * (G.partyMul || 1)), atk: def.atk * riftMult(RIFT.atk, L) * (o.atkMul || 1),
     spd: def.spd, res: Object.assign({}, def.res), atkElem: def.atkElem, ai: def.ai,
     xp: def.xp, pts: def.pts, gold: GOLD_BASE * Math.pow(GOLD_GROWTH, riftIlvl(L)),
     dots: {}, slowT: 0, slowPct: 0, stunT: 0, stunImm: 0, cd: rand(0.5, 1.5), spec: rand(1, 3), wind: 0,
@@ -372,16 +373,20 @@ function killMonster(m) {
   debris(m.x, m.y, monsterColors(m), m.boss ? 40 : 14);
   if (m.boss) { shake(6); burst(m.x, m.y, '#ffd060', 50, 120, { glow: true }); }
   onKillTalents(m, st);
-  // odměny
+  // odměny: zkušenosti dostane každý hrdina, zlato a předměty padají každému zvlášť (vidí je jen on)
   const L = G.rift.level;
-  gainXP(m.xp * 2.5 * riftMult(RIFT.xp, L) * st.xpMul);
+  eachHero(() => gainXP(m.xp * 2.5 * riftMult(RIFT.xp, L) * G.st.xpMul));
   if (m.onDeath) m.onDeath(m);
   if (m.obj) { if (Math.random() < 0.25) G.loot.push({ kind: 'globe', x: m.x, y: m.y, t: 0 }); return; }
-  if (!m.minion || Math.random() < 0.3) dropGold(m.x, m.y, m.gold * st.goldMul * rand(0.7, 1.3) * (m.boss ? 15 : 1));
   if (!m.boss) addProgress(m.pts);
-  const dropC = (m.elite ? RIFT.eliteDrop : RIFT.dropChance) * st.dropMul * (1 + RIFT.dropPerLevel * L);
-  if (m.boss) { const n = 3 + rnd(3); for (let i = 0; i < n; i++) dropItem(m.x + rand(-20, 20), m.y + rand(-20, 20), true); }
-  else if (Math.random() < dropC) dropItem(m.x, m.y, false);
+  const gold = !m.minion || Math.random() < 0.3;
+  eachHero(() => {
+    const st = G.st;
+    if (gold) dropGold(m.x, m.y, m.gold * st.goldMul * rand(0.7, 1.3) * (m.boss ? 15 : 1));
+    const dropC = (m.elite ? RIFT.eliteDrop : RIFT.dropChance) * st.dropMul * (1 + RIFT.dropPerLevel * L);
+    if (m.boss) { const n = 3 + rnd(3); for (let i = 0; i < n; i++) dropItem(m.x + rand(-20, 20), m.y + rand(-20, 20), true); }
+    else if (Math.random() < dropC) dropItem(m.x, m.y, false);
+  });
   if (Math.random() < (m.elite ? 0.6 : RIFT.globeChance)) G.loot.push({ kind: 'globe', x: m.x + rand(-6, 6), y: m.y + rand(-6, 6), t: 0 });
   if (m.def && m.def.split && m.scale >= 1) for (let i = 0; i < 2; i++) {
     const s = spawnMonster(m.type, m.x + rand(-6, 6), m.y + rand(-6, 6), { scale: 0.65, hpMul: 0.35, minion: true });
@@ -404,7 +409,7 @@ function onKillTalents(m, st) {
   const keys = Object.keys(m.dots);
   if (M.dotSpread && keys.length) {   // Nákazlivost: kletby přeskočí dál
     G.monsters.filter(o => !o.dead && o !== m && dist(o, m) < 80).sort((a, b) => dist(a, m) - dist(b, m)).slice(0, M.dotSpread).forEach(o => {
-      keys.forEach(kk => { const d = m.dots[kk]; o.dots[kk] = { elem: d.elem, dps: d.dps, t: Math.max(d.t, 3), tick: 1 }; });
+      keys.forEach(kk => { const d = m.dots[kk]; o.dots[kk] = { elem: d.elem, dps: d.dps, t: Math.max(d.t, 3), tick: 1, owner: d.owner }; });
       lineFx(m.x, m.y - 6, o.x, o.y - 6, '#a050ff', 0.3, 1);
     });
   }
@@ -416,7 +421,7 @@ function explodeBloater(m) {
   burst(m.x, m.y, '#9ac040', 30, 110);
   ringFx(m.x, m.y, 36, '#9ac040', 0.35, 3);
   shake(2);
-  if (dist(m, G.hero) < 38) hurtHero(m.atk * 1.4, m.atkElem, m);
+  eachHero(h => { if (dist(m, h) < 38) hurtHero(m.atk * 1.4, m.atkElem, m); }, true);
   hazard({ x: m.x, y: m.y, r: 20, delay: 0, dur: 3, dps: m.atk * 0.25, elem: 'nature', color: '#7ab03a', pool: true });
 }
 
@@ -450,17 +455,32 @@ function monsterShoot(m, tx, ty, o = {}) {
   });
 }
 
+// Cíl nepřítele: nejbližší živý hrdina (chvíli se ho drží, boss déle)
+function monsterTarget(m) {
+  const cur = m.tgt;
+  if (G.heroes.length <= 1) return G.heroes[0] || G.hero;
+  if (cur && !cur.dead && isHero(cur) && (m.tgtT || 0) > G.time) return cur;
+  m.tgt = nearestHero(m.x, m.y) || (isHero(cur) ? cur : G.heroes[0]);
+  m.tgtT = G.time + (m.boss ? 4 : 1.2);
+  return m.tgt;
+}
+
 function updateMonster(m, dt) {
-  const h = G.hero, st = G.st;
   m.hitT -= dt; m.knock = Math.max(0, (m.knock || 0) - dt);
   m.stunT -= dt; m.stunImm -= dt; m.slowT -= dt; if (m.vulnT > 0) m.vulnT -= dt;
-  // poškození v čase
+  // poškození v čase (počítá se staty toho, kdo ho způsobil)
   for (const k in m.dots) {
     const d = m.dots[k];
     d.t -= dt; d.tick -= dt;
-    if (d.tick <= 0) { d.tick += 1; dealDamage(m, d.dps, d.elem, { dot: true }); if (m.dead) return; }
+    if (d.tick <= 0) { d.tick += 1; withHero(isHero(d.owner) ? d.owner : G.hero, () => dealDamage(m, d.dps, d.elem, { dot: true })); if (m.dead) return; }
     if (d.t <= 0) delete m.dots[k];
   }
+  withHero(monsterTarget(m), () => monsterThink(m, dt));
+}
+
+// Chování nepřítele vůči jeho cíli (běží v kontextu cílového hrdiny: G.hero = cíl)
+function monsterThink(m, dt) {
+  const h = G.hero;
   if (m.obj) return updateBossObject(m, dt);
   if (m.stunT > 0) return;
   const d = dist(m, h);
@@ -469,7 +489,7 @@ function updateMonster(m, dt) {
   if (m.boss) return updateBoss(m, dt, d);
 
   let slow = m.slowT > 0 ? m.slowPct : 0;
-  if (st.slowAura && d < 70) slow = Math.max(slow, st.slowAura);
+  for (const x of G.heroes) { const xs = heroSt(x); if (xs && xs.slowAura && !x.dead && dist(m, x) < 70) slow = Math.max(slow, xs.slowAura); }
   slow = Math.min(0.7, slow);
   const fast = m.elite && m.elite.includes('fast') ? 1.35 : 1;
   const spd = m.spd * (1 - slow);
@@ -576,24 +596,30 @@ function dust(x, y) { if (Math.random() < 0.5) particle(x + rand(-3, 3), y, { vx
 function hazard(o) { const z = Object.assign({ t: 0, dur: 0, tickT: 0 }, o); G.hazards.push(z); return z; }
 function hazardLine(x, y, ang, len, delay) { G.hazards.push({ line: true, x, y, ang, len, t: 0, delay, dur: 0, dmg: 0 }); }
 
+// Nebezpečí zasahují všechny hrdiny. Zásah se počítá v kontextu zasaženého (jeho odolnosti).
 function updateHazards(dt) {
-  const h = G.hero, A = G.st.areaTaken;
-  const inside = z => dist(z, h) < z.r + h.r;
+  const inside = (z, h) => dist(z, h) < z.r + h.r;
+  const A = () => G.st.areaTaken;
   G.hazards = G.hazards.filter(z => {
     z.t += dt;
     if (z.line) return z.t < z.delay;
     if (z.wave) {   // rozpínající se vlna (otřes)
       if (z.t < z.delay) return true;
       z.cur = (z.t - z.delay) * z.speed;
-      if (!z.hit && Math.abs(dist(z, h) - z.cur) < 7) { z.hit = true; hurtHero(z.dmg * A, z.elem, z.src, (z.pct || 0) * A); if (z.stun) freezeHero(z.stun); }
+      if (!z.hitSet) z.hitSet = new Set();
+      eachHero(h => {
+        if (!z.hitSet.has(h) && Math.abs(dist(z, h) - z.cur) < 7) { z.hitSet.add(h); hurtHero(z.dmg * A(), z.elem, z.src, (z.pct || 0) * A()); if (z.stun) freezeHero(z.stun); }
+      }, true);
       return z.cur < z.maxR;
     }
     if (z.cone) {   // kužel (dech)
       if (!z.fired && z.t >= z.delay) {
         z.fired = true;
-        const d = dist(z, h), a = Math.atan2(h.y - z.y, h.x - z.x);
-        const da = Math.abs(((a - z.ang + Math.PI * 3) % (Math.PI * 2)) - Math.PI);
-        if (d < z.len && da < z.arc / 2) hurtHero(z.dmg * A, z.elem, z.src, (z.pct || 0) * A);
+        eachHero(h => {
+          const d = dist(z, h), a = Math.atan2(h.y - z.y, h.x - z.x);
+          const da = Math.abs(((a - z.ang + Math.PI * 3) % (Math.PI * 2)) - Math.PI);
+          if (d < z.len && da < z.arc / 2) hurtHero(z.dmg * A(), z.elem, z.src, (z.pct || 0) * A());
+        }, true);
         for (let i = 0; i < 40; i++) { const aa = z.ang + rand(-z.arc / 2, z.arc / 2), s2 = rand(60, 200); particle(z.x, z.y - 8, { vx: Math.cos(aa) * s2, vy: Math.sin(aa) * s2, life: 0.5, color: pick([z.color, z.color2 || '#ffd060', z.color3 || '#ff4020']), size: 2, glow: true, drag: 0.92 }); }
         if (z.pools) for (let i = 1; i <= 3; i++) hazard({ x: z.x + Math.cos(z.ang) * z.len * i / 4, y: z.y + Math.sin(z.ang) * z.len * i / 4, r: 14, delay: 0, dur: 3, dps: z.dmg * 0.25, elem: z.elem, color: z.color, pool: true });
       }
@@ -602,26 +628,28 @@ function updateHazards(dt) {
     if (z.safe) {   // bezpečná zóna: kdo je venku, dostane zásah
       if (!z.fired && z.t >= z.delay) {
         z.fired = true;
-        if (!inside(z)) { hurtHero(z.dmg, z.elem, z.src, z.pct || 0); if (z.freeze) freezeHero(z.freeze); }
-        else floatText(h.x, h.y - 28, 'V bezpečí', '#ffd890', 0.9);
+        eachHero(h => {
+          if (!inside(z, h)) { hurtHero(z.dmg, z.elem, z.src, z.pct || 0); if (z.freeze) freezeHero(z.freeze); }
+          else floatText(h.x, h.y - 28, 'V bezpečí', '#ffd890', 0.9);
+        }, true);
         if (z.onFire) z.onFire(z);
       }
       return z.t < z.delay + 0.3;
     }
     if (z.pillar) {   // sloup světla: smyje prokletí
-      if (h.curse && inside(z)) { h.curse.clean += dt; if (h.curse.clean > 0.5) { h.curse = null; floatText(h.x, h.y - 28, 'Prokletí smyto', '#fff0b0', 1); burst(h.x, h.y - 6, '#fff0b0', 24, 70, { glow: true }); } }
+      G.heroes.forEach(h => { if (h.curse && inside(z, h)) { h.curse.clean += dt; if (h.curse.clean > 0.5) { h.curse = null; floatText(h.x, h.y - 28, 'Prokletí smyto', '#fff0b0', 1); burst(h.x, h.y - 6, '#fff0b0', 24, 70, { glow: true }); } } });
       light(z.x, z.y - 10, 40, '#fff0b0');
       if (Math.random() < dt * 10) particle(z.x + rand(-z.r, z.r) * 0.6, z.y, { vy: -50, life: 0.6, color: '#fff0b0', size: 1, glow: true });
       return z.t < z.dur;
     }
-    if (z.follow && z.t < z.delay + z.dur) {   // zóna, která pronásleduje hrdinu
-      const d = dist(z, h) || 1, mv = Math.min(d, z.follow * dt);
+    if (z.follow && z.t < z.delay + z.dur) {   // zóna, která pronásleduje hrdinu (nejbližšího)
+      const h = nearestHero(z.x, z.y) || G.hero, d = dist(z, h) || 1, mv = Math.min(d, z.follow * dt);
       z.x += (h.x - z.x) / d * mv; z.y += (h.y - z.y) / d * mv;
     }
     if (!z.fired && z.t >= z.delay) {
       z.fired = true;
       if (z.dmg || z.pct) {
-        if (inside(z)) { hurtHero(z.dmg * A, z.elem, z.src, (z.pct || 0) * A); if (z.freeze) freezeHero(z.freeze); if (z.slow) slowHero(z.slow, z.slowT || 3); if (z.onHit) z.onHit(z); }
+        eachHero(h => { if (inside(z, h)) { hurtHero(z.dmg * A(), z.elem, z.src, (z.pct || 0) * A()); if (z.freeze) freezeHero(z.freeze); if (z.slow) slowHero(z.slow, z.slowT || 3); if (z.onHit) z.onHit(z); } }, true);
         if (!z.quiet) { burst(z.x, z.y, z.color, z.orb || z.spike ? 12 : 22, 90, { glow: !z.spike }); ringFx(z.x, z.y, z.r, z.color, 0.3, 2); }
         if (z.r > 25 && !z.quiet) shake(1.5);
       }
@@ -629,7 +657,7 @@ function updateHazards(dt) {
     }
     if (z.fired && z.dur > 0 && z.dps) {
       z.tickT -= dt;
-      if (z.tickT <= 0) { z.tickT = 0.5; if (dist(z, h) < z.r + h.r * 0.5) { hurtHero(z.dps * 0.5 * A, z.elem, null, (z.pctTick || 0) * A); if (z.slow) slowHero(z.slow, 1); } }
+      if (z.tickT <= 0) { z.tickT = 0.5; eachHero(h => { if (dist(z, h) < z.r + h.r * 0.5) { hurtHero(z.dps * 0.5 * A(), z.elem, null, (z.pctTick || 0) * A()); if (z.slow) slowHero(z.slow, 1); } }, true); }
       if (Math.random() < dt * 6) particle(z.x + rand(-z.r, z.r) * 0.7, z.y + rand(-z.r, z.r) * 0.5, { vy: -12, life: 0.5, color: z.color, size: 1, glow: z.elem === 'fire' || z.elem === 'shadow' });
     }
     return z.t < z.delay + Math.max(z.dur, z.spike ? 0.45 : 0.05);
@@ -642,10 +670,15 @@ function slowHero(p, t) { G.hero.slowP = p; G.hero.slowT = t * (1 - (G.st.ccRed 
 // ---------- Projektily ----------
 
 function updateProjectiles(dt) {
+  // střely hrdinů a mazlíčků se počítají v kontextu majitele (jeho staty, jeho zásahy)
+  G.projs = G.projs.filter(p => p.friendly && isHero(p.owner) ? withHero(p.owner, () => stepProjectile(p, dt)) : stepProjectile(p, dt));
+}
+
+function stepProjectile(p, dt) {
   const W = G.world;
-  G.projs = G.projs.filter(p => {
-    if (p.seek && !p.friendly) {   // nepřátelská střela, která tě sleduje
-      const h = G.hero, a = Math.atan2(h.y - p.y, h.x - p.x), cur = Math.atan2(p.vy, p.vx);
+  {
+    if (p.seek && !p.friendly) {   // nepřátelská střela, která sleduje nejbližšího hrdinu
+      const h = nearestHero(p.x, p.y) || G.hero, a = Math.atan2(h.y - p.y, h.x - p.x), cur = Math.atan2(p.vy, p.vx);
       const da = ((a - cur + Math.PI * 3) % (Math.PI * 2)) - Math.PI, na = cur + clamp(da, -p.seek * dt, p.seek * dt);
       p.vx = Math.cos(na); p.vy = Math.sin(na);
     }
@@ -665,7 +698,7 @@ function updateProjectiles(dt) {
       if (p.shardT <= 0) {
         p.shardT = p.shards.every;
         const a = Math.random() * Math.PI * 2;
-        G.projs.push({ x: p.x, y: p.y, vx: Math.cos(a), vy: Math.sin(a), speed: 200, dmg: p.shards.dmg, elem: p.elem, size: 1, color: p.color, friendly: true, range: 70, traveled: 0, hits: new Set(), pierce: 0, skill: p.skill, trail: false });
+        G.projs.push({ x: p.x, y: p.y, vx: Math.cos(a), vy: Math.sin(a), speed: 200, dmg: p.shards.dmg, elem: p.elem, size: 1, color: p.color, friendly: true, range: 70, traveled: 0, hits: new Set(), pierce: 0, skill: p.skill, trail: false, owner: p.owner });
       }
     }
     if (p.trail && Math.random() < 0.7) particle(p.x, p.y - 7, { vx: rand(-8, 8), vy: rand(-8, 8), life: 0.3, color: p.color, size: 1, glow: true });
@@ -685,17 +718,22 @@ function updateProjectiles(dt) {
           if (--p.pierce < 0) { projEnd(p); return false; }
         }
       }
-    } else if (!G.hero.dead && Math.hypot(G.hero.x - p.x, G.hero.y - p.y) < G.hero.r + p.size + 3) {
-      hurtHero(p.dmg * G.st.rangedTaken, p.elem, p.owner, (p.pct || 0) * G.st.rangedTaken);
-      if (p.slow) slowHero(p.slow, 2);
-      if (p.hook && !p.hook.dead) bossHooked(p.hook);
-      if (p.burst) { burst(p.x, p.y, p.color, 20, 80, { glow: true }); ringFx(p.x, p.y, 18, p.color, 0.3, 2); }
-      if (p.pool) hazard({ x: p.x, y: p.y + 6, r: 16, delay: 0, dur: 3, dps: p.dmg * 0.3, elem: p.elem, color: p.color, pool: true });
-      sparks(p.x, p.y - 7, p.color, 6);
-      return false;
+    } else {
+      const h = G.heroes.find(x => !x.dead && Math.hypot(x.x - p.x, x.y - p.y) < x.r + p.size + 3);
+      if (h) {
+        withHero(h, () => {
+          hurtHero(p.dmg * G.st.rangedTaken, p.elem, p.owner, (p.pct || 0) * G.st.rangedTaken);
+          if (p.slow) slowHero(p.slow, 2);
+          if (p.hook && !p.hook.dead) bossHooked(p.hook);
+        });
+        if (p.burst) { burst(p.x, p.y, p.color, 20, 80, { glow: true }); ringFx(p.x, p.y, 18, p.color, 0.3, 2); }
+        if (p.pool) hazard({ x: p.x, y: p.y + 6, r: 16, delay: 0, dur: 3, dps: p.dmg * 0.3, elem: p.elem, color: p.color, pool: true });
+        sparks(p.x, p.y - 7, p.color, 6);
+        return false;
+      }
     }
     return true;
-  });
+  }
 }
 
 function projEnd(p) {
@@ -726,16 +764,23 @@ function monstersIn(x, y, r) { return G.monsters.filter(m => !m.dead && Math.hyp
 
 function spawnPet(type, life) {
   const P = PETS[type], h = G.hero;
-  const p = { kind: 'pet', type, def: P, x: h.x + rand(-12, 12), y: h.y + rand(-12, 12), r: 5, cd: 0.5, life: life || Infinity, face: 1, walk: 0, scale: P.scale };
+  const p = { kind: 'pet', type, def: P, x: h.x + rand(-12, 12), y: h.y + rand(-12, 12), r: 5, cd: 0.5, life: life || Infinity, face: 1, walk: 0, scale: P.scale, owner: h };
   const fp = nearestFree(G.world, p.x, p.y, 4); p.x = fp.x; p.y = fp.y;
   G.pets.push(p);
   burst(p.x, p.y, '#ffffff', 10, 50);
   return p;
 }
 
+// Mazlíček jedná v kontextu svého majitele (jeho útok, jeho cíle). Mazlíčci odešlého hrdiny zmizí.
 function updatePets(dt) {
-  const h = G.hero, st = G.st;
   G.pets = G.pets.filter(p => {
+    if (!isHero(p.owner)) return false;
+    return withHero(p.owner, () => stepPet(p, dt));
+  });
+}
+function stepPet(p, dt) {
+  const h = G.hero, st = G.st;
+  {
     p.life -= dt;
     if (p.life <= 0) { smoke(p.x, p.y, 6); return false; }
     p.cd -= dt; p.atkAnim = Math.max(0, (p.atkAnim || 0) - dt);
@@ -748,7 +793,7 @@ function updatePets(dt) {
       if (d <= P.range + t.r + 2 && p.cd <= 0) {
         p.cd = P.cd / (1 + (st.petSpd || 0));
         const dmg = st.atk * P.dmg * st.petMul * (p.strike || 1);
-        if (P.ranged) G.projs.push({ x: p.x, y: p.y, vx: (t.x - p.x) / d, vy: (t.y - p.y) / d, speed: 170, dmg, elem: P.elem, size: 2, color: P.proj, friendly: true, pet: true, range: 200, traveled: 0, hits: new Set(), pierce: 0, trail: true });
+        if (P.ranged) G.projs.push({ x: p.x, y: p.y, vx: (t.x - p.x) / d, vy: (t.y - p.y) / d, speed: 170, dmg, elem: P.elem, size: 2, color: P.proj, friendly: true, pet: true, range: 200, traveled: 0, hits: new Set(), pierce: 0, trail: true, owner: h });
         else { const dd = dealDamage(t, dmg, P.elem, {}); if (st.petLs) healHero(dd * st.petLs, true); p.atkAnim = 0.15; arcFx(t.x, t.y - 4, Math.atan2(t.y - p.y, t.x - p.x), 1.6, 10, '#ffffff', 0.15); }
         if (p.strike) { p.strike = 0; p.forceTarget = null; burst(t.x, t.y, '#e0c080', 12, 70); }
       }
@@ -759,46 +804,54 @@ function updatePets(dt) {
       if (d > 300) { p.x = h.x; p.y = h.y; }
     }
     return true;
-  });
+  }
 }
 
 // ---------- Kořist na zemi ----------
 
+// Zlato a předměty patří aktuálnímu hrdinovi (owner) – vidí a sebere je jen on. Koule zdraví jsou společné.
 function dropGold(x, y, amount) {
   amount = Math.max(1, Math.round(amount));
-  G.loot.push({ kind: 'gold', x: x + rand(-8, 8), y: y + rand(-6, 6), amount, t: 0 });
+  G.loot.push({ kind: 'gold', x: x + rand(-8, 8), y: y + rand(-6, 6), amount, t: 0, owner: G.hero });
 }
 function dropItem(x, y, boss) {
   const st = G.st, L = G.rift.level;
   const rar = rollRarity(st.mf + riftMf(L), boss, L);
-  const it = makeItem(riftIlvl(L), rar, G.save.nextUid++, null, Math.random() < 0.8 ? G.char.cls : null);
-  G.loot.push({ kind: 'item', item: it, x: x + rand(-10, 10), y: y + rand(-8, 8), t: 0 });
-  if (RARITY_ORDER.indexOf(rar) >= 2) { sfx('rare'); burst(x, y, RARITIES[rar].color, 20, 60, { glow: true }); }
+  const it = makeItem(riftIlvl(L), rar, heroSave().nextUid++, null, Math.random() < 0.8 ? G.char.cls : null);
+  G.loot.push({ kind: 'item', item: it, x: x + rand(-10, 10), y: y + rand(-8, 8), t: 0, owner: G.hero });
+  if (RARITY_ORDER.indexOf(rar) >= 2 && !G.remoteCtx) { sfx('rare'); burst(x, y, RARITIES[rar].color, 20, 60, { glow: true }); }
 }
 
 function updateLoot(dt) {
-  const h = G.hero;
   G.loot = G.loot.filter(l => {
     l.t += dt;
-    if (h.dead) return true;
-    const d = Math.hypot(l.x - h.x, l.y - h.y);
-    if (l.kind === 'gold' && d < 40) { l.x += (h.x - l.x) * dt * 8; l.y += (h.y - l.y) * dt * 8; }
-    if (d < 12 && l.t > 0.3) {
-      if (l.kind === 'gold') { sfx('gold'); G.save.gold += l.amount; floatText(h.x, h.y - 26, '+' + fmt(l.amount) + ' zlata', '#e0c040', 0.8); return false; }
-      if (l.kind === 'globe') { sfx('potion'); healHero(G.st.maxHp * GLOBE_HEAL * G.st.healMul); burst(l.x, l.y, '#ff5050', 12, 50); return false; }
-      if (l.kind === 'item') {
-        if (pickupItem(l.item)) return false;
-        if (!l.warned) { l.warned = true; toast('Batoh je plný'); }
-      }
+    if (l.owner && !isHero(l.owner)) return false;   // majitel odešel
+    for (const h of (l.owner ? [l.owner] : G.heroes)) {
+      if (h.dead) continue;
+      if (withHero(h, () => lootStep(l, h, dt))) return false;
     }
     return true;
   });
 }
+// Vrací true, když hrdina kořist sebral
+function lootStep(l, h, dt) {
+  const d = Math.hypot(l.x - h.x, l.y - h.y);
+  if (l.kind === 'gold' && d < 40) { l.x += (h.x - l.x) * dt * 8; l.y += (h.y - l.y) * dt * 8; }
+  if (d < 12 && l.t > 0.3) {
+    if (l.kind === 'gold') { sfx('gold'); heroSave().gold += l.amount; floatText(h.x, h.y - 26, '+' + fmt(l.amount) + ' zlata', '#e0c040', 0.8); return true; }
+    if (l.kind === 'globe') { sfx('potion'); healHero(G.st.maxHp * GLOBE_HEAL * G.st.healMul); burst(l.x, l.y, '#ff5050', 12, 50); return true; }
+    if (l.kind === 'item') {
+      if (pickupItem(l.item)) return true;
+      if (!l.warned) { l.warned = true; toast('Batoh je plný'); }
+    }
+  }
+  return false;
+}
 
 function pickupItem(it) {
-  const ch = G.char, s = G.save.settings;
-  if (s.autoSell[it.rarity]) {
-    const g = sellValue(it); G.save.gold += g;
+  const ch = G.char, sv = heroSave(), s = sv.settings || { autoSell: {} };
+  if (s.autoSell && s.autoSell[it.rarity]) {
+    const g = sellValue(it); sv.gold += g;
     addLootLog(it, `prodáno +${fmt(g)} zlata`);
     return true;
   }
@@ -806,11 +859,12 @@ function pickupItem(it) {
   ch.inv.push(it);
   sfx('pickup');
   addLootLog(it, 'do batohu');
-  if (RARITY_ORDER.indexOf(it.rarity) >= 2) G.banner = { text: `${RARITIES[it.rarity].name}: ${it.name}`, color: RARITIES[it.rarity].color, t: 0 };
+  if (RARITY_ORDER.indexOf(it.rarity) >= 2 && !G.remoteCtx) G.banner = { text: `${RARITIES[it.rarity].name}: ${it.name}`, color: RARITIES[it.rarity].color, t: 0 };
   return true;
 }
 
 function addLootLog(it, note) {
+  if (G.remoteCtx) return;
   G.lootLog.unshift({ name: it.name, color: RARITIES[it.rarity].color, note, t: 0 });
   G.lootLog.length = Math.min(G.lootLog.length, 6);
 }

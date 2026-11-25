@@ -1,7 +1,8 @@
 # Dungeony (rifty)
 
 ## Jak to funguje teď (v1.6.0)
-- Na obelisku ve městě si hráč zvolí úroveň riftu – kteroukoli od 1 po nejvyšší odemčenou. Poražením strážce se odemkne další úroveň.
+- Na obelisku ve městě si hráč zvolí úroveň riftu: nejvyšší odemčenou, poslední dokončenou, nebo libovolnou dokončenou (tlačítka −10 / − / + / +10 nebo napsat číslo; od 1.7.0). Poražením strážce se odemkne další úroveň.
+- Ve hře více hráčů (příprava od 1.7.0, viz `docs/kooperace.md`) přidá každý další hráč +10 % nepřátel, jejich života a poškození.
 - Rift je náhodná mapa s náhodným tématem.
 - Zabíjením nepřátel roste postup. Na 100 % se **u hráče** objeví strážce (boss). Po jeho zabití se **u bosse** otevře portál do města.
 - Smrt: oživení v riftu, ztráta odolnosti výbavy.

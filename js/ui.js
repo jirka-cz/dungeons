@@ -40,6 +40,7 @@ function runConfirm() { const a = confirmAction; confirmAction = null; if (a) a(
 
 let toastTimer;
 function toast(msg) {
+  if (G.remoteCtx) return;   // zprávy o spoluhráčích (rozbitý předmět, plný batoh, úroveň) se tomuto hráči neukazují
   const t = $('toast');
   t.textContent = msg; t.classList.add('show');
   clearTimeout(toastTimer);
@@ -386,20 +387,39 @@ function itemBySrcByUid(uid) { return allWorn().find(x => x.uid === uid); }
 // ---------- Výběr riftu ----------
 
 function showRiftSelect() {
-  const ch = G.char, max = ch.maxRift;
-  const rows = [];
-  for (let L = max; L >= 1; L--) {
-    rows.push(`<button class="rift-row ${L === max ? 'top' : ''}" onclick="hideModal();startRift(${L})">
-      <b>Rift ${L}</b><span>Nepřátelé: život ×${riftMult(RIFT.hp, L).toFixed(1)}, poškození ×${riftMult(RIFT.atk, L).toFixed(1)}</span>
-      <span class="loot">Kořist +${Math.round(riftMf(L) * 100)} %, předměty úr. ${riftIlvl(L)}</span></button>`);
-    if (rows.length > 30) break;
-  }
+  const ch = G.char, max = ch.maxRift, done = max - 1;
+  UI.riftSel = clamp(UI.riftSel || done || 1, 1, max);
+  const row = (L, note, top) => `<button class="rift-row ${top ? 'top' : ''}" onclick="hideModal();startRift(${L})">
+      <b>Rift ${L}</b><span>${note}</span><span class="loot">${riftLootText(L)}</span></button>`;
+  const rows = [row(max, max > 1 ? 'Nejvyšší odemčený – posuň se dál' : 'První rift', true)];
+  if (done >= 1) rows.push(row(done, 'Poslední dokončený'));
+  const pick = max > 1 ? `<div class="rift-pick">
+      <div class="rp-head">Libovolný dokončený rift</div>
+      <div class="rp-ctl">
+        <button onclick="riftSelStep(-10)">−10</button><button onclick="riftSelStep(-1)">−</button>
+        <input id="rift-lvl" type="number" inputmode="numeric" min="1" max="${max}" value="${UI.riftSel}" oninput="riftSelSet(this.value)" onkeydown="if(event.key==='Enter'){hideModal();startRift(UI.riftSel)}">
+        <button onclick="riftSelStep(1)">+</button><button onclick="riftSelStep(10)">+10</button>
+        <button class="primary" onclick="hideModal();startRift(UI.riftSel)">Vstoupit</button>
+      </div>
+      <div id="rift-info" class="rp-info">${riftInfoText(UI.riftSel)}</div></div>` : '';
   showModal(`<h2>Obelisk riftů</h2>
     <p class="muted small">Zabíjej nepřátele, dokud se nenaplní ukazatel postupu. Pak se objeví strážce riftu, náhodný boss. Po jeho porážce se odemkne další úroveň.
       Vyšší úroveň znamená silnější nepřátele, ale lepší kořist, víc zlata a zkušeností.</p>
     <div class="rift-list">${rows.join('')}</div>
+    ${pick}
     <div class="actions"><button onclick="closeMenu()">Zavřít</button></div>`, true);
 }
+function riftLootText(L) { return `Kořist +${Math.round(riftMf(L) * 100)} %, předměty úr. ${riftIlvl(L)}`; }
+function riftInfoText(L) { return `Nepřátelé: život ×${riftMult(RIFT.hp, L).toFixed(1)}, poškození ×${riftMult(RIFT.atk, L).toFixed(1)} · <span class="loot">${riftLootText(L)}</span>`; }
+function riftSelSet(v, fromStep) {
+  const n = parseInt(v, 10);
+  if (!isFinite(n)) return;
+  UI.riftSel = clamp(n, 1, G.char.maxRift);
+  const inp = $('rift-lvl'), info = $('rift-info');
+  if (inp && (fromStep || String(UI.riftSel) !== inp.value)) inp.value = UI.riftSel;
+  if (info) info.innerHTML = riftInfoText(UI.riftSel);
+}
+function riftSelStep(d) { riftSelSet(UI.riftSel + d, true); }
 
 // ---------- Talenty a lišta dovedností ----------
 

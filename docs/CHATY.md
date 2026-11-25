@@ -23,6 +23,7 @@ Stačí zkopírovat první řádek a dopsat, co chceš udělat.
 | Předměty | `Téma: předměty, kořist, sety, legendárky (docs/predmety.md). Chci…` |
 | Rozhraní | `Téma: ovládání, HUD, okna, mobil (docs/rozhrani.md). Chci…` |
 | Technika | `Téma: ukládání, testy, nasazení, výkon (docs/technika.md). Chci…` |
+| Kooperace | `Téma: hra více hráčů (docs/kooperace.md). Chci…` |
 
 ## Tipy
 - Když chat začne být dlouhý (Claude ho začne automaticky shrnovat), je čas založit nový ke stejnému tématu. Nic se neztratí – stav je v repozitáři.

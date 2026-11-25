@@ -294,6 +294,26 @@ function flowField(W, px, py, maxD = 30) {
   return dist;
 }
 
+// Mapa vzdáleností k nejbližšímu z více bodů (všichni hrdinové) – nepřátelé jdou k tomu nejbližšímu
+function flowFieldMulti(W, pts, maxD = 30) {
+  if (pts.length === 1) return flowField(W, pts[0].x, pts[0].y, maxD);
+  const dist = new Int16Array(W.w * W.h).fill(-1), q = [];
+  pts.forEach(p => {
+    const sx = Math.floor(p.x / TILE), sy = Math.floor(p.y / TILE), c = sy * W.w + sx;
+    if (isFloor(W, sx, sy) && dist[c] < 0) { dist[c] = 0; q.push(c); }
+  });
+  for (let qi = 0; qi < q.length; qi++) {
+    const c = q[qi], d = dist[c];
+    if (d >= maxD) continue;
+    const x = c % W.w, y = (c / W.w) | 0;
+    for (const [ddx, ddy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+      const nx = x + ddx, ny = y + ddy, n = ny * W.w + nx;
+      if (isFloor(W, nx, ny) && dist[n] < 0) { dist[n] = d + 1; q.push(n); }
+    }
+  }
+  return dist;
+}
+
 // Cesta pro hrdinu (BFS + vyhlazení přímou viditelností)
 function findPath(W, x0, y0, x1, y1) {
   const sx = Math.floor(x0 / TILE), sy = Math.floor(y0 / TILE);

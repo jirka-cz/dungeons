@@ -28,8 +28,10 @@ function noise(dur, vol, freq, q = 1, type = 'bandpass', delay = 0) {
   s.connect(f); f.connect(g); g.connect(SFX.master); s.start(t, Math.random() * 0.5); s.stop(t + dur + 0.02);
 }
 
+const SFX_PRIVATE = new Set(['gold', 'pickup', 'levelup', 'rare', 'hurt', 'death', 'potion']);
 function sfx(name) {
   if (!SFX.ctx || G.headless || !G.save || G.save.settings.sound === false) return;
+  if (G.remoteCtx && SFX_PRIVATE.has(name)) return;   // osobní zvuky spoluhráčů (zlato, sebrání, zranění…) neslyšíš
   const now = performance.now();
   if (SFX.last[name] && now - SFX.last[name] < 45) return;
   SFX.last[name] = now;

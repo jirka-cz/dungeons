@@ -57,7 +57,7 @@ function spawnBoss(forceId) {
   // v prvních riftech je boss slabší (rift 1 = 68 % života, od riftu 5 plný)
   const m = {
     kind: 'monster', boss: id, def: B, name: B.name, sprite: B.sprite, pal: B.pal || null, scale: B.scale,
-    x: pos.x, y: pos.y, z: 0, r: B.r, maxHp: Math.round(B.hp * riftMult(RIFT.hp, L) * Math.min(1, 0.6 + 0.08 * L)), atk: B.atk * riftMult(RIFT.atk, L),
+    x: pos.x, y: pos.y, z: 0, r: B.r, maxHp: Math.round(B.hp * riftMult(RIFT.hp, L) * Math.min(1, 0.6 + 0.08 * L) * (G.partyMul || 1)), atk: B.atk * riftMult(RIFT.atk, L),
     spd: B.spd, res: Object.assign({}, B.res), atkElem: B.atkElem, xp: 40, pts: 0, gold: GOLD_BASE * Math.pow(GOLD_GROWTH, riftIlvl(L)),
     dots: {}, slowT: 0, slowPct: 0, stunT: 0, stunImm: 0, cd: 2, spec: 3.2, sigT: 9, wind: 0, aggro: true, face: 1, hitT: 0, bob: 0,
     attackIdx: 0, phase: 1, fightT: 0, animT: 0, shield: 0, exposedT: 0, introT: 1.4, immune: true, sq: 0
@@ -176,8 +176,8 @@ function bossPhaseChange(m) {
   burst(m.x, m.y - 10, '#ff4040', 50, 140, { glow: true });
   flashFx(m.x, m.y - 10, 50, '#ff6040', 0.3);
   floatText(m.x, m.y - 50, m.phase === 3 ? 'Poslední fáze!' : 'Zuří!', '#ff4040', 1.5, { dur: 1.5 });
-  // z hrdiny se uvolní hák, pavučina apod.
-  G.hero.hooked = null;
+  // z hrdinů se uvolní hák, pavučina apod.
+  G.heroes.forEach(h => { h.hooked = null; });
 }
 
 function bossExpose(m, t) {
@@ -237,13 +237,17 @@ function bossAct(m, dt) {
       A.tick -= dt;
       arcFx(m.x, m.y - 10, Math.random() * 6, Math.PI * 2, 34, '#e0e0e0', 0.2);
       if (Math.random() < 0.5) dust(m.x + rand(-10, 10), m.y + 4);
-      const dd = dist(m, h);
-      if (A.pull && dd < 130 && dd > m.r + 6 && !h.dead && !h.dash && !h.leap) {   // vtahování do víru
-        const p = A.pull * dt / dd;
-        moveEntity(G.world, h, (m.x - h.x) * p, (m.y - h.y) * p);
-        if (Math.random() < 0.3) particle(h.x + rand(-4, 4), h.y - 4, { vx: (m.x - h.x) * 0.8, vy: (m.y - h.y) * 0.8, life: 0.3, color: '#c0c0c0', size: 1 });
-      }
-      if (A.tick <= 0) { A.tick = 0.5; if (dd < 34) hurtHero(bossAtk(m, A.dmg || 0.6), 'phys', m, bossPct(m, A.pct || 0.03)); }
+      const tick = A.tick <= 0;
+      if (tick) A.tick = 0.5;
+      eachHero(hh => {   // vír vtahuje a zraňuje všechny hrdiny
+        const dd = dist(m, hh);
+        if (A.pull && dd < 130 && dd > m.r + 6 && !hh.dash && !hh.leap) {   // vtahování do víru
+          const p = A.pull * dt / dd;
+          moveEntity(G.world, hh, (m.x - hh.x) * p, (m.y - hh.y) * p);
+          if (Math.random() < 0.3) particle(hh.x + rand(-4, 4), hh.y - 4, { vx: (m.x - hh.x) * 0.8, vy: (m.y - hh.y) * 0.8, life: 0.3, color: '#c0c0c0', size: 1 });
+        }
+        if (tick && dd < 34) hurtHero(bossAtk(m, A.dmg || 0.6), 'phys', m, bossPct(m, A.pct || 0.03));
+      }, true);
       if (A.t <= 0 && A.expose) { m.act = null; bossExpose(m, A.expose); return; }
       break;
     }
@@ -253,7 +257,8 @@ function bossAct(m, dt) {
       dust(m.x, m.y + 6);
       if (A.trail && dist(m, A.lastPool || { x: -99, y: -99 }) > 20) A.lastPool = hazard({ x: m.x, y: m.y, r: 11, delay: 0, dur: 3.5, dps: bossAtk(m, 0.4), pctTick: bossPct(m, 0.015), elem: 'fire', color: '#ff6020', pool: true });
       if (Math.random() < 0.5) vfx({ kind: 'ghost', x: m.x, y: m.y, sprite: m.sprite, scale: m.scale, pal: m.pal, flip: m.face < 0, dur: 0.3, color: A.ghost || '#ff6020' });
-      if (!A.hit && dist(m, h) < m.r + h.r + 4) { A.hit = true; hurtHero(bossAtk(m, A.dmg || 1.8), m.atkElem, m, bossPct(m, A.pct || 0.12)); shake(4); }
+      if (!A.hitSet) A.hitSet = new Set();
+      eachHero(hh => { if (!A.hitSet.has(hh) && dist(m, hh) < m.r + hh.r + 4) { A.hitSet.add(hh); A.hit = true; hurtHero(bossAtk(m, A.dmg || 1.8), m.atkElem, m, bossPct(m, A.pct || 0.12)); if (!G.remoteCtx) shake(4); } }, true);
       if (!mv) A.t = Math.min(A.t, 0);   // narazil do zdi
       if (A.t <= 0) {
         m.act = null;
@@ -270,7 +275,7 @@ function bossAct(m, dt) {
       if (A.t <= 0) {
         m.z = 0; m.act = null; m.sq = 0.35;
         burst(m.x, m.y, A.color || '#a09080', 40, 120); shake(6); ringFx(m.x, m.y, A.r, A.color || '#c8a060', 0.45, 3);
-        if (dist(m, h) < A.r + h.r) hurtHero(bossAtk(m, A.dmg || 2), A.elem || 'phys', m, bossPct(m, A.pct || 0.15));
+        eachHero(hh => { if (dist(m, hh) < A.r + hh.r) hurtHero(bossAtk(m, A.dmg || 2), A.elem || 'phys', m, bossPct(m, A.pct || 0.15)); }, true);
         G.decals.push({ kind: 'crack', x: m.x, y: m.y, r: A.r * 0.6, t: 0, dur: 6, seed: Math.random() * 10 });
         if (A.land) A.land(m);
         if (A.expose) bossExpose(m, A.expose);
@@ -295,7 +300,7 @@ function bossAct(m, dt) {
         if (A.dtl <= 0) {
           bossShow(m); m.z = 0; m.act = null; m.sq = 0.4;
           burst(m.x, m.y, A.color || '#a09080', 50, 140, { glow: true }); shake(7); ringFx(m.x, m.y, A.r, A.color || '#c8a060', 0.5, 3);
-          if (dist(m, h) < A.r + h.r) hurtHero(bossAtk(m, A.dmg || 2), A.elem || 'phys', m, bossPct(m, A.pct || 0.2));
+          eachHero(hh => { if (dist(m, hh) < A.r + hh.r) hurtHero(bossAtk(m, A.dmg || 2), A.elem || 'phys', m, bossPct(m, A.pct || 0.2)); }, true);
           if (A.land) A.land(m);
           if (A.expose) bossExpose(m, A.expose);
         }
@@ -379,12 +384,15 @@ function bossHooked(m) {
 // ---------- Globální efekty souboje (hák, prokletí, tma, otisky na zemi) ----------
 
 function updateBossWorld(dt) {
-  const h = G.hero;
   // otisky na zemi
   G.decals = G.decals.filter(dc => (dc.t += dt) < dc.dur);
   // tma (Xal'Vor)
   const b = G.rift && G.rift.boss, target = b && !b.dead ? (b.darkTarget || 0) : 0;
   G.darkness += (target - G.darkness) * Math.min(1, dt * 2);
+  eachHero(h => updateBossHero(h, dt));
+}
+// Hák a prokletí jednoho hrdiny (v jeho kontextu)
+function updateBossHero(h, dt) {
   if (h.dead) { h.hooked = null; h.curse = null; return; }
   // hák: hrdina je přitahován k bossovi
   if (h.hooked) {
@@ -1048,11 +1056,12 @@ function drawBossOverlay(sx, sy, d) {
     const tx = `${c.name} – přeruš!`;
     ctx.strokeText(tx, sx(m.x), y0 - 4 * d); ctx.fillText(tx, sx(m.x), y0 - 4 * d);
   }
-  if (h && h.curse && !h.dead) {
+  (G.heroes.length ? G.heroes : [h]).forEach(h => {
+    if (!h || !h.curse || h.dead) return;
     ctx.font = `800 ${12 * d}px system-ui`; ctx.textAlign = 'center'; ctx.lineWidth = 3 * d; ctx.strokeStyle = '#000'; ctx.fillStyle = h.curse.t < 2.5 && Math.floor(G.time * 6) % 2 ? '#ffffff' : '#c070ff';
     const tx = `Prokletí ${h.curse.t.toFixed(1)} s`;
     ctx.strokeText(tx, sx(h.x), sy(h.y - 32)); ctx.fillText(tx, sx(h.x), sy(h.y - 32));
-  }
+  });
   // mráz přes obrazovku při Absolutní nule
   if (m && m.act && m.act.frost) {
     const p = 1 - Math.max(0, m.act.t) / 3;

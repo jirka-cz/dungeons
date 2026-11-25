@@ -52,6 +52,7 @@ Město (obchodník, kovář, truhla, obelisk) → rift zvolené úrovně → pln
 - `PROJEKT.md` a `docs/` – dokumentace pro další vývoj
 
 ## Verze
+- **1.7.0** – příprava na hru více hráčů: jádro hry počítá s více hrdiny v riftu (zatím jen interně, hraje se dál sám), každý další hráč přidá +10 % nepřátel, jejich života a poškození; obelisk nabízí nejvyšší odemčený, poslední dokončený nebo libovolný dokončený rift.
 - **1.6.1** – oprava: na malých mapách bylo občas málo nepřátel na 100 % postupu a boss se neobjevil; teď se nepřátelé vždy rozmístí a když přesto dojdou, boss se objeví i tak.
 - **1.6.0** – předělaní bossové: 3 fáze, velké útoky s varováním (část poškození v % života), vyčerpání (+50 % poškození), přerušitelná kouzla, běsnění po 2 minutách; každý boss má vlastní mechaniku a animace (kamenný štít, fylakterie, pekelné brány, vajíčka, garda, ledové přeludy, hák, tma a prokletí); 3 noví bossové: Ledová vědma Ysolda, Hnilobný Gorgul a Xal'Vor, Pán stínů; stejný boss se neopakuje 3 rifty po sobě.
 - **1.5.0** – vysoké hodnoty afixů jsou vzácné (legendárky mají nejlepší šanci), procenta celkově menší; vzácné rarity vzácnější; bonus riftu ke kořisti roste se zpomalením místo bez omezení.
