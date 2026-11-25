@@ -1,6 +1,6 @@
 # Postavy
 
-## Jak to funguje teď (v1.2.0)
+## Jak to funguje teď (v1.3.0)
 - Hráč má víc postav. Zlato a truhla jsou sdílené, výbava a talenty patří postavě.
 - Postava = jméno + rasa + třída. Vzhled je pixelový sprite, obarvený podle třídy.
 
@@ -44,10 +44,17 @@ Povolené kombinace: `RACE_CLASSES` a `raceAllows()` v `js/data.js`. Obrazovka t
 | Obratnost | +0,1 % krit. šance za bod | lovec, druid |
 | Intelekt | +0,3 % všech odolností za bod | mág, černokněžník, druid |
 | Výdrž | +1 % života za bod | – |
+| Duch | +1,5 % rychlosti obnovy zdroje za bod (mana, soustředění, duch); válečníkovi +1 % generování zuřivosti | – |
 
 - Hlavní atribut je `main` v `CLASSES`. Druid bere vyšší z intelektu a obratnosti (Rovnováha i Divočina).
-- Atributy jsou jen z výbavy. V okně postavy jsou čtyři políčka, hlavní atribut má hvězdičku.
+- Atributy jsou jen z výbavy. V okně postavy je pět políček, hlavní atribut má hvězdičku.
+- Okno postavy ukazuje i zdroj (maximum a obnovu za sekundu) a u kouzelníků rychlost sesílání. Detail má sekce Zdroj a dovednosti a Obrana.
 - Konstanty účinků `ATTR_FX` v `js/items.js`, výpočet v `heroStats()`.
+
+### Rychlost útoku a sesílání
+- Základní útok mága, černokněžníka a druida je kouzlo (není fyzický) → zrychluje ho **rychlost sesílání** (`castPct`). Válečník a lovec útočí zbraní → **rychlost útoku zbraní** (`wpnSpd`).
+- Obecná „rychlost útoku a sesílání“ (`spdPct`) platí pro všechny.
+- Ostatní dovednosti jsou okamžité, omezuje je přebíjení a cena.
 
 ### Úrovně a staty
 - Bez stropu úrovně. XP na další úroveň: `100 × 1,17^(úroveň−1)`.

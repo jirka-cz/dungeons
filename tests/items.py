@@ -25,7 +25,19 @@ CHECKS = r"""(()=>{
     });
     Object.values(s.bonus).forEach(b => Object.keys(b).forEach(k => { if (!STAT_LABELS[k]) E('neznámý stat ' + k + ' v setu ' + id); }));
   });
-  Object.keys(AFFIXES).forEach(k => { if (!STAT_LABELS[k]) E('afix bez popisku: ' + k); });
+  Object.keys(AFFIXES).forEach(k => { if (!AFFIXES[k].family && !STAT_LABELS[k]) E('afix bez popisku: ' + k); });
+  // rodiny afixů a popisky všech náhodně vygenerovaných statů
+  const seen = new Set(), fallbacks = new Set();
+  clsIds.forEach(c => { for (let i = 0; i < 600; i++) { const it = makeItem(40, i % 2 ? 'purple' : 'orange', 1, null, i % 5 ? c : null);
+    Object.keys(it.affixes).forEach(k => { seen.add(k.includes('_') ? k.split('_')[0] === 'skd' ? 'skd_*' : '*_atkPct' : k);
+      if (statLine(k, it.affixes[k]).startsWith(k)) fallbacks.add(k); if (!affixSuffix(k)) fallbacks.add('suf:' + k);
+      if (AFFIXES[k] && AFFIXES[k].slots && !AFFIXES[k].slots.includes(it.slot)) E('afix na špatném slotu ' + k + ' ' + it.slot); });
+    Object.keys(it.affixes).filter(k => k.endsWith('_atkPct')).forEach(k => { if (!CLASSES[c].weapons.includes(k.split('_')[0]) && i % 5) out.wrongWeapon = (out.wrongWeapon || 0) + 1; });
+  } });
+  out.affixKinds = seen.size; out.fallbacks = [...fallbacks];
+  if (fallbacks.size) E('staty bez popisku: ' + [...fallbacks].join(','));
+  const missing = Object.keys(AFFIXES).filter(k => !AFFIXES[k].family && !seen.has(k));
+  if (missing.length) E('afixy, které nepadly: ' + missing.join(','));
   out.perClass = {};
   clsIds.forEach(c => {
     const legs = LEGENDARIES.filter(l => l.cls.includes(c)).length, sets = Object.values(SETS).filter(s => s.cls.includes(c)).length;
@@ -70,6 +82,7 @@ async def main():
         print('per class', json.dumps(res['perClass'], ensure_ascii=False))
         print('smart', json.dumps(res['smart']))
         print('armor', json.dumps(res['armor']))
+        print('affix kinds rolled', res['affixKinds'], 'wrong weapon bonus (smart)', res.get('wrongWeapon', 0))
         print('data errors', res['errors'])
 
         # 4) účinek atributů: válečník vs mág se stejným prstenem +20 síly / +20 intelektu
@@ -96,6 +109,33 @@ async def main():
               invalidate(); r[cls][k] = +(heroStats().atk / a - 1).toFixed(2); }
           } return r; })()""")
         print('main stat atk gain per class (10 bodů)', json.dumps(sel))
+        # 4b) Duch, sesílání, elity, cena, zbraň, druhy nepřátel, obrana
+        fx = await pg.evaluate("""(()=>{ const r = {};
+          const mk = (cls, race) => { const ch = newChar('X', race, cls, G.save); G.save.chars.push(ch); G.save.current = G.save.chars.length - 1; playChar(); return ch; };
+          const ring = (aff) => ({ uid: -1, slot: 'ring', type: 'ring', rarity: 'green', ilvl: 1, base: {}, affixes: aff, dur: 10, maxDur: 10 });
+          let ch = mk('mage', 'human'); invalidate(); let a = heroStats();
+          ch.equip.ring1 = ring({ spi: 20, castPct: 0.2, wpnSpd: 0.5, costRed: 0.2, eliteDmg: 0.3, vsUndead: 0.5, eliteRed: 0.2, rangedRed: 0.2, areaRed: 0.2, ccRed: 0.3, resMax: 15 });
+          invalidate(); let b = heroStats(); G.st = b;
+          r.mage = { regen: +(b.resRegen / a.resRegen).toFixed(2), resMax: b.resMax - a.resMax, cast: b.castMul, wpnSpd: b.wpnSpdMul,
+            cost: +(skillCost('fireball') / (SKILLS.fireball.cost || 1)).toFixed(2), elite: b.eliteDmg, undead: b.vs.undead, taken: [b.eliteTaken, b.rangedTaken, b.areaTaken, b.ccRed] };
+          // rychlost sesílání: cooldown základního kouzla
+          startRift(1); G.st = heroStats(); G.hero.atkCd = 0; G.hero.castLock = 0; castSkill('missile', G.hero.x + 60, G.hero.y);
+          r.atkCdMage = +G.hero.atkCd.toFixed(3); r.atkCdMageExpected = +(1 / (G.st.spd * 1.2)).toFixed(3); G.st.mods && 0;
+          // poškození elitě a nemrtvému vs. normálnímu
+          const dmgTo = (mods) => { const m = { dead: false, hp: 1e9, maxHp: 1e9, res: {}, dots: {}, x: 0, y: 0, r: 5, def: { fam: mods.fam }, elite: mods.elite }; const old = Math.random; Math.random = () => 0.5; const d = dealDamage(m, 1000, 'arcane', { noProc: true }); Math.random = old; return d; };
+          r.dmg = { plain: dmgTo({}), undead: dmgTo({ fam: 'undead' }), elite: dmgTo({ elite: ['fast'] }), beast: dmgTo({ fam: 'beast' }) };
+          ch = mk('warrior', 'human'); invalidate(); a = heroStats();
+          ch.equip.ring1 = ring({ spi: 20, axe_atkPct: 0.5 }); invalidate(); b = heroStats();
+          r.warrior = { gen: +(b.genMul - a.genMul).toFixed(2), atkNoAxe: +(b.atk / a.atk).toFixed(2) };
+          ch.equip.main = makeItem(1, 'gray', 999, 'weapon', 'warrior'); ch.equip.main.type = 'axe'; ch.equip.main.affixes = {}; ch.equip.main.base = { atk: 3 };
+          invalidate(); const c1 = heroStats(); delete ch.equip.ring1; invalidate(); const c0 = heroStats();
+          r.warrior.atkWithAxe = +(c1.atk / c0.atk).toFixed(2);
+          return r; })()""")
+        print('new stat effects', json.dumps(fx))
+        okfx = (fx['atkCdMage'] == fx['atkCdMageExpected'] and fx['mage']['regen'] == 1.3 and fx['mage']['resMax'] == 15 and fx['mage']['cast'] == 1.2 and fx['mage']['cost'] == 0.8
+                and fx['dmg']['undead'] > fx['dmg']['plain'] * 1.45 and fx['dmg']['elite'] > fx['dmg']['plain'] * 1.25 and fx['dmg']['beast'] == fx['dmg']['plain']
+                and fx['warrior']['gen'] == 0.2 and fx['warrior']['atkNoAxe'] == 1.0 and fx['warrior']['atkWithAxe'] == 1.5)
+        print('new stat effects ok', okfx)
 
         # 5) migrace: mág s Titánovou helmou a Sekerou Krvavého měsíce
         await pg.evaluate("""(()=>{ const s = newSave(); const ch = newChar('Starý', 'human', 'mage', s); delete ch.classItems12;

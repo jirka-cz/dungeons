@@ -6,7 +6,11 @@ function currentElems() {
   if (CLASSES[c.cls].pet) els.add('phys');
   return [...els];
 }
-function scoreOf(it) { return itemScore(it, currentElems(), G.char.cls); }
+function scoreCtx() {
+  const c = G.char, wtypes = ['main', 'off'].map(s => c.equip[s] && c.equip[s].type).filter(Boolean);
+  return { elems: currentElems(), cls: c.cls, wtypes, skills: c.bar.filter(Boolean) };
+}
+function scoreOf(it) { return itemScore(it, scoreCtx()); }
 function hasTitanGrip() { return heroStats().titanGrip; }
 
 function slotsFor(it) {

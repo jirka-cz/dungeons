@@ -51,6 +51,7 @@ Město (obchodník, kovář, truhla, obelisk) → rift zvolené úrovně → pln
 - `PROJEKT.md` a `docs/` – dokumentace pro další vývoj
 
 ## Verze
+- **1.3.0** – atribut Duch (obnova many a zdroje), rychlost sesílání a rychlost útoku zbraní, velká sada náhodných bonusů (poškození se zbraní, dovednosti, proti elitám, nemrtvým, šelmám a démonům, cena a obnova zdroje, obrana proti střelám a plošným útokům…), přehled zdroje v okně postavy.
 - **1.2.0** – atributy Síla, Obratnost, Intelekt a Výdrž; těžká zbroj dává obranu, lehká odolnosti; legendárky a sety jen pro určité třídy (+ 6 nových legendárek, sety pro černokněžníka a druida); chytrá kořist podle třídy.
 - **1.1.7** – na mobilu po zapnutí celé obrazovky hra vyplní celý displej (bez prázdného pruhu dole).
 - **1.1.6** – celá obrazovka (tlačítko, klávesa F, automaticky na mobilu), instalace na plochu, talenty na mobilu na šířku ve dvou sloupcích.

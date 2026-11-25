@@ -214,8 +214,12 @@ function charStatsHtml(st) {
       return `<div class="${isMain ? 'main' : ''}" data-tip="${tip}"><span>${ATTRS[k].name}${isMain ? ' ★' : ''}</span><b>${v}</b></div>`;
     }).join('')}</div>
     <div class="xpline">Úroveň <b>${ch.level}</b> · ${fmt(ch.xp)} / ${fmt(need)} XP · nejvyšší rift <b>${ch.maxRift}</b></div>`;
+  const C = CLASSES[ch.cls], caster = isCasterClass(ch.cls);
+  const regenTxt = st.resRegen > 0 ? `+${st.resRegen.toFixed(1).replace('.', ',')} / s` : `útoky +${P(st.genMul - 1)}`;
   const basic = statRows([
-    ['Rychlost útoku', `${st.spd.toFixed(2)} / s`],
+    caster ? ['Rychlost sesílání', `${(st.spd * st.castMul).toFixed(2)} / s`, 'Kolikrát za sekundu sešleš základní kouzlo.']
+           : ['Rychlost útoku', `${(st.spd * st.wpnSpdMul).toFixed(2)} / s`],
+    [C.res.name, `max ${fmt(st.resMax)} · ${st.resRegen > 0 ? regenTxt : 'generují útoky'}`, st.resRegen > 0 ? 'Maximum a obnova za sekundu. Obnovu zrychluje Duch.' : 'Zuřivost generují útoky a sama klesá. Duch zrychluje generování.'],
     ['Kritická šance', P(st.crit)], ['Kritické poškození', `×${st.critMult.toFixed(2)}`],
     st.dodge && ['Úhyb', P(st.dodge)], st.block && ['Blok', P(st.block), 'Šance zablokovat polovinu poškození.'],
     st.dmgTaken < 1 && ['Snížení poškození', P(1 - st.dmgTaken)], st.ls && ['Vysávání života', P(st.ls)],
@@ -230,12 +234,25 @@ function charStatsHtml(st) {
       <h4>Bonus poškození</h4>${statRows(dmgRows.concat([
         st.dotMul > 1 && ['Poškození v čase', `+${P(st.dotMul - 1)}`], st.petMul > 1 && ['Síla mazlíčků', `+${P(st.petMul - 1)}`],
         st.execPct && ['Proti oslabeným (pod 30 %)', `+${P(st.execPct)}`], st.stunDmg && ['Proti omráčeným', `+${P(st.stunDmg)}`],
-        st.armorPen && ['Ignoruje zbroj', P(st.armorPen)], st.resPen && ['Ignoruje odolnosti', P(st.resPen)]])) || '<div class="muted small">Žádné</div>'}
+        st.armorPen && ['Ignoruje zbroj', P(st.armorPen)], st.resPen && ['Ignoruje odolnosti', P(st.resPen)],
+        st.eliteDmg && ['Elitám a strážcům', `+${P(st.eliteDmg)}`],
+        ...Object.keys(MONSTER_FAMS).map(f => st.vs[f] && [`Proti ${MONSTER_FAMS[f]}`, `+${P(st.vs[f])}`]),
+        ...Object.keys(WEAPON_INSTR).map(t => st.mods[t + '_atkPct'] && [`Poškození ${WEAPON_INSTR[t]}`, `+${P(st.mods[t + '_atkPct'])}${gearConds(ch)[t] ? '' : ' (nedržíš)'}`])])) || '<div class="muted small">Žádné</div>'}
+      <h4>Zdroj a dovednosti</h4>${statRows([
+        ['Max. ' + C.res.name.toLowerCase(), fmt(st.resMax)], st.resRegen > 0 && ['Obnova', regenTxt],
+        st.genMul > 1 && ['Generování', `+${P(st.genMul - 1)}`], st.costRed && ['Cena dovedností', `-${P(st.costRed)}`],
+        st.cdr && ['Přebíjení dovedností', `-${P(st.cdr)}`], st.skillMul > 1 && ['Síla dovedností', `+${P(st.skillMul - 1)}`],
+        st.castMul > 1 && ['Rychlost sesílání', `+${P(st.castMul - 1)}`], st.wpnSpdMul > 1 && ['Rychlost útoku zbraní', `+${P(st.wpnSpdMul - 1)}`],
+        st.mods.killRes && ['Zdroj za zabití', `+${fmt(st.mods.killRes)}`]])}
+      <h4>Obrana</h4>${statRows([
+        st.eliteTaken < 1 && ['Od elit a strážců', `-${P(1 - st.eliteTaken)}`], st.rangedTaken < 1 && ['Od střel', `-${P(1 - st.rangedTaken)}`],
+        st.areaTaken < 1 && ['Z plošných útoků', `-${P(1 - st.areaTaken)}`], st.ccRed && ['Kratší zmrazení a zpomalení', `-${P(st.ccRed)}`],
+        st.mods.killHeal && ['Léčení za zabití', P(st.mods.killHeal)], st.moveSpeed > 64 && ['Rychlost pohybu', `+${P(st.moveSpeed / 64 - 1)}`]]) || '<div class="muted small">Žádné</div>'}
       <h4>Zvláštní</h4>${statRows([
         st.double && ['Šance zaútočit dvakrát', P(st.double)], st.slowAura && ['Zpomalení nepřátel kolem tebe', P(st.slowAura)],
         st.freezeChance && ['Šance zmrazit', P(st.freezeChance)], st.stunChance && ['Šance omráčit', P(st.stunChance)],
         st.healMul > 1 && ['Silnější léčení', `+${P(st.healMul - 1)}`], st.rebirth && ['Znovuzrození', 'ano'], st.titanGrip && ['Titánský stisk', 'ano']]) || '<div class="muted small">Žádné</div>'}
-      <h4>Kořist</h4>${statRows([['Zlato', `+${P(st.goldMul - 1)}`], ['Lepší kořist', `+${P(st.mf)}`], ['Šance na předmět', `+${P(st.dropMul - 1)}`]])}`;
+      <h4>Kořist</h4>${statRows([['Zlato', `+${P(st.goldMul - 1)}`], ['Lepší kořist', `+${P(st.mf)}`], ['Šance na předmět', `+${P(st.dropMul - 1)}`], st.xpMul > 1 && ['Zkušenosti', `+${P(st.xpMul - 1)}`]])}`;
   }
   return main + `<div class="srows">${basic}</div>
     <button class="ghost small-btn" onclick="UI.detail=!UI.detail;showCharacter()">${UI.detail ? 'Skrýt detail ▴' : 'Detail ▾'}</button>

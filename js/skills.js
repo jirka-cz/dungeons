@@ -28,7 +28,7 @@ function castSkill(id, tx, ty, target) {
   h.res = Math.min(st.resMax, h.res - (S.cost || 0) + (S.gen || 0) * st.genMul);
   if (S.cd) h.cds[id] = S.cd * (1 - st.cdr);
   h.castLock = 0.18;
-  if (S.primary) h.atkCd = 1 / st.spd;
+  if (S.primary) h.atkCd = 1 / (st.spd * (S.elem !== 'phys' ? st.castMul : st.wpnSpdMul));   // kouzlo = rychlost sesílání, zbraň = rychlost útoku zbraní
   h.atkAnim = 0.15; h.atkAng = ang; h.moveLock = S.primary ? 0.16 : 0.12;
   if (S.primary) wearWeapon();
   doSkill(S, tx, ty, ang, target);

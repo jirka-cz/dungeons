@@ -19,7 +19,10 @@ function setCounts(ch) {
 function gearConds(ch) {
   const eq = ch.equip, main = eq.main, off = eq.off;
   const dw = !!(main && off && off.slot === 'weapon');
-  return { dw, dw1: dw && itemHand(main) === 1 && itemHand(off) === 1, th: !!(main && itemHand(main) === 2 && !dw), sh: !!(off && off.type === 'shield') };
+  const c = { dw, dw1: dw && itemHand(main) === 1 && itemHand(off) === 1, th: !!(main && itemHand(main) === 2 && !dw), sh: !!(off && off.type === 'shield') };
+  // držené typy zbraní pro bonusy "poškození se sekerou" apod. (klíče axe_atkPct …)
+  [main, off].forEach(w => { if (w && w.slot === 'weapon' && w.dur !== 0) c[w.type] = true; });
+  return c;
 }
 // Přičte podmíněné klíče "prefix_stat", pokud je podmínka splněná
 function applyConds(m, active) {
@@ -71,6 +74,7 @@ function heroStats(ch) {
   m.crit += m.agi * ATTR_FX.agiCrit;
   m.resAll += m.int * ATTR_FX.intRes;
   m.hpPct += m.sta * ATTR_FX.staHp;
+  if (c.res.regen > 0) m.resRegenPct += m.spi * ATTR_FX.spiRegen; else m.genPct += m.spi * ATTR_FX.spiGen;
   const atk = (r.atk * c.atk * (1 + LVL_ATK * L) + m.atk) * (1 + m.atkPct);
   const elemMul = { chaos: 1 };
   ['phys', 'fire', 'frost', 'shadow', 'nature', 'arcane'].forEach(e => elemMul[e] = 1 + m[e + 'Pct']);
@@ -103,7 +107,11 @@ function heroStats(ch) {
     resMax: c.res.max + (m.resMax || 0), resRegen: c.res.regen > 0 ? c.res.regen * (1 + (m.resRegenPct || 0)) : c.res.regen,
     genMul: 1 + (m.genPct || 0), cdr: Math.min(0.5, (m.cdr || 0) + (m.skillCd || 0) * 0.1), skillMul: 1 + (m.skillPct || 0),
     petSpd: m.petSpd || 0, petLs: m.petLs || 0,
-    attrs: { str: m.str, agi: m.agi, int: m.int, sta: m.sta }, mainVal,
+    attrs: { str: m.str, agi: m.agi, int: m.int, sta: m.sta, spi: m.spi }, mainVal,
+    castMul: 1 + m.castPct, wpnSpdMul: 1 + m.wpnSpd,
+    eliteDmg: m.eliteDmg, vs: { undead: m.vsUndead, beast: m.vsBeast, demon: m.vsDemon },
+    eliteTaken: 1 - Math.min(0.5, m.eliteRed), rangedTaken: 1 - Math.min(0.5, m.rangedRed), areaTaken: 1 - Math.min(0.5, m.areaRed),
+    ccRed: Math.min(0.6, m.ccRed), costRed: Math.min(0.5, m.costRed),
     moveSpeed: 64 * (1 + (m.msPct || 0)) * (G.hero && G.hero.whirl > 0 ? 1.3 : 1),
     mods: m
   };
@@ -130,7 +138,7 @@ function skillParams(id, st) {
   if (k('skpierce')) S.pierce = (S.pierce || 0) + k('skpierce');
   if (S.dur) S.dur += k('skdur') + (S.form ? (m.formDur || 0) : 0);
   if (S.cd) S.cd = Math.max(0.3, S.cd - k('skcd'));
-  if (S.cost) S.cost *= 1 - Math.min(0.8, k('skcost'));
+  if (S.cost) S.cost *= 1 - Math.min(0.8, k('skcost') + (st.costRed || 0));
   if (S.lifeCost) S.lifeCost *= 1 - Math.min(0.8, k('skcost'));
   S.gen = (S.gen || 0) + k('skgen');
   if (k('skstun')) S.stun = (S.stun || 0) + k('skstun');
@@ -140,7 +148,7 @@ function skillParams(id, st) {
   return S;
 }
 // Skutečná cena dovednosti po talentech (pro lištu a kontrolu zdroje)
-function skillCost(id) { const S = SKILLS[id]; if (!S || !S.cost) return 0; return S.cost * (1 - Math.min(0.8, (G.st && G.st.mods['skcost_' + id]) || 0)); }
+function skillCost(id) { const S = SKILLS[id]; if (!S || !S.cost) return 0; return S.cost * (1 - Math.min(0.8, ((G.st && G.st.mods['skcost_' + id]) || 0) + ((G.st && G.st.costRed) || 0))); }
 
 // Rozzuření (válečník): +10 % útok a +15 % rychlost útoku
 function triggerEnrage() {
@@ -171,6 +179,9 @@ function dealDamage(m, raw, elem, o = {}) {
   raw *= st.elemMul[elem] || 1;
   if (m.hp < m.maxHp * 0.3) raw *= 1 + st.execPct;
   if (m.stunT > 0) raw *= 1 + st.stunDmg;
+  const fam = m.def && m.def.fam;
+  if (fam && st.vs[fam]) raw *= 1 + st.vs[fam];
+  if ((m.elite || m.boss) && st.eliteDmg) raw *= 1 + st.eliteDmg;
   if (m.vulnT > 0) raw *= 1.2 + (st.mods.vulnPct || 0);
   const dmg = Math.max(1, Math.round(raw * rand(0.9, 1.1) * resFactor(m, elem, st, o.armorPen)));
   m.hp -= dmg;
@@ -254,6 +265,7 @@ function hurtHero(raw, elem, src) {
   const def = Math.max(0, st.def) * (elem === 'phys' ? 1 : 0.5);
   const res = elem === 'phys' ? 0 : (st.res[elem] || 0);
   let dmg = raw * rand(0.9, 1.1) * (k / (k + def)) * (1 - res) * st.dmgTaken;
+  if (src && (src.elite || src.boss)) dmg *= st.eliteTaken;
   let blocked = false;
   if (Math.random() < st.block) { dmg *= 0.5; blocked = true; }
   if (st.mods.manaShield > 0 && h.res > 0) {   // mana pohltí část poškození (1 mana = 2 poškození)
@@ -550,7 +562,7 @@ function updateHazards(dt) {
     if (z.wave) {   // rozpínající se vlna (otřes)
       if (z.t < z.delay) return true;
       z.cur = (z.t - z.delay) * z.speed;
-      if (!z.hit && Math.abs(dist(z, h) - z.cur) < 7) { z.hit = true; hurtHero(z.dmg, z.elem, z.src); if (z.stun) freezeHero(z.stun); }
+      if (!z.hit && Math.abs(dist(z, h) - z.cur) < 7) { z.hit = true; hurtHero(z.dmg * G.st.areaTaken, z.elem, z.src); if (z.stun) freezeHero(z.stun); }
       return z.cur < z.maxR;
     }
     if (z.cone) {   // kužel (dech)
@@ -558,7 +570,7 @@ function updateHazards(dt) {
         z.fired = true;
         const d = dist(z, h), a = Math.atan2(h.y - z.y, h.x - z.x);
         const da = Math.abs(((a - z.ang + Math.PI * 3) % (Math.PI * 2)) - Math.PI);
-        if (d < z.len && da < z.arc / 2) hurtHero(z.dmg, z.elem, z.src);
+        if (d < z.len && da < z.arc / 2) hurtHero(z.dmg * G.st.areaTaken, z.elem, z.src);
         for (let i = 0; i < 40; i++) { const aa = z.ang + rand(-z.arc / 2, z.arc / 2), s2 = rand(60, 200); particle(z.x, z.y - 8, { vx: Math.cos(aa) * s2, vy: Math.sin(aa) * s2, life: 0.5, color: pick([z.color, '#ffd060', '#ff4020']), size: 2, glow: true, drag: 0.92 }); }
         if (z.pools) for (let i = 1; i <= 3; i++) hazard({ x: z.x + Math.cos(z.ang) * z.len * i / 4, y: z.y + Math.sin(z.ang) * z.len * i / 4, r: 14, delay: 0, dur: 3, dps: z.dmg * 0.25, elem: z.elem, color: z.color, pool: true });
       }
@@ -567,7 +579,7 @@ function updateHazards(dt) {
     if (!z.fired && z.t >= z.delay) {
       z.fired = true;
       if (z.dmg) {
-        if (dist(z, h) < z.r + h.r) { hurtHero(z.dmg, z.elem, z.src); if (z.freeze) freezeHero(z.freeze); if (z.slow) slowHero(z.slow, 3); }
+        if (dist(z, h) < z.r + h.r) { hurtHero(z.dmg * G.st.areaTaken, z.elem, z.src); if (z.freeze) freezeHero(z.freeze); if (z.slow) slowHero(z.slow, 3); }
         burst(z.x, z.y, z.color, z.orb ? 16 : 22, 90, { glow: true });
         ringFx(z.x, z.y, z.r, z.color, 0.3, 2);
         if (z.r > 25) shake(1.5);
@@ -575,15 +587,15 @@ function updateHazards(dt) {
     }
     if (z.fired && z.dur > 0 && z.dps) {
       z.tickT -= dt;
-      if (z.tickT <= 0) { z.tickT = 0.5; if (dist(z, h) < z.r + h.r * 0.5) hurtHero(z.dps * 0.5, z.elem, null); }
+      if (z.tickT <= 0) { z.tickT = 0.5; if (dist(z, h) < z.r + h.r * 0.5) hurtHero(z.dps * 0.5 * G.st.areaTaken, z.elem, null); }
       if (Math.random() < dt * 6) particle(z.x + rand(-z.r, z.r) * 0.7, z.y + rand(-z.r, z.r) * 0.5, { vy: -12, life: 0.5, color: z.color, size: 1, glow: z.elem === 'fire' });
     }
     return z.t < z.delay + Math.max(z.dur, 0.05);
   });
 }
 
-function freezeHero(t) { G.hero.frozen = Math.max(G.hero.frozen || 0, t); floatText(G.hero.x, G.hero.y - 28, 'Zmrazen!', '#8fd8ff'); }
-function slowHero(p, t) { G.hero.slowP = p; G.hero.slowT = t; }
+function freezeHero(t) { t *= 1 - (G.st.ccRed || 0); G.hero.frozen = Math.max(G.hero.frozen || 0, t); floatText(G.hero.x, G.hero.y - 28, 'Zmrazen!', '#8fd8ff'); }
+function slowHero(p, t) { G.hero.slowP = p; G.hero.slowT = t * (1 - (G.st.ccRed || 0)); }
 
 // ---------- Projektily ----------
 
@@ -627,7 +639,7 @@ function updateProjectiles(dt) {
         }
       }
     } else if (!G.hero.dead && Math.hypot(G.hero.x - p.x, G.hero.y - p.y) < G.hero.r + p.size + 3) {
-      hurtHero(p.dmg, p.elem, p.owner);
+      hurtHero(p.dmg * G.st.rangedTaken, p.elem, p.owner);
       if (p.slow) slowHero(p.slow, 2);
       if (p.pool) hazard({ x: p.x, y: p.y + 6, r: 16, delay: 0, dur: 3, dps: p.dmg * 0.3, elem: p.elem, color: p.color, pool: true });
       sparks(p.x, p.y - 7, p.color, 6);

@@ -1,6 +1,6 @@
 # Předměty a kořist
 
-## Jak to funguje teď (v1.2.0)
+## Jak to funguje teď (v1.3.0)
 - **Sloty výbavy:** hlavní ruka, druhá ruka, hlava, krk, plášť, hruď, rukavice, nohy, boty, 2 prsteny (`EQUIP_ORDER` v `js/items.js`).
 - **Zbraně:** obouruční zbraň dává ≈ 1,9× útoku jednoruční. Zbraň v druhé ruce dává 70 % útoku (dvě zbraně).
 - Třída smí nosit jen své typy zbraní a jen legendárky a sety určené pro ni (`canClassUse`).
@@ -22,6 +22,7 @@
 | Obratnost | +0,1 % krit. šance za bod | +1 % útoku za bod (lovec, druid) |
 | Intelekt | +0,3 % všech odolností za bod | +1 % útoku za bod (mág, černokněžník, druid) |
 | Výdrž | +1 % života za bod | – |
+| Duch | +1,5 % obnovy zdroje za bod (válečník +1 % generování zuřivosti) | – |
 
 - Afix atributu: 3 body × (1 + úroveň/40), strop na úrovni 100 (≈ 2–3 body na začátku, 4–6 na úrovni 40, 7–10 na 100). Stejná křivka jako „% útok“, takže hlavní atribut je pro svou třídu o kousek lepší než obecný útok a pro ostatní je slabší.
 - Legendárky a sety mají hlavní atribut své třídy vždy jako základní stat (≈ 1,6× afixu).
@@ -37,14 +38,28 @@
 - Nosit smí každý cokoli. Popisek ukazuje „těžká zbroj“ / „lehká zbroj“.
 - Plášť, šperky a zbraně váhu nemají.
 
-### Afixy (`AFFIXES`) – 30 druhů
-Síla, obratnost, intelekt, výdrž, % útok, obrana, rychlost útoku a sesílání, kritický zásah, krit. poškození, vysávání, úhyb, blok, regenerace, **léčení**, **přebíjení dovedností**, trny, poškození 6 elementů, odolnosti 5 elementů + všechny, zlato, lepší kořist.
+### Afixy (`AFFIXES`) – 60 druhů + rodiny
+Každý afix má `v0` (hodnota na úrovni 1, roste do úrovně 100), `w` (jak často padá, výchozí 1) a případně `slots` (jen na určitých druzích předmětů). Výběr je vážený, atributy padají častěji, speciální bonusy méně.
+
+| Skupina | Afixy |
+|---|---|
+| Atributy | síla, obratnost, intelekt, výdrž, duch |
+| Útok | % útok, síla dovedností, rychlost útoku a sesílání, **rychlost sesílání**\*, **rychlost útoku zbraní**\*, krit. šance, krit. poškození, poškození 6 elementů, **poškození elitám a strážcům**, **poškození nemrtvým / šelmám / démonům**, poškození oslabeným (pod 30 %), poškození v čase, ignoruje zbroj, ignoruje odolnosti, šance zaútočit dvakrát, šance omráčit, síla mazlíčků |
+| Rodina „zbraň“\* | **+% poškození se sekerou / s mečem / s holí…** (platí, jen když zbraň držíš; na zbrani vždy její typ, chytrá kořist bere zbraně tvé třídy) |
+| Rodina „dovednost“ | **+% poškození konkrétní dovednosti** (např. Ohnivá koule); chytrá kořist bere dovednosti tvé třídy včetně talentových |
+| Zdroj | **max. zdroj**, **obnova zdroje**, **generování zdroje**, **cena dovedností**\*, přebíjení\*, **zdroj za zabití** |
+| Obrana | obrana, vysávání, úhyb, blok, regenerace, léčení, **léčení za zabití**, trny, odolnosti 5 elementů + všechny, **méně poškození od elit**, **od střel**, **z plošných útoků**, **kratší zmrazení a zpomalení**, **rychlost pohybu** (jen boty) |
+| Kořist | zlato, lepší kořist, **šance na předmět**, **zkušenosti** |
+
+\* jen na zbraních, levé ruce, rukavicích, šperkech a hlavě (jako v Diablu 3).
+
+Nepřátelé mají druh `fam` v `MONSTERS` a `BOSSES`: nemrtví (zombie, kostlivci, nadutec, Lich, Kostěný král), šelmy (netopýr, pavouk, ledový vlk, Pavoučí královna), démoni (ohnivý skřet, pekelný pes, Pekelný démon), ostatní bez bonusu. Elity a strážci riftu se počítají jako „elity“.
 
 ### Legendárky (`LEGENDARIES`) – 17
 | Třída | Legendárky |
 |---|---|
 | Válečník | Sekera Krvavého měsíce, Štít Věčné hlídky, Fénixova zbroj*, Nohavice Kamenné kůže*, Amulet Popravčího* |
-| Mág | Hůl věčného plamene, Koruna Mrazivého krále, Ohnisko Hvězdného prachu, Róba Tisíce run* |
+| Mág | Hůl věčného plamene, Koruna Mrazivého krále, Ohnisko Hvězdného prachu, Róba Tisíce run* (nově rychlost sesílání) |
 | Černokněžník | Prsten Prázdnoty, Hůlka Žnece duší, Plášť Stínochodce*, Róba Tisíce run*, Prsten Vyvolávače* |
 | Lovec | Boty Větrného běžce, Luk Orlího oka, Plášť Stínochodce*, Amulet Popravčího*, Prsten Vyvolávače* |
 | Druid | Hůl Srdce dubu, Koruna z parohů, Fénixova zbroj*, Nohavice Kamenné kůže*, Prsten Vyvolávače* |
@@ -65,13 +80,14 @@ Síla, obratnost, intelekt, výdrž, % útok, obrana, rychlost útoku a sesílá
 - Chytrá legendárka/set: 85 % šance, že je pro tvou třídu (jako Diablo 3). Zbytek jde do truhly pro jinou postavu nebo na prodej.
 - Chytrá zbroj: 70 % šance na váhu, kterou třída preferuje (válečník těžkou, mág a černokněžník lehkou, lovec a druid bez preference).
 - Chytrý předmět s afixy: 40 % šance, že jeden afix nahradí hlavní atribut třídy.
-- **Porovnání předmětů** (`itemScore`) počítá s třídou: hlavní atribut má vyšší váhu, cizí atribut jen vedlejší účinek.
+- **Porovnání předmětů** (`itemScore`, `statWeight`) počítá s třídou, drženou zbraní a dovednostmi na liště: hlavní atribut a bonus k držené zbrani nebo dovednosti na liště mají plnou váhu, cizí málo; rychlost sesílání se počítá jen kouzelníkům, rychlost útoku zbraní jen válečníkovi a lovci.
 
 ### Zásady balancu (research Diablo 3/4 a WoW, listopad 2026)
 - Diablo 3: každý atribut má obranný účinek pro všechny (síla → zbroj, obratnost → úhyb, intelekt → odolnosti, vitalita → život) a hlavní atribut navíc zvyšuje poškození své třídy o 1 % za bod. Převzato, jen obratnost dává krit. šanci místo úhybu.
 - WoW: těžká zbroj má víc obrany, látková ji má malou a kouzelníci spoléhají na intelekt. Převzato zjednodušeně na 2 váhy bez zákazu nošení.
 - Chytrá kořist 85/15 % podle Diabla 3, aby legendárky pro jiné třídy nebyly otravně časté.
 - Válečník: síla, výdrž, obrana (těžká zbroj, štít). Kouzelníci: intelekt, odolnosti (lehká zbroj), síla elementu, přebíjení, rychlost sesílání, léčení.
+- v1.3 (Grim Dawn, D3, WoW): Duch jako ve WoW a Grim Dawnu zrychluje obnovu many. Rychlost sesílání je oddělená od rychlosti útoku (WoW spell haste vs. attack haste, Grim Dawn casting speed). Bonusy k typu zbraně a ke konkrétní dovednosti podle Diabla 3/4, poškození elitám a od elit podle D3, poškození proti druhům nepřátel podle Grim Dawnu, rychlost pohybu jen na botách podle D3.
 
 ### Automatický prodej
 - Nastavuje se po raritách v Nastavení i v okně postavy.
@@ -80,7 +96,8 @@ Síla, obratnost, intelekt, výdrž, % útok, obrana, rychlost útoku a sesílá
 ## Kde v kódu
 - `js/items.js` – data, atributy, váha zbroje, generování předmětů (`makeItem`), třídy předmětů (`itemClasses`, `canClassUse`), popisky statů (`STAT_LABELS`), skóre, ceny;
 - `js/classes.js` – `main` (hlavní atribut) a `armor` (preferovaná zbroj) u tříd;
-- `js/entities.js` – přepočet atributů v `heroStats()`, padání kořisti;
+- `js/entities.js` – přepočet atributů a bonusů v `heroStats()`, bonusy proti elitám a druhům nepřátel (`dealDamage`), obrana proti elitám, střelám a plochám (`hurtHero`, projektily, `updateHazards`), padání kořisti;
+- `js/skills.js` – rychlost sesílání / útoku zbraní u základního útoku;
 - `js/inventory.js` – nasazování, batoh, truhla, prodej, oprava;
 - `js/save.js` – migrace `classItems12`;
 - `js/ui.js` – okno postavy (atributy), popisek předmětu („Pouze: …“, zvýrazněný hlavní atribut).

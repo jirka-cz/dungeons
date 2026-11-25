@@ -1,6 +1,6 @@
 // Herní data a balanc. Změna čísla = jiná obtížnost.
 
-const GAME_VERSION = '1.2.0';
+const GAME_VERSION = '1.3.0';
 const TILE = 16;                 // velikost dlaždice v px
 const VIEW_W = 460, VIEW_H = 260; // logické rozlišení světa (zvětšuje se pixelově)
 
@@ -48,20 +48,20 @@ function xpToNext(lvl) { return Math.round(100 * Math.pow(1.17, lvl - 1)); }
 
 // ---------- Nepřátelé ----------
 // ai: melee | ranged | charger | caster | exploder | swarm
-// res: odolnosti (záporné = slabina), atkElem: čím útočí
+// res: odolnosti (záporné = slabina), atkElem: čím útočí, fam: druh (undead/beast/demon… pro bonusy z předmětů)
 const MONSTERS = {
-  zombie:   { name: 'Zombie',          sprite: 'zombie',   ai: 'melee',    hp: 38, atk: 7, spd: 22, r: 6, xp: 2, pts: 1.2, atkElem: 'phys',   res: { nature: 0.4, fire: -0.25 } },
-  skeleton: { name: 'Kostlivec',       sprite: 'skeleton', ai: 'melee',    hp: 26, atk: 6, spd: 36, r: 6, xp: 1.5, pts: 1, atkElem: 'phys', res: { phys: 0.3, shadow: 0.5, fire: -0.25 } },
-  archer:   { name: 'Kostlivec lučištník', sprite: 'skeleton', pal: { c: '#6a5a3a', C: '#4a3c26', e: '#ffd060' }, ai: 'ranged', hp: 20, atk: 6, spd: 32, r: 6, xp: 1.5, pts: 1, atkElem: 'phys', res: { phys: 0.3, shadow: 0.5 }, proj: { color: '#e8e4d4', speed: 150 } },
-  goblin:   { name: 'Goblin',          sprite: 'goblin',   ai: 'melee',    hp: 20, atk: 5, spd: 48, r: 5, xp: 1, pts: 0.8, atkElem: 'phys',   res: {} },
-  bat:      { name: 'Netopýr',         sprite: 'bat',      ai: 'swarm',    hp: 10, atk: 3, spd: 62, r: 5, xp: 0.5, pts: 0.4, atkElem: 'phys', res: { shadow: 0.3, nature: -0.2 }, fly: true },
-  spider:   { name: 'Pavouk',          sprite: 'spider',   ai: 'melee',    hp: 18, atk: 5, spd: 56, r: 5, xp: 1, pts: 0.8, atkElem: 'nature', res: { nature: 0.5, fire: -0.3 } },
-  slime:    { name: 'Sliz',            sprite: 'slime',    ai: 'melee',    hp: 30, atk: 5, spd: 24, r: 6, xp: 1.5, pts: 1, atkElem: 'nature', res: { phys: 0.2, nature: 0.5, fire: -0.25 }, split: true },
-  cultist:  { name: 'Kultista',        sprite: 'cultist',  ai: 'caster',   hp: 24, atk: 9, spd: 30, r: 6, xp: 2, pts: 1.3, atkElem: 'shadow', res: { shadow: 0.4, arcane: -0.2 } },
-  imp:      { name: 'Ohnivý skřet',    sprite: 'imp',      ai: 'ranged',   hp: 18, atk: 6, spd: 40, r: 5, xp: 1.5, pts: 1, atkElem: 'fire', res: { fire: 0.6, frost: -0.3 }, proj: { color: '#ff8a3a', speed: 120, elem: 'fire' } },
-  hound:    { name: 'Pekelný pes',     sprite: 'wolf',     pal: { g: '#8a3a2a', G: '#5a2018', e: '#ffcc33', w: '#c06030' }, ai: 'charger', hp: 26, atk: 8, spd: 50, r: 6, xp: 2, pts: 1.2, atkElem: 'fire', res: { fire: 0.4 } },
-  icewolf:  { name: 'Ledový vlk',      sprite: 'wolf',     pal: { g: '#c8dceb', G: '#7a9ab0', e: '#5ad0ff', w: '#ffffff' }, ai: 'charger', hp: 26, atk: 8, spd: 52, r: 6, xp: 2, pts: 1.2, atkElem: 'frost', res: { frost: 0.5, fire: -0.25 } },
-  bloater:  { name: 'Nadutec',         sprite: 'bloater',  ai: 'exploder', hp: 22, atk: 16, spd: 30, r: 7, xp: 2, pts: 1.2, atkElem: 'nature', res: { nature: 0.3 } }
+  zombie:   { name: 'Zombie', fam: 'undead',          sprite: 'zombie',   ai: 'melee',    hp: 38, atk: 7, spd: 22, r: 6, xp: 2, pts: 1.2, atkElem: 'phys',   res: { nature: 0.4, fire: -0.25 } },
+  skeleton: { name: 'Kostlivec', fam: 'undead',       sprite: 'skeleton', ai: 'melee',    hp: 26, atk: 6, spd: 36, r: 6, xp: 1.5, pts: 1, atkElem: 'phys', res: { phys: 0.3, shadow: 0.5, fire: -0.25 } },
+  archer:   { name: 'Kostlivec lučištník', fam: 'undead', sprite: 'skeleton', pal: { c: '#6a5a3a', C: '#4a3c26', e: '#ffd060' }, ai: 'ranged', hp: 20, atk: 6, spd: 32, r: 6, xp: 1.5, pts: 1, atkElem: 'phys', res: { phys: 0.3, shadow: 0.5 }, proj: { color: '#e8e4d4', speed: 150 } },
+  goblin:   { name: 'Goblin', fam: 'humanoid',          sprite: 'goblin',   ai: 'melee',    hp: 20, atk: 5, spd: 48, r: 5, xp: 1, pts: 0.8, atkElem: 'phys',   res: {} },
+  bat:      { name: 'Netopýr', fam: 'beast',         sprite: 'bat',      ai: 'swarm',    hp: 10, atk: 3, spd: 62, r: 5, xp: 0.5, pts: 0.4, atkElem: 'phys', res: { shadow: 0.3, nature: -0.2 }, fly: true },
+  spider:   { name: 'Pavouk', fam: 'beast',          sprite: 'spider',   ai: 'melee',    hp: 18, atk: 5, spd: 56, r: 5, xp: 1, pts: 0.8, atkElem: 'nature', res: { nature: 0.5, fire: -0.3 } },
+  slime:    { name: 'Sliz', fam: 'ooze',            sprite: 'slime',    ai: 'melee',    hp: 30, atk: 5, spd: 24, r: 6, xp: 1.5, pts: 1, atkElem: 'nature', res: { phys: 0.2, nature: 0.5, fire: -0.25 }, split: true },
+  cultist:  { name: 'Kultista', fam: 'humanoid',        sprite: 'cultist',  ai: 'caster',   hp: 24, atk: 9, spd: 30, r: 6, xp: 2, pts: 1.3, atkElem: 'shadow', res: { shadow: 0.4, arcane: -0.2 } },
+  imp:      { name: 'Ohnivý skřet', fam: 'demon',    sprite: 'imp',      ai: 'ranged',   hp: 18, atk: 6, spd: 40, r: 5, xp: 1.5, pts: 1, atkElem: 'fire', res: { fire: 0.6, frost: -0.3 }, proj: { color: '#ff8a3a', speed: 120, elem: 'fire' } },
+  hound:    { name: 'Pekelný pes', fam: 'demon',     sprite: 'wolf',     pal: { g: '#8a3a2a', G: '#5a2018', e: '#ffcc33', w: '#c06030' }, ai: 'charger', hp: 26, atk: 8, spd: 50, r: 6, xp: 2, pts: 1.2, atkElem: 'fire', res: { fire: 0.4 } },
+  icewolf:  { name: 'Ledový vlk', fam: 'beast',      sprite: 'wolf',     pal: { g: '#c8dceb', G: '#7a9ab0', e: '#5ad0ff', w: '#ffffff' }, ai: 'charger', hp: 26, atk: 8, spd: 52, r: 6, xp: 2, pts: 1.2, atkElem: 'frost', res: { frost: 0.5, fire: -0.25 } },
+  bloater:  { name: 'Nadutec', fam: 'undead',         sprite: 'bloater',  ai: 'exploder', hp: 22, atk: 16, spd: 30, r: 7, xp: 2, pts: 1.2, atkElem: 'nature', res: { nature: 0.3 } }
 };
 
 // Tematické sady: barvy mapy + nepřátelé
@@ -89,15 +89,15 @@ const ELITE_MULT = { hp: 2.6, atk: 1.25, xp: 4, pts: 4, gold: 3 };
 
 // Strážci riftu (náhodný boss na konci)
 const BOSSES = {
-  colossus: { name: 'Kamenný kolos', sprite: 'golem', scale: 2.2, hp: 380, atk: 11, spd: 20, r: 14, res: { phys: 0.5, nature: 0.3 }, atkElem: 'phys',
+  colossus: { name: 'Kamenný kolos', fam: 'construct', sprite: 'golem', scale: 2.2, hp: 380, atk: 11, spd: 20, r: 14, res: { phys: 0.5, nature: 0.3 }, atkElem: 'phys',
               attacks: ['slam', 'quakeRing', 'rocks'], desc: 'Drtivé údery, otřesy a padající kameny.' },
-  lich:     { name: 'Lich Mor\'thal', sprite: 'cultist', pal: { r: '#3a2a5a', R: '#22183a', s: '#c8d0c0', e: '#7ff0ff', y: '#7ff0ff' }, scale: 2, hp: 320, atk: 10, spd: 26, r: 11,
+  lich:     { name: 'Lich Mor\'thal', fam: 'undead', sprite: 'cultist', pal: { r: '#3a2a5a', R: '#22183a', s: '#c8d0c0', e: '#7ff0ff', y: '#7ff0ff' }, scale: 2, hp: 320, atk: 10, spd: 26, r: 11,
               res: { shadow: 0.5, frost: 0.3, fire: -0.25 }, atkElem: 'shadow', attacks: ['boltFan', 'frostNova', 'summonSkel', 'teleport'], desc: 'Stínové střely, mrazivá nova a vyvolávání kostlivců.' },
-  demon:    { name: 'Pekelný démon',  sprite: 'imp', scale: 2.6, hp: 350, atk: 11, spd: 30, r: 13, res: { fire: 0.6, frost: -0.3 }, atkElem: 'fire',
+  demon:    { name: 'Pekelný démon', fam: 'demon',  sprite: 'imp', scale: 2.6, hp: 350, atk: 11, spd: 30, r: 13, res: { fire: 0.6, frost: -0.3 }, atkElem: 'fire',
               attacks: ['breath', 'meteors', 'charge'], desc: 'Ohnivý dech, déšť meteorů a výpady.' },
-  queen:    { name: 'Pavoučí královna', sprite: 'spider', pal: { b: '#5a2a6e', B: '#38184a', e: '#ff4040' }, scale: 2.4, hp: 340, atk: 10, spd: 34, r: 13,
+  queen:    { name: 'Pavoučí královna', fam: 'beast', sprite: 'spider', pal: { b: '#5a2a6e', B: '#38184a', e: '#ff4040' }, scale: 2.4, hp: 340, atk: 10, spd: 34, r: 13,
               res: { nature: 0.6, fire: -0.3 }, atkElem: 'nature', attacks: ['spit', 'web', 'brood'], desc: 'Jedovaté plivance, pavučiny a pavoučí potěr.' },
-  bonelord: { name: 'Kostěný král', sprite: 'skeleton', pal: { c: '#c8a030', C: '#8a6a1a', e: '#ff5050', w: '#f0ead8' }, scale: 2.2, hp: 360, atk: 10, spd: 30, r: 12,
+  bonelord: { name: 'Kostěný král', fam: 'undead', sprite: 'skeleton', pal: { c: '#c8a030', C: '#8a6a1a', e: '#ff5050', w: '#f0ead8' }, scale: 2.2, hp: 360, atk: 10, spd: 30, r: 12,
               res: { phys: 0.35, shadow: 0.5, fire: -0.2 }, atkElem: 'phys', attacks: ['whirlwind', 'leapSlam', 'summonSkel'], desc: 'Smrtící vír, skoky a vyvolávání mrtvých.' }
 };
 

@@ -178,7 +178,7 @@ body.touch-ui .hud-btns button { min-width: 38px; min-height: 34px; }
 .big3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 6px; }
 .big3 div { display: flex; flex-direction: column; align-items: center; background: var(--panel-2); border-radius: 8px; padding: 6px 2px; }
 .big3 span { font-size: 11px; color: var(--muted); } .big3 b { font-size: 20px; color: var(--gold); }
-.attrs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; margin-bottom: 6px; }
+.attrs { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; margin-bottom: 6px; }
 .attrs div { display: flex; flex-direction: column; align-items: center; background: var(--panel-2); border-radius: 8px; padding: 4px 2px; border: 1px solid transparent; }
 .attrs span { font-size: 10px; color: var(--muted); white-space: nowrap; } .attrs b { font-size: 15px; color: var(--text); }
 .attrs div.main { border-color: var(--gold); } .attrs div.main b { color: var(--gold); }
