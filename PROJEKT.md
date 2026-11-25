@@ -1,0 +1,81 @@
+# World & Dungeons – projektový dokument
+
+Tohle je hlavní vstupní bod pro každý nový chat s Claudem. Popisuje, co hra je, jak je kód poskládaný, co už je rozhodnuté a jak se pracuje. Podrobnosti k jednotlivým oblastem jsou v `docs/`.
+
+## Co to je
+- 2D akční RPG v prohlížeči ve stylu Diabla 3/4. Rifty s náhodnými mapami, strážce na konci, kořist, talenty, aktivní dovednosti.
+- Hraje se na počítači i na mobilu (na výšku i na šířku).
+- Zdarma pro kamarády. Každý má vlastní uložené postavy v prohlížeči (localStorage) a může je přenést exportním kódem.
+- Autor (Jirka) neprogramuje. Všechno vzniká přes zadání v češtině, Claude píše kód, testuje ho a vysvětluje změny srozumitelně.
+- Aktuální verze: **1.1.6** (konstanta `GAME_VERSION` v `js/data.js`).
+
+## Kde hra běží
+| Co | Kde |
+|---|---|
+| Kód | GitHub repozitář `jirka-cz/dungeons` (tento) |
+| Hra pro kamarády | GitHub Pages: `https://jirka-cz.github.io/dungeons/` |
+| Kalkulačka talentů | `https://jirka-cz.github.io/dungeons/kalkulacka/` |
+| Starší kopie v Claude | artefakt hry `5323df1b-fc12-4e4c-b9b7-feba75985f9b`, artefakt kalkulačky `7bf6f806-59e3-42e3-a7af-21be9ca15783` |
+
+Hlavní je verze na GitHub Pages. Artefakty v Claude se aktualizují jen na požádání (`publish_files` se slug výše, `base_version` zjistit přes `get_artifact`).
+
+## Témata a dokumenty
+Každé větší téma má vlastní dokument a vlastní chat (viz `docs/CHATY.md`):
+
+| Téma | Dokument | Obsah |
+|---|---|---|
+| Jak pokračovat v chatech | `docs/CHATY.md` | instrukce projektu a úvodní zprávy |
+| Talenty | `docs/talenty.md` | stromy, uzly, body, okno talentů, kalkulačka |
+| Postavy | `docs/postavy.md` | rasy, třídy, dovednosti, mazlíčci, úrovně, staty |
+| Město | `docs/mesto.md` | obchodník, kovář, truhla, obelisk, odolnost |
+| Dungeony | `docs/dungeony.md` | rifty, mapy, nepřátelé, elity, bossové, svatyně, obtížnost |
+| Předměty | `docs/predmety.md` | rarity, afixy, legendárky, sety, automatický prodej |
+| Rozhraní | `docs/rozhrani.md` | ovládání PC/mobil, HUD, okna, nastavení, celá obrazovka |
+| Technika | `docs/technika.md` | engine, ukládání a migrace, testy, nasazení, verze |
+
+## Struktura kódu
+Čisté HTML + JavaScript + CSS, bez knihoven a bez sestavování. Skripty jsou globální (bez modulů) a načítají se v tomto pořadí (`index.html`):
+
+`data → classes → talents → icons → items → sprites → world → fx → sfx → save → entities → skills → rift → inventory → ui → hud → engine`
+
+| Soubor | Role |
+|---|---|
+| `js/data.js` | verze, rasy, povolené kombinace rasa/třída, nepřátelé, témata, elitní afixy, bossové, škálování riftů, svatyně |
+| `js/classes.js` | třídy, zdroje (zuřivost, mana…), základní dovednosti, mazlíčci, přebíjení |
+| `js/talents.js` | 35 dalších dovedností, talentové stromy, výpočet bodů a platnosti |
+| `js/icons.js` | SVG ikony z game-icons.net (vygenerováno, ručně needitovat velké bloky) |
+| `js/items.js` | typy předmětů, rarity, afixy, legendárky, sety, popisky statů, ceny |
+| `js/sprites.js` | pixel art postav, nepřátel a objektů |
+| `js/world.js` | generátor map (jeskyně, krypty), město, kolize, hledání cest |
+| `js/fx.js`, `js/sfx.js` | částice a čísla poškození, syntetizované zvuky (WebAudio) |
+| `js/save.js` | ukládání, migrace starších uložení, export/import |
+| `js/entities.js` | výpočet statů, souboj, AI nepřátel, mazlíčci, projektily, kořist, XP |
+| `js/skills.js` | sesílání dovedností a jejich efekty |
+| `js/rift.js` | průběh riftu, strážce, smrt a oživení |
+| `js/inventory.js` | výbava, batoh, truhla, obchod, oprava |
+| `js/ui.js` | okna (menu, postava, talenty, obchod, nastavení…) |
+| `js/hud.js` | HUD, lišta dovedností, dotykové ovládání |
+| `js/engine.js` | herní smyčka, ovládání, kamera, vykreslování |
+| `css/style.css` | veškerý vzhled |
+| `kalkulacka/index.html` | samostatná kalkulačka talentů, používá `../js/classes.js`, `talents.js`, `icons.js` |
+| `tests/` | automatické testy (viz `docs/technika.md`) |
+
+## Rozhodnutí, která platí (neměnit bez dotazu)
+- **Bez stropu úrovně** (endless). Vyšší úrovně jdou pomaleji, nad úrovní 60 je talentový bod jen za každé 3 úrovně.
+- **Klíčová pasivka** (zlatý uzel): nejvýš jedna v každém stromu, ne jedna celkem.
+- **Portréty postav zůstávají pixelové.** Malované portréty byly zkoušené a zamítnuté.
+- **Ikony** jen z game-icons.net (CC BY 3.0, uvést autory). Žádné emoji jako ikony dovedností.
+- **Šedé předměty se automaticky neprodávají.** Automatický prodej je ve výchozím stavu vypnutý.
+- **Česká klávesnice:** číselné klávesy se čtou přes `e.code` (Digit/Numpad), ne přes `e.key`.
+- **Omezení rasa/třída:** člověk bez černokněžníka a druida; trpaslík bez mága, černokněžníka a druida; elf bez černokněžníka a válečníka; ork bez druida a mága; nemrtvý bez lovce a druida.
+- **Na mobilu se útočí automaticky na nejbližšího nepřítele.**
+- **Texty ve hře jsou česky** a stručné. V okně talentů nepsat zbytečné nápovědy („Odemyká“, „Nejkratší cesta“ apod.).
+
+## Jak pracovat (pro Clauda)
+1. Na začátku chatu si stáhnout repozitář a přečíst `PROJEKT.md` a dokument tématu.
+2. Měnit jen to, co Jirka zadal. Když je zadání nejasné nebo má víc rozumných řešení, krátce se zeptat.
+3. Po změně spustit testy, které se změny týkají (`docs/technika.md`), a u vizuálních změn udělat snímky obrazovky (počítač, mobil na výšku i na šířku).
+4. Zvýšit `GAME_VERSION` v `js/data.js` a doplnit řádek do sekce Verze v `README.md`. Když se mění struktura uložení, přidat migraci v `js/save.js`.
+5. Pokud se změnilo něco, co dokumenty popisují, aktualizovat příslušný `docs/*.md`.
+6. Commit a push do `main`. GitHub Pages se aktualizuje sama za 1–2 minuty.
+7. Jirkovi stručně česky napsat, co se změnilo a co má vyzkoušet.

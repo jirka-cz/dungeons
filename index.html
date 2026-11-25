@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="W&amp;D">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon-192.png">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <meta name="theme-color" content="#0d0b14">
+  <title>World &amp; Dungeons</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <canvas id="game"></canvas>
+
+  <!-- Hlavní menu: postavy -->
+  <div id="menu">
+    <div class="menu-inner">
+      <h1>World <span class="amp">&amp;</span> Dungeons</h1>
+      <p class="muted">Rifty, kořist a strážci. Vyber postavu.</p>
+      <div id="menu-chars" class="char-list"></div>
+      <div class="actions center">
+        <button id="menu-play" class="primary big">Hrát</button>
+        <button id="menu-new" class="big">Nová postava</button>
+        <button id="menu-settings" title="Nastavení">⚙</button>
+        <button id="menu-fs" title="Celá obrazovka">⛶</button>
+      </div>
+      <p class="muted small">Sdílené zlato: <b class="gold" id="menu-gold">0</b> <span class="gold">●</span></p>
+    </div>
+  </div>
+
+  <!-- HUD -->
+  <div id="hud" hidden>
+    <div id="top-center">
+      <div id="area-name"></div>
+      <div id="progress-wrap"><div id="progress-bar"></div><span id="progress-txt"></span></div>
+      <div id="boss-wrap" hidden><div id="boss-name"></div><div class="bossbar"><div id="boss-bar"></div></div></div>
+    </div>
+    <div id="top-right">
+      <canvas id="minimap" width="92" height="72"></canvas>
+      <div class="hud-btns">
+        <span class="hud-gold" data-tip="Zlato (sdílené všemi postavami)"><span class="gold">●</span> <b id="hud-gold">0</b></span>
+        <button id="hb-char" data-tip="Postava a batoh (I)">🎒</button>
+        <button id="hb-tal" data-tip="Talenty a dovednosti (K)">✦</button>
+        <button id="hb-fs" data-tip="Celá obrazovka (F)">⛶</button>
+        <button id="hb-menu" data-tip="Menu (Esc)">☰</button>
+      </div>
+      <div id="warn-broken" class="warn" hidden data-tip="Některý nasazený předmět je rozbitý a nedává staty. Oprav ho u kováře ve městě.">⚠ Rozbitá výbava</div>
+    </div>
+    <div id="buffs"></div>
+    <div id="loot-log"></div>
+    <div id="banner" hidden></div>
+    <div id="bottom">
+      <div class="orb hp" data-tip="Život"><div class="orb-fill" id="hp-fill"></div><span class="orb-txt" id="hp-txt"></span></div>
+      <div id="bar-mid">
+        <div id="xpbar" data-tip="Zkušenosti"><div id="xp-fill"></div><span id="xp-txt"></span></div>
+        <div id="action-bar"></div>
+      </div>
+      <div class="orb res" id="res-orb" data-tip=""><div class="orb-fill" id="res-fill"></div><span class="orb-txt" id="res-txt"></span><span class="orb-name" id="res-name"></span></div>
+    </div>
+    <div id="touch" hidden>
+      <div id="joy-zone"><div id="joy-base"><div id="joy-knob"></div></div></div>
+      <div id="tbtns"></div>
+    </div>
+  </div>
+
+  <div id="modal" class="modal" hidden><div id="modal-box" class="modal-box"></div></div>
+  <div id="toast" class="toast"></div>
+  <div id="tip" class="tip" hidden></div>
+  <div id="itip" class="itip" hidden></div>
+
+  <script src="js/data.js"></script>
+  <script src="js/classes.js"></script>
+  <script src="js/talents.js"></script>
+  <script src="js/icons.js"></script>
+  <script src="js/items.js"></script>
+  <script src="js/sprites.js"></script>
+  <script src="js/world.js"></script>
+  <script src="js/fx.js"></script>
+  <script src="js/sfx.js"></script>
+  <script src="js/save.js"></script>
+  <script src="js/entities.js"></script>
+  <script src="js/skills.js"></script>
+  <script src="js/rift.js"></script>
+  <script src="js/inventory.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/hud.js"></script>
+  <script src="js/engine.js"></script>
+</body>
+</html>

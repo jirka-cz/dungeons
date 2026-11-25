@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>World & Dungeons – talentové stromy</title>
+<style>
+  :root { --bg:#0d0b14; --panel:#1b1626; --panel2:#262036; --border:#3a3150; --text:#ece6f5; --muted:#9d93b0; --gold:#e0b030; --green:#4fd05a; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: radial-gradient(ellipse at top, #1d1630, var(--bg) 60%); color: var(--text); font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; min-height: 100vh; }
+  button { font: inherit; color: var(--text); background: var(--panel2); border: 1px solid var(--border); border-radius: 7px; padding: 6px 12px; cursor: pointer; }
+  button:hover { border-color: var(--gold); }
+  button:disabled { opacity: .45; cursor: not-allowed; }
+  button.primary { background: var(--gold); color: #241a05; border-color: var(--gold); font-weight: 600; }
+  .muted { color: var(--muted); } .small { font-size: 12px; } .gold { color: var(--gold); }
+  header { padding: 16px 20px 8px; max-width: 1500px; margin: 0 auto; }
+  h1 { margin: 0 0 4px; font: 700 26px Georgia, serif; color: #f0e2bd; } h1 span { color: var(--gold); }
+  .classes { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0 10px; }
+  .cls { display: flex; align-items: center; gap: 8px; padding: 8px 14px; }
+  .cls .sw { width: 14px; height: 14px; border-radius: 4px; }
+  .cls.sel { border: 2px solid var(--gold); background: #2e2542; }
+  .bar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px; }
+  .bar input[type=range] { width: 180px; accent-color: var(--gold); }
+  .bar input[type=search] { font: inherit; background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 7px; padding: 6px 10px; width: 200px; }
+  .pts b { font-size: 18px; }
+  main { max-width: 1500px; margin: 0 auto; padding: 10px 20px 40px; display: grid; grid-template-columns: 1fr 360px; gap: 16px; align-items: start; }
+  .trees { display: grid; grid-template-columns: repeat(3, minmax(300px, 1fr)); gap: 12px; }
+  .tree { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 10px 8px 12px; }
+  .tree h2 { margin: 0; font-size: 16px; display: flex; align-items: center; gap: 8px; } .tree h2 .ic { font-size: 22px; }
+  .tree .sub { margin: 2px 0 8px; min-height: 34px; }
+  .tree .tp { margin-left: auto; font-size: 13px; color: var(--muted); } .tree .tp b { color: var(--gold); }
+  .canvas { position: relative; background: radial-gradient(ellipse at 50% 0%, #241c36, #120e1a 70%); border-radius: 10px; }
+  svg.lines { position: absolute; inset: 0; width: 100%; height: 100%; }
+  svg.lines line { stroke: #3a3150; stroke-width: 2; } svg.lines line.can { stroke: #6a5a8a; } svg.lines line.on { stroke: var(--gold); stroke-width: 3; }
+  .gate { position: absolute; left: 0; right: 0; border-top: 1px dashed #5a4a6a; pointer-events: none; }
+  .gate span { position: absolute; right: 3px; top: -9px; font-size: 10px; background: #1a1424; color: var(--muted); padding: 0 4px; border-radius: 4px; }
+  .gate.ok { border-color: #4a8a4a; } .gate.ok span { color: #7ad07a; }
+  .n { position: absolute; transform: translate(-50%, -50%); width: 38px; height: 38px; padding: 0; display: flex; align-items: center; justify-content: center;
+       background: #1e1830; border: 2px solid #4a4060; border-radius: 50%; box-shadow: 0 2px 6px rgba(0,0,0,.6); z-index: 1; user-select: none; }
+  .n .g { font-size: 17px; line-height: 1; filter: drop-shadow(0 1px 1px #000); }
+  .n .r { position: absolute; right: -7px; bottom: -6px; font-size: 9px; font-weight: 700; background: #0d0b14; border: 1px solid #4a4060; border-radius: 6px; padding: 0 3px; color: #ccc; }
+  .n .plus { position: absolute; left: -4px; top: -7px; font-size: 12px; font-weight: 800; color: #7ad07a; text-shadow: 0 0 2px #000; }
+  .n.t-skill, .n.t-base { border-radius: 8px; width: 42px; height: 42px; }
+  .n.t-enh { border-radius: 6px; width: 30px; height: 30px; } .n.t-enh .g { font-size: 14px; }
+  .n.t-choice { border: 0; clip-path: polygon(30% 0,70% 0,100% 30%,100% 70%,70% 100%,30% 100%,0 70%,0 30%); background: #4a4060; }
+  .n.t-choice::before { content: ''; position: absolute; inset: 2px; clip-path: inherit; background: #1e1830; z-index: -1; }
+  .n.t-choice .r { right: 4px; bottom: 1px; }
+  .n.t-key { width: 48px; height: 48px; border-width: 3px; border-color: #7a6030; background: radial-gradient(circle, #3a2a10, #1a1408); } .n.t-key .g { font-size: 22px; color: var(--gold); }
+  .n.lock { filter: grayscale(.9) brightness(.55); }
+  .n.ok { border-color: var(--green); box-shadow: 0 0 8px #4fd05a66; }
+  .n.part { border-color: #c09030; }
+  .n.max, .n.base { border-color: var(--gold); box-shadow: 0 0 10px #e0b03088; }
+  .n.t-choice.ok { background: var(--green); } .n.t-choice.max { background: var(--gold); }
+  .n.sel { outline: 2px solid #fff; outline-offset: 3px; } .n.t-choice.sel { outline: none; filter: drop-shadow(0 0 5px #fff); }
+  .n.hit { box-shadow: 0 0 0 4px #50c0ff, 0 0 14px #50c0ff; filter: none; }
+  .n.dim { opacity: .25; }
+  aside { position: sticky; top: 10px; display: flex; flex-direction: column; gap: 12px; max-height: calc(100vh - 20px); overflow-y: auto; }
+  .card { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; }
+  .card h3 { margin: 0 0 6px; font-size: 14px; color: #f0e2bd; }
+  .d-head { display: flex; gap: 10px; align-items: center; } .d-g { font-size: 30px; width: 40px; text-align: center; }
+  .d-head b { font-size: 16px; }
+  .tag { display: inline-block; font-size: 11px; padding: 1px 7px; border-radius: 10px; background: #2e2542; border: 1px solid var(--border); margin: 2px 4px 2px 0; }
+  .props { display: grid; grid-template-columns: auto 1fr; gap: 2px 12px; margin: 8px 0; font-size: 13px; } .props span:nth-child(odd) { color: var(--muted); }
+  .opt { border: 1px solid var(--border); border-radius: 8px; padding: 7px 9px; margin: 6px 0; background: #1a1424; }
+  .opt.sel { border-color: var(--gold); }
+  .why { color: #e0a060; font-size: 12px; margin-top: 6px; }
+  .acts { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+  ul.enh { margin: 6px 0 0; padding-left: 18px; font-size: 12px; } ul.enh li { margin: 2px 0; } ul.enh li.on { color: var(--gold); }
+  .sum div { display: flex; justify-content: space-between; gap: 10px; font-size: 13px; border-bottom: 1px solid #2a2338; padding: 2px 0; }
+  .sum div span:last-child { color: var(--gold); text-align: right; }
+  .sum div span:first-child { white-space: nowrap; }
+  .sum h4 { margin: 10px 0 4px; font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; }
+  .legend { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 12px; color: var(--muted); }
+  .legend i { display: inline-block; width: 11px; height: 11px; border: 2px solid #8a7aa0; vertical-align: -1px; margin-right: 3px; background: #1e1830; }
+  .lg-sq { border-radius: 3px; } .lg-dm { border-radius: 2px; width: 8px !important; height: 8px !important; } .lg-ci { border-radius: 50%; } .lg-ky { border-radius: 50%; border-color: var(--gold) !important; }
+  .lg-oc { clip-path: polygon(30% 0,70% 0,100% 30%,100% 70%,70% 100%,30% 100%,0 70%,0 30%); background: #8a7aa0 !important; border: 0 !important; }
+  .tabs { display: none; }
+  .gi { width: 1em; height: 1em; display: block; fill: currentColor; filter: drop-shadow(0 1px 1px rgba(0,0,0,.8)); }
+  .n .g .gi { width: 22px; height: 22px; } .n.t-skill .g .gi, .n.t-base .g .gi { width: 27px; height: 27px; } .n.t-enh .g .gi { width: 17px; height: 17px; } .n.t-key .g .gi { width: 29px; height: 29px; }
+  .d-g .gi { width: 34px; height: 34px; }
+  i.si { display: inline-block; vertical-align: -3px; margin-right: 5px; font-style: normal; } i.si .gi { width: 16px; height: 16px; display: inline-block; }
+  svg.lines line.up { stroke: #5fd0ff; stroke-width: 3.5; } svg.lines line.down { stroke: #b48cff; stroke-width: 3; stroke-dasharray: .06 .05; }
+  .n.anc { box-shadow: 0 0 0 3px #5fd0ffaa, 0 0 12px #5fd0ff88; filter: none; } .n.desc { box-shadow: 0 0 0 2px #b48cff88; }
+  .n.t-choice.anc { filter: drop-shadow(0 0 5px #5fd0ff); }
+  svg.lines line.alt { stroke: #5fd0ff; stroke-opacity: .55; stroke-width: 2.5; stroke-dasharray: .1 .07; }
+  .n.altn { box-shadow: 0 0 0 2px #5fd0ff66; filter: grayscale(.4) brightness(.85); } .n.t-choice.altn { filter: drop-shadow(0 0 3px #5fd0ff99); }
+  .rel.main > span b { color: #5fd0ff; } .rel.alt > span b { color: #8fd8ffbb; } .n.t-choice.desc { filter: drop-shadow(0 0 4px #b48cff); }
+  .n.t-opt { width: 30px; height: 30px; border: 0; border-radius: 0; background: #4a4060; box-shadow: none; clip-path: polygon(30% 0,70% 0,100% 30%,100% 70%,70% 100%,30% 100%,0 70%,0 30%); }
+  .n.t-opt::before { content: ''; position: absolute; inset: 2px; clip-path: inherit; background: #1e1830; z-index: -1; }
+  .n.t-opt .g .gi { width: 18px; height: 18px; } .n.t-opt.ok { background: var(--green); } .n.t-opt.max { background: var(--gold); }
+  .n.t-opt.excl { filter: grayscale(1) brightness(.4); } .n.t-opt.sel { outline: none; filter: drop-shadow(0 0 5px #fff); }
+  .n.t-opt.anc { filter: drop-shadow(0 0 5px #5fd0ff); } .n.t-opt.altn { filter: drop-shadow(0 0 3px #5fd0ff99); } .n.t-opt.desc { filter: drop-shadow(0 0 3px #b48cff); }
+  .pm { position: absolute; transform: translate(-50%, -50%); display: flex; flex-direction: column; gap: 3px; z-index: 3; }
+  .pm button { width: 25px; height: 21px; padding: 0; font-size: 16px; font-weight: 800; line-height: 1; border-radius: 6px; color: #fff; box-shadow: 0 2px 6px rgba(0,0,0,.7); }
+  .pm .pp { background: #2f7a36; border-color: #4fd05a; } .pm .mm { background: #6a2a2a; border-color: #c05050; }
+  .pm button:disabled { background: #2a2436; border-color: #3a3150; color: #6a6080; opacity: 1; }
+  .rel { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+  .chip { display: inline-flex; align-items: center; padding: 2px 9px 2px 5px; font-size: 12px; border-radius: 14px; background: #1a1424; }
+  .chip.on { border-color: var(--gold); color: #f0d890; } .chip i.si { margin-right: 4px; }
+  footer { max-width: 1500px; margin: 0 auto; padding: 0 20px 30px; }
+  @media (max-width: 1250px) { main { grid-template-columns: 1fr; } aside { position: static; max-height: none; } }
+  @media (max-width: 980px) {
+    header, main { padding-left: 10px; padding-right: 10px; }
+    .tabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 8px; }
+    .tabs button { padding: 6px 4px; font-size: 12px; } .tabs button.sel { border: 2px solid var(--gold); background: #2e2542; }
+    .trees { grid-template-columns: 1fr; } .tree:not(.show) { display: none; }
+    .bar input[type=search] { width: 100%; }
+    aside { position: static; }
+    #detail { position: fixed; left: 0; right: 0; bottom: 0; z-index: 5; border-radius: 12px 12px 0 0; border-color: var(--gold); box-shadow: 0 -4px 16px rgba(0,0,0,.7); max-height: 38vh; overflow-y: auto; }
+    body { padding-bottom: 40vh; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>World <span>&</span> Dungeons – talentové stromy</h1>
+  <div class="muted small">Zkušební kalkulačka: klikej, plánuj build a čti vlastnosti. Nic se tu neukládá do hry. Úroveň nemá strop – od 60. úrovně přibude bod za každé 3 úrovně.</div>
+  <div class="classes" id="classes"></div>
+  <div class="bar">
+    <label>Úroveň postavy <input type="range" id="lvl" min="1" max="120" value="60"> <b id="lvlv">60</b></label>
+    <span class="pts">Volné body: <b id="free" class="gold">59</b> <span class="muted small">z <span id="tot">59</span></span></span>
+    <input type="search" id="q" placeholder="Hledat (např. krit, zmraz, vlk)…">
+    <button id="reset">Resetovat strom</button>
+    <span class="muted small">Klikni na uzel a přidávej body tlačítky + / −</span>
+  </div>
+</header>
+<main>
+  <section>
+    <div class="tabs" id="tabs"></div>
+    <div class="trees" id="trees"></div>
+    <div class="legend" style="margin-top:10px">
+      <span><i class="lg-sq"></i>dovednost</span><span><i class="lg-dm"></i>zesílení dovednosti</span><span><i class="lg-oc"></i><i class="lg-oc"></i>volba – vezmi jednu, druhá se zamkne</span>
+      <span><i class="lg-ci"></i>pasivka</span><span><i class="lg-ky"></i>klíčová pasivka (jedna na strom)</span>
+      <span>čísla u čar = body potřebné ve stromu</span>
+    </div>
+  </section>
+  <aside>
+    <div class="card" id="detail"></div>
+    <div class="card sum" id="summary"></div>
+  </aside>
+</main>
+<footer class="muted small">Ikony: <a href="https://game-icons.net" target="_blank" style="color:#b48cff">game-icons.net</a> (Lorc, Delapouite a další), licence CC BY 3.0.</footer>
+
+<script src="../js/classes.js"></script>
+<script src="../js/talents.js"></script>
+<script src="../js/icons.js"></script>
+<script>
+const ROW = 56;
+const ELEM = { phys: 'fyzické', fire: 'oheň', frost: 'mráz', shadow: 'stín', nature: 'příroda', arcane: 'arkána', chaos: 'chaos' };
+const TYPE_TXT = { skill: 'Dovednost', enh: 'Zesílení dovednosti', choice: 'Volba – vyber jednu ze dvou', passive: 'Pasivka', key: 'Klíčová pasivka – v každém stromu smíš mít jen jednu', base: 'Výchozí dovednost (máš ji vždy)' };
+const SK_TYPE = { melee: 'útok zblízka', projectile: 'střela', ground: 'plošné kouzlo na místo', nova: 'vlna kolem tebe', leap: 'skok', dash: 'výpad', teleport: 'teleport', buff: 'posílení', summon: 'vyvolání', heal: 'léčení', whirl: 'vichřice', petstrike: 'rozkaz mazlíčkům', trap: 'past', drain: 'vysátí', tap: 'pakt' };
+const S = { cls: 'warrior', level: 60, sel: null, tab: 1, q: '', builds: {} };
+const build = () => S.builds[S.cls] || (S.builds[S.cls] = {});
+
+// ---------- popisky bonusů pro souhrn ----------
+const PCT = v => Math.round(v * 1000) / 10;
+const LBL = { hpPct: 'Život', atkPct: 'Útok', def: 'Obrana', spdPct: 'Rychlost útoku', crit: 'Krit. šance', critDmg: 'Krit. poškození', ls: 'Vysávání života', dodge: 'Úhyb', block: 'Blok',
+  dmgRed: 'Méně přijatého poškození', regen: 'Život za sekundu', thorns: 'Trny', physPct: 'Fyzické poškození', firePct: 'Ohnivé poškození', frostPct: 'Mrazivé poškození', shadowPct: 'Stínové poškození',
+  naturePct: 'Přírodní poškození', arcanePct: 'Arkánní poškození', resFire: 'Odolnost vůči ohni', resFrost: 'Odolnost vůči mrazu', resShadow: 'Odolnost vůči stínu', resAll: 'Odolnost vůči všem živlům',
+  armorPen: 'Ignoruje zbroj', resPen: 'Ignoruje odolnosti', execPct: 'Poškození pod 30 % života', dotPct: 'Poškození v čase', dotDur: 'Delší DoT', slowPct: 'Silnější zpomalení', slowAura: 'Zpomalení kolem tebe',
+  freezeChance: 'Šance zmrazit', stunChance: 'Šance omráčit', stunDmg: 'Poškození omráčeným a zmrazeným', doubleChance: 'Šance na dvojitý útok', healPct: 'Léčení', petPct: 'Síla mazlíčků',
+  petCount: 'Mazlíčci navíc', titanGrip: 'Titánský stisk', rebirth: 'Znovuzrození 1× za rift', goldPct: 'Zlato', dropPct: 'Šance na předmět', msPct: 'Rychlost pohybu', skillPct: 'Poškození dovedností',
+  cdr: 'Kratší přebíjení', resMax: 'Max. zdroj', resRegenPct: 'Obnova zdroje', genPct: 'Získaný zdroj', killRes: 'Zdroj za zabití', critRes: 'Zdroj za krit. zásah', killHeal: 'Léčení za zabití (z max. života)',
+  enrageChance: 'Šance na rozzuření při kritu', enrageDur: 'Delší rozzuření', enrageAlways: 'Trvalé rozzuření', bleedHit: 'Krvácení základního útoku (z útoku/s)', offhand: 'Síla zbraně v levé ruce',
+  ignite: 'Šance zapálit', burnBonus: 'Poškození hořícím', slowedBonus: 'Poškození zpomaleným', shatter: 'Tříštění (násobek útoku)', dotSpread: 'Kletby přeskočí na nepřátel', dottedBonus: 'Poškození prokletým',
+  vulnPct: 'Silnější zranitelnost', manaShield: 'Manový štít', loneWolf: 'Osamělý vlk (útok)', petSpd: 'Rychlost mazlíčků', petLs: 'Léčení z poškození mazlíčků', primCount: 'Střely základního útoku navíc',
+  primPierce: 'Průraz základního útoku', arrowPierce: 'Průraz všech šípů', eclipse: 'Síla Zatmění', trapMax: 'Pastí navíc', auraPct: 'Síla aury', formDur: 'Delší podoby', lowHpDmg: 'Poškození pod 50 % života' };
+const FLAT = { def: '', petCount: '', resMax: '', killRes: '', critRes: '', dotDur: ' s', enrageDur: ' s', formDur: ' s', trapMax: '', dotSpread: '', primCount: '', primPierce: '', arrowPierce: '', shatter: '×', titanGrip: '!', rebirth: '!', enrageAlways: '!' };
+const COND = { dw: 'se dvěma zbraněmi', dw1: 'se dvěma jednoručními zbraněmi', th: 's obouruční zbraní', sh: 'se štítem', enrage: 'během rozzuření' };
+const SKL = { skd: v => `+${PCT(v)} % poškození`, skr: v => `+${PCT(v)} % plocha/dosah`, skc: v => `+${v} ks`, skdur: v => `+${v} s trvání`, skcd: v => `-${v} s přebíjení`, skcost: v => `-${PCT(v)} % cena`,
+  skgen: v => `+${v} zdroje`, skpierce: v => v >= 99 ? 'proletí všemi' : `průraz +${v}`, skstun: v => `+${v} s omráčení`, skslow: v => `+${PCT(v)} % zpomalení`, skdot: v => `+${PCT(v)} % DoT`,
+  skheal: v => `léčí ${PCT(v)} % poškození`, skvuln: v => `zranitelnost ${v} s`, skburn: v => `zapálí (${PCT(v)} % útoku/s)`, skbleed: v => `krvácení (${PCT(v)} % útoku/s)`,
+  skfreeze: v => `${PCT(v)} % šance zmrazit`, skexec: v => `+${PCT(v)} % pod 30 % života`, skenrage: () => 'rozzuří tě', skhits: v => `+${v} úder`, skkillres: v => `+${v} zdroje za zabití` };
+function fmtStat(k, v) { if (k in FLAT) return FLAT[k] === '!' ? 'ano' : (FLAT[k] === '×' ? `${v}×` : `+${Math.round(v * 10) / 10}${FLAT[k]}`); return `+${PCT(v)} %`; }
+function condName(pre) { if (COND[pre]) return COND[pre]; const sk = SKILLS[pre]; return sk ? `během: ${sk.name}` : pre; }
+
+// ---------- pomocníci ----------
+const trees = () => classTrees(S.cls);
+const free = () => talentPointsTotal(S.level) - talentsSpent({ cls: S.cls, talents: build() });
+function canLearn(n, opt) {
+  const t = build(), v = t[n.id] || 0;
+  if (n.type === 'base' || free() <= 0) return false;
+  if (n.type === 'choice' ? v > 0 : v >= n.max) return false;
+  return talentStateValid(S.cls, Object.assign({}, t, { [n.id]: n.type === 'choice' ? (opt || 1) : v + 1 }));
+}
+function canUnlearn(n) {
+  const t = Object.assign({}, build()), v = t[n.id] || 0;
+  if (!v) return false;
+  if (n.type === 'choice' || v === 1) delete t[n.id]; else t[n.id] = v - 1;
+  return talentStateValid(S.cls, t);
+}
+function title(n) { return n.type === 'choice' ? n.opts.map(o => o.name).join(' / ') : n.name; }
+function whyNot(n) {
+  const t = build(), tree = trees().find(x => x.key === n.tree);
+  if (n.type === 'base') return '';
+  if (free() <= 0) return 'Nemáš volný bod – zvyš úroveň nahoře.';
+  if (n.req.length && !n.req.some(r => { const p = nodeById(S.cls, r); return p.type === 'base' || t[r]; })) return 'Nejdřív potřebuješ bod v: ' + n.req.map(r => title(nodeById(S.cls, r))).join(' nebo ') + '.';
+  const need = gateFor(tree, n.row), below = tree.nodes.filter(x => x.row < n.row).reduce((s, x) => s + nodeSpent(x, t[x.id]), 0);
+  if (below < need) return `Potřebuješ ${need} bodů ve vyšších řádcích stromu (máš ${below}).`;
+  if (n.type === 'key') return 'V tomto stromu už máš jinou klíčovou pasivku.';
+  return '';
+}
+function glyph(n) {
+  if (n.type === 'key') return '★';
+  if (n.glyph) return n.glyph;
+  const st = n.type === 'choice' ? n.opts[0].stats : n.stats, k = Object.keys(st)[0] || '';
+  const b = k.includes('_') && !k.startsWith('sk') ? k.split('_')[1] : k;
+  return ({ hpPct: '❤', def: '⛨', dmgRed: '⛨', block: '⛨', crit: '✧', critDmg: '✹', spdPct: '»', msPct: '➤', ls: '❦', regen: '✚', healPct: '✚', thorns: '✶', firePct: '🔥', frostPct: '❄', shadowPct: '☾',
+    naturePct: '❀', arcanePct: '✦', physPct: '⚔', atkPct: '⚔', dotPct: '☠', dotDur: '☠', petPct: '🐾', petSpd: '🐾', petLs: '🐾', petCount: '🐾', resAll: '◈', resFire: '◈', resFrost: '◈', resShadow: '◈',
+    armorPen: '➶', resPen: '➶', execPct: '☩', rebirth: '✟', goldPct: '●', killRes: '◆', killHeal: '◆', resMax: '◆', resRegenPct: '◆', genPct: '◆', cdr: '⟳', enrageChance: '💢', enrageDur: '💢', offhand: '⚔',
+    bleedHit: '🩸', ignite: '🔥', burnBonus: '🔥', slowedBonus: '❄', slowPct: '❄', slowAura: '❄', freezeChance: '❄', stunDmg: '✺', stunChance: '✺', dotSpread: '☣', dottedBonus: '☣', titanGrip: '⚔',
+    loneWolf: '🐺', primCount: '⁂', eclipse: '🌗', formDur: '🐻', doubleChance: '⁑', skillPct: '✦', dodge: '↯' })[b] || '◆';
+}
+function matches(n) {
+  if (!S.q) return null;
+  const txt = (title(n) + ' ' + (n.desc || '') + ' ' + (n.opts ? n.opts.map(o => o.desc).join(' ') : '')).toLowerCase();
+  return txt.includes(S.q.toLowerCase());
+}
+
+// ---------- akce ----------
+function learn(id, opt) {
+  const n = nodeById(S.cls, id), t = build(), v = t[id] || 0;
+  if (n.type === 'choice' && v) { t[id] = opt; }
+  else if (canLearn(n, opt)) t[id] = n.type === 'choice' ? (opt || 1) : v + 1;
+  S.sel = n.type === 'choice' ? `${id}#${t[id] || opt || 1}` : id; render();
+}
+function unlearn(id) {
+  const n = nodeById(S.cls, id), t = build();
+  if (!canUnlearn(n)) return;
+  if (n.type === 'choice' || t[id] === 1) delete t[id]; else t[id]--;
+  S.sel = id; render();
+}
+
+// ---------- vykreslení ----------
+function renderClasses() {
+  document.getElementById('classes').innerHTML = Object.keys(TALENTS).map(c => `<button class="cls ${c === S.cls ? 'sel' : ''}" data-cls="${c}">
+    <span class="sw" style="background:${CLASSES[c].colors[0]}"></span><b>${CLASSES[c].name}</b>
+    <span class="muted small">${TALENTS[c].specs.map(s => s.icon + ' ' + s.name).join(' · ')}</span></button>`).join('');
+}
+function relations(tree) {
+  const out = { anc: new Set(), alt: new Set(), main: new Set(), altE: new Set(), desc: new Set() };
+  const sid = (S.sel || '').split('#')[0];
+  if (!sid || !tree.nodes.some(n => n.id === sid)) return out;
+  talentRoutes(S.cls, build(), sid).forEach((r, i) => {
+    r.nodes.forEach(x => (i === 0 ? out.anc : out.alt).add(x));
+    routeEdges(r, sid).forEach(e => (i === 0 ? out.main : out.altE).add(e));
+  });
+  out.desc = new Set(talentChildren(S.cls, sid));
+  return out;
+}
+function renderTree(tree, i) {
+  const { anc, alt, main, altE, desc } = relations(tree);
+  const t = build(), pts = tree.nodes.reduce((s, n) => s + nodeSpent(n, t[n.id]), 0);
+  const pos = n => [n.col + 0.5, n.row + 0.5];
+  const lines = tree.nodes.flatMap(n => n.req.map(r => {
+    const p = tree.nodes.find(x => x.id === r), a = pos(p), b = pos(n);
+    const pOn = p.type === 'base' || t[p.id], on = pOn && (n.type === 'base' || t[n.id]);
+    const e = p.id + '>' + n.id, hl = main.has(e) ? 'up' : altE.has(e) ? 'alt' : (desc.has(n.id) && p.id === (S.sel || '').split('#')[0]) ? 'down' : '';
+    return `<line x1="${a[0]}" y1="${a[1]}" x2="${b[0]}" y2="${b[1]}" class="${on ? 'on' : pOn ? 'can' : ''} ${hl}" vector-effect="non-scaling-stroke"/>`;
+  })).join('');
+  const gates = tree.gates.map(([r, need]) => `<div class="gate ${pts >= need ? 'ok' : ''}" style="top:${r * ROW}px"><span>${need} b.</span></div>`).join('');
+  const nodes = tree.nodes.map(n => {
+    const v = t[n.id] || 0, m = matches(n);
+    const rel = anc.has(n.id) ? 'anc' : alt.has(n.id) ? 'altn' : desc.has(n.id) ? 'desc' : '';
+    const x = (n.col + 0.5) / 7 * 100, top = (n.row + 0.5) * ROW, srch = m === true ? 'hit' : m === false ? 'dim' : '';
+    if (n.type === 'choice') return n.opts.map((o, i) => {   // volba = dva menší uzly, zvolením jednoho se druhý zamkne
+      const st = v === i + 1 ? 'max' : v ? 'excl' : canLearn(n, i + 1) ? 'ok' : 'lock', sid = `${n.id}#${i + 1}`;
+      return `<button class="n t-opt ${st} ${rel} ${S.sel === sid ? 'sel' : ''} ${srch}" data-id="${sid}"
+        style="left:calc(${x}% + ${(i ? 17 : -17) + (n.col === 0 ? 11 : n.col === 6 ? -11 : 0)}px);top:${top}px"><span class="g">${optIconHtml(o, n)}</span></button>`;
+    }).join('');
+    const st = n.type === 'base' ? 'base' : v >= n.max ? 'max' : v ? 'part' : canLearn(n) ? 'ok' : 'lock';
+    const rank = n.type === 'base' ? '' : `<span class="r">${v}/${n.max}</span>`;
+    return `<button class="n t-${n.type} ${st} ${rel} ${S.sel === n.id ? 'sel' : ''} ${srch}" data-id="${n.id}"
+      style="left:${x}%;top:${top}px"><span class="g">${nodeIconHtml(n)}</span>${n.type === 'enh' ? '<span class="plus">+</span>' : ''}${rank}</button>`;
+  }).join('');
+  const pm = (() => {
+    if (!S.sel) return '';
+    const [sid, so] = S.sel.split('#'), n = tree.nodes.find(x => x.id === sid);
+    if (!n || n.type === 'base') return '';
+    const opt = n.type === 'choice' ? (+so || 1) : undefined, v = t[n.id] || 0;
+    const plus = n.type === 'choice' ? (v ? v !== opt : canLearn(n, opt)) : canLearn(n), minus = n.type === 'choice' ? v === opt && canUnlearn(n) : canUnlearn(n);
+    const off = n.type === 'key' ? 38 : n.type === 'skill' ? 36 : n.type === 'enh' ? 29 : 34;
+    const dx = n.type === 'choice' ? (opt === 2 ? 39 : -39) + (n.col === 0 ? 11 : n.col === 6 ? -11 : 0) : (n.col >= 5 ? -off : off);
+    return `<div class="pm" style="left:calc(${(n.col + 0.5) / 7 * 100}% + ${dx}px);top:${(n.row + 0.5) * ROW}px">
+      <button class="pp" ${plus ? '' : 'disabled'} onclick="event.stopPropagation();learn('${n.id}'${opt ? ', ' + opt : ''})">+</button>
+      <button class="mm" ${minus ? '' : 'disabled'} onclick="event.stopPropagation();unlearn('${n.id}')">−</button></div>`;
+  })();
+  return `<div class="tree ${i === S.tab ? 'show' : ''}">
+    <h2><span class="ic">${tree.icon}</span>${tree.name}<span class="tp"><b>${pts}</b> b.</span></h2>
+    <div class="sub muted small">${tree.core ? 'Strom třídy' : 'Specializace'} – ${tree.desc}</div>
+    <div class="canvas" style="height:${tree.rows * ROW}px"><svg class="lines" viewBox="0 0 7 ${tree.rows}" preserveAspectRatio="none">${lines}</svg>${gates}${nodes}${pm}</div></div>`;
+}
+function skillProps(id) {
+  const k = SKILLS[id], rn = CLASSES[S.cls].res.name.toLowerCase(), rows = [];
+  rows.push(['Druh', SK_TYPE[k.type] || k.type]);
+  if (k.elem) rows.push(['Živel', ELEM[k.elem]]);
+  if (k.dmg) rows.push(['Poškození', `${Math.round(k.dmg * 100)} % útoku${k.hits ? ` × ${k.hits} údery` : ''}${k.count ? ` × ${k.count} střel` : ''}`]);
+  if (k.explode) rows.push(['Výbuch', `${Math.round(k.explode.dmg * 100)} % útoku`]);
+  if (k.dot) rows.push(['Poškození v čase', `${Math.round(k.dot.pct * 100)} % útoku za s, ${k.dot.dur} s`]);
+  if (k.aura) rows.push(['Aura', `${Math.round(k.aura.dmg * 100)} % útoku každých ${k.aura.tick} s`]);
+  if (k.exec) rows.push(['Poprava', `+${Math.round(k.exec * 100)} % pod 30 % života`]);
+  if (k.stun) rows.push(['Omráčení', `${k.stun} s`]);
+  if (k.freeze) rows.push(['Zmrazení', `${k.freeze} s`]);
+  if (k.slow) rows.push(['Zpomalení', `${Math.round(k.slow * 100)} %`]);
+  if (k.vuln) rows.push(['Zranitelnost', `${k.vuln} s (+20 % poškození)`]);
+  if (k.dur && k.type !== 'ground') rows.push(['Trvání', `${k.dur} s`]);
+  if (k.cost) rows.push(['Cena', `${k.cost} ${rn}`]);
+  if (k.gen) rows.push(['Generuje', `${k.gen} ${rn}`]);
+  if (k.lifeCost) rows.push(['Cena', `${Math.round(k.lifeCost * 100)} % života`]);
+  rows.push(['Přebíjení', k.cd ? `${k.cd} s` : (k.primary ? 'podle rychlosti útoku' : 'žádné')]);
+  return `<div class="props">${rows.map(r => `<span>${r[0]}</span><span>${r[1]}</span>`).join('')}</div>`;
+}
+function renderDetail() {
+  const el = document.getElementById('detail');
+  if (!S.sel) { el.innerHTML = `<h3>Detail</h3><div class="muted small">Klikni na libovolný uzel ve stromu. Uvidíš, co dělá, co potřebuje a jak ho vylepšit.<br><br>
+    Každá třída má <b>strom třídy</b> a <b>dvě specializace</b>. Body můžeš dávat do všech tří a v každé specializaci si vybereš jednu <b>klíčovou pasivku</b> (★ dole).
+    Řádky se odemykají body utracenými výš ve stejném stromu (čárkované čáry).</div>`; return; }
+  const [sid, so] = S.sel.split('#');
+  const n = nodeById(S.cls, sid), t = build(), v = t[n.id] || 0, tree = trees().find(x => x.key === n.tree);
+  if (n.type === 'choice') {
+    const i = Math.max(0, (+so || 1) - 1), o = n.opts[i], other = n.opts[1 - i], chosen = v === i + 1, ok = canLearn(n, i + 1);
+    el.innerHTML = `<div class="d-head"><span class="d-g">${optIconHtml(o, n)}</span><div><b>${o.name}</b><br>
+      <span class="tag">Volba${n.forSkill ? ' · ' + SKILLS[n.forSkill].name : ''}</span><span class="tag">vylučuje se s: ${other.name}</span></div></div>
+      <p class="small" style="margin:8px 0 0">${o.desc}</p>
+      ${chosen ? '<div class="gold small">✓ zvoleno</div>' : ''}
+      ${!v && !ok && whyNot(n) ? `<div class="why">${whyNot(n)}</div>` : ''}`;
+    return;
+  }
+  let h = `<div class="d-head"><span class="d-g">${nodeIconHtml(n)}</span><div><b>${title(n)}</b><br>
+    <span class="tag">${TYPE_TXT[n.type]}</span><span class="tag">${tree.icon} ${tree.name}</span>${n.forSkill ? `<span class="tag"><i class="si">${skillIcon(n.forSkill)}</i>${SKILLS[n.forSkill].name}</span>` : ''}</div></div>`;
+  {
+    h += `<p class="small" style="margin:8px 0 0">${n.desc}${n.max > 1 ? ' <span class="muted">(za každou úroveň)</span>' : ''}</p>`;
+    if (n.max > 1) h += `<div class="small muted">Úroveň ${v}/${n.max}${v ? ` – teď celkem: ${Object.entries(n.stats).map(([k, x]) => fmtStat(k, x * v) + ' ' + (LBL[k] || k).toLowerCase()).join(', ')}` : ''}</div>`;
+    if (n.skill) {
+      h += skillProps(n.skill);
+      const enh = tree.nodes.filter(x => x.forSkill === n.skill && x.id !== n.id);
+      if (enh.length) h += `<div class="small"><b>Vylepšení této dovednosti:</b><ul class="enh">${enh.map(x => `<li class="${t[x.id] ? 'on' : ''}">${x.type === 'choice' ? 'Volba: ' + x.opts.map((o, i) => `<b>${o.name}</b> (${o.desc})${t[x.id] === i + 1 ? ' ✓' : ''}`).join(' nebo ') : `<b>${x.name}</b>: ${x.desc}${t[x.id] ? ' ✓' : ''}`}</li>`).join('')}</ul></div>`;
+    }
+    if (n.type !== 'base' && v < n.max && !canLearn(n)) { const w = whyNot(n); if (w) h += `<div class="why">${w}</div>`; }
+  }
+  el.innerHTML = h;
+}
+function renderSummary() {
+  const t = build(), sum = {}, skillMods = {}, conds = {};
+  const skills = CLASSES[S.cls].base.slice();
+  talentNodes(S.cls).forEach(n => {
+    const v = t[n.id]; if (!v || n.type === 'base') return;
+    if (n.type === 'skill') skills.push(n.skill);
+    const st = nodeStats(n, v), mul = n.type === 'passive' ? v : 1;
+    for (const k in st) {
+      const val = st[k] * mul, i = k.indexOf('_'), pre = i > 0 ? k.slice(0, i) : '', rest = k.slice(i + 1);
+      if (SKILL_KEY_PREFIXES.includes(pre)) { (skillMods[rest] = skillMods[rest] || {})[pre] = (skillMods[rest][pre] || 0) + val; }
+      else if (pre && (COND_PREFIXES.includes(pre) || SKILLS[pre] || pre === 'enrage')) { const c = condName(pre); (conds[c] = conds[c] || {})[rest] = (conds[c][rest] || 0) + val; }
+      else sum[k] = (sum[k] || 0) + val;
+    }
+  });
+  const keyNode = talentNodes(S.cls).find(n => n.type === 'key' && t[n.id]);
+  let h = `<h3>Souhrn buildu – ${CLASSES[S.cls].name}</h3><div class="muted small">Rozděleno ${talentsSpent({ cls: S.cls, talents: t })} z ${talentPointsTotal(S.level)} bodů · ${trees().map(tr => `${tr.icon} ${tr.name} ${tr.nodes.reduce((s, n) => s + nodeSpent(n, t[n.id]), 0)}`).join(' · ')}</div>`;
+  if (keyNode) h += `<h4>Klíčová pasivka</h4><div><span><i class="si">${nodeIconHtml(keyNode)}</i>${keyNode.name}</span><span></span></div><div class="small muted" style="border:0">${keyNode.desc}</div>`;
+  h += `<h4>Dovednosti (${skills.length})</h4>` + skills.map(id => `<div><span><i class="si">${skillIcon(id)}</i>${SKILLS[id].name}</span><span class="small">${skillMods[id] ? Object.entries(skillMods[id]).map(([p, v]) => SKL[p](v)).join(', ') : ''}</span></div>`).join('');
+  const keys = Object.keys(sum).filter(k => sum[k]);
+  h += `<h4>Trvalé bonusy</h4>` + (keys.length ? keys.map(k => `<div><span>${LBL[k] || k}</span><span>${fmtStat(k, sum[k])}</span></div>`).join('') : '<div class="muted small" style="border:0">zatím žádné</div>');
+  for (const c in conds) h += `<h4>${c}</h4>` + Object.entries(conds[c]).map(([k, v]) => `<div><span>${LBL[k] || k}</span><span>${fmtStat(k, v)}</span></div>`).join('');
+  document.getElementById('summary').innerHTML = h;
+}
+function render() {
+  document.getElementById('lvlv').textContent = S.level;
+  document.getElementById('free').textContent = free();
+  document.getElementById('tot').textContent = talentPointsTotal(S.level);
+  renderClasses();
+  const tr = trees();
+  document.getElementById('tabs').innerHTML = tr.map((t, i) => `<button class="${i === S.tab ? 'sel' : ''}" data-tab="${i}">${t.icon} ${t.name}</button>`).join('');
+  renderTrees();
+  renderDetail(); renderSummary();
+}
+function renderTrees() { document.getElementById('trees').innerHTML = trees().map(renderTree).join(''); }
+
+// ---------- ovládání ----------
+document.addEventListener('click', e => {
+  const c = e.target.closest('[data-cls]'); if (c) { S.cls = c.dataset.cls; S.sel = null; render(); return; }
+  const tb = e.target.closest('[data-tab]'); if (tb) { S.tab = +tb.dataset.tab; render(); return; }
+  const n = e.target.closest('.n');
+  if (n) {   // jen výběr – strom se nepřekresluje (aby fungoval dvojklik)
+    S.sel = n.dataset.id;
+    document.querySelectorAll('.n.sel').forEach(x => x.classList.remove('sel')); n.classList.add('sel');
+    renderDetail(); if (window.innerWidth <= 980) document.getElementById('detail').scrollTop = 0;
+    renderTrees();
+  }
+});
+document.addEventListener('dblclick', e => { const n = e.target.closest('.n'); if (n) { const [id, o] = n.dataset.id.split('#'); learn(id, o ? +o : undefined); } });
+document.addEventListener('contextmenu', e => { const n = e.target.closest('.n'); if (n) { e.preventDefault(); unlearn(n.dataset.id.split('#')[0]); } });
+document.getElementById('lvl').addEventListener('input', e => {
+  S.level = +e.target.value;
+  while (free() < 0) {   // nižší úroveň: odeber body od nejhlubších uzlů
+    const t = build(), list = talentNodes(S.cls).filter(n => t[n.id] && canUnlearn(n)).sort((a, b) => b.row - a.row);
+    if (!list.length) { S.builds[S.cls] = {}; break; }
+    const n = list[0]; if (n.type === 'choice' || t[n.id] === 1) delete t[n.id]; else t[n.id]--;
+  }
+  render();
+});
+document.getElementById('q').addEventListener('input', e => { S.q = e.target.value.trim(); render(); });
+document.getElementById('reset').addEventListener('click', () => { S.builds[S.cls] = {}; S.sel = null; render(); });
+render();
+</script>
+</body>
+</html>
