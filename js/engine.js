@@ -19,6 +19,11 @@ function initCanvas() {
   lc = document.createElement('canvas'); lg = lc.getContext('2d');
   resize();
   window.addEventListener('resize', resize);
+  // po zapnutí/vypnutí celé obrazovky nebo otočení telefonu hlásí prohlížeč novou velikost se zpožděním – přeměřit ještě jednou
+  const later = () => { resize(); setTimeout(resize, 150); setTimeout(resize, 500); };
+  ['fullscreenchange', 'webkitfullscreenchange'].forEach(ev => document.addEventListener(ev, later));
+  window.addEventListener('orientationchange', later);
+  if (window.visualViewport) window.visualViewport.addEventListener('resize', resize);
 }
 
 function resize() {
@@ -31,7 +36,6 @@ function resize() {
   else { G.vw = 230; G.vh = Math.round(230 / aspect); }
   G.vw = Math.min(G.vw, 600);
   canvas.width = Math.round(w * dpr); canvas.height = Math.round(h * dpr);
-  canvas.style.width = w + 'px'; canvas.style.height = h + 'px';
   wc.width = lc.width = G.vw; wc.height = lc.height = G.vh;
   G.scale = canvas.width / G.vw;
   G.dpr = dpr; G.cssScale = w / G.vw;

@@ -32,6 +32,8 @@
 ## Celá obrazovka
 - Tlačítko ⛶ v menu a v HUD, klávesa F. Na dotykových zařízeních se zapne automaticky po „Hrát“ (dá se vypnout v Nastavení).
 - Když prohlížeč nebo okno Claude celou obrazovku nedovolí, hra to oznámí hláškou.
+- Plátno se vždy roztáhne na celé okno a po přepnutí celé obrazovky nebo otočení telefonu se velikost přeměří ještě se zpožděním (prohlížeč ji hlásí pozdě).
+- Pruh nahoře u výřezu kamery může na Androidu zůstat. Ten patří systému/prohlížeči, stránka do něj kreslit nesmí, pokud to telefon nedovolí (nastavení výřezu kamery u aplikace Chrome).
 - iPhone nepodporuje celou obrazovku pro stránku. Řešením je „Přidat na plochu“ – hra má manifest (`manifest.webmanifest`, `display: fullscreen`) a ikony `icon-192.png` a `icon-512.png`.
 
 ## Kde v kódu

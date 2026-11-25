@@ -51,6 +51,7 @@ Město (obchodník, kovář, truhla, obelisk) → rift zvolené úrovně → pln
 - `PROJEKT.md` a `docs/` – dokumentace pro další vývoj
 
 ## Verze
+- **1.1.7** – na mobilu po zapnutí celé obrazovky hra vyplní celý displej (bez prázdného pruhu dole).
 - **1.1.6** – celá obrazovka (tlačítko, klávesa F, automaticky na mobilu), instalace na plochu, talenty na mobilu na šířku ve dvou sloupcích.
 - **1.1.5** – talenty přes tlačítka + a −, potvrzení vybraných talentů.
 - **1.1.4** – stručnější detail talentu, volby rozdělené na dva menší uzly.
