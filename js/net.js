@@ -49,7 +49,8 @@ function netCreate() {
   if (G.scene !== 'town') { toast('Místnost můžeš založit jen ve městě.'); return; }
   const code = netCode();
   const peer = new Peer(NET_PREFIX + code, netOpts());
-  Net.peer = peer; Net.code = code;
+  Net.peer = peer; Net.code = code; Net.creating = true;
+  setTimeout(() => { if (Net.peer === peer && !Net.role) { netDestroy(); toast('Server pro spojení neodpovídá. Zkontroluj internet a zkus to znovu.'); netUi(); } }, 15000);
   peer.on('open', id => {
     Net.role = 'host'; Net.myId = id; Net.mem = {};
     netRefreshMembers(); toast(`Místnost ${code} je založená`); netUi();
@@ -69,6 +70,7 @@ function netJoin(code) {
   if (G.scene !== 'town') { toast('K místnosti se můžeš připojit jen ve městě.'); return; }
   const peer = new Peer(netOpts());
   Net.peer = peer; Net.code = code; Net.joining = true; netUi();
+  setTimeout(() => { if (Net.peer === peer && Net.role !== 'guest') { netDestroy(); toast('Připojení se nepodařilo navázat. Zkontroluj kód, nebo zkuste jinou síť (Wi-Fi / mobilní data).'); netUi(); } }, 20000);
   peer.on('open', id => {
     Net.myId = id;
     const conn = peer.connect(NET_PREFIX + code, { reliable: true, serialization: 'json' });
@@ -104,7 +106,7 @@ function netDestroy() {
   try { Object.values(Net.mem).forEach(m => m.conn.close()); } catch (e) {}
   try { if (Net.conn) Net.conn.close(); } catch (e) {}
   try { if (Net.peer) Net.peer.destroy(); } catch (e) {}
-  Object.assign(Net, { role: null, peer: null, conn: null, mem: {}, members: [], prop: null, clientRift: false, joining: false, code: null, cache: {} });
+  Object.assign(Net, { role: null, peer: null, conn: null, mem: {}, members: [], prop: null, clientRift: false, joining: false, creating: false, code: null, cache: {} });
   netRemoveGhosts();
   if (G.scene === 'rift' && G.heroes.length > 1) G.heroes = G.heroes.filter(h => !h.netId);
 }
@@ -772,7 +774,8 @@ function guestUpdate(dt) {
 function showNetModal() {
   const inRoom = !!Net.role;
   let body;
-  if (Net.joining && !Net.role) body = `<p>Připojuji se k místnosti <b>${Net.code}</b>…</p><div class="actions"><button onclick="netDestroy();showNetModal()">Zrušit</button></div>`;
+  if (Net.creating && !Net.role) body = `<p>Zakládám místnost…</p><div class="actions"><button onclick="netDestroy();showNetModal()">Zrušit</button></div>`;
+  else if (Net.joining && !Net.role) body = `<p>Připojuji se k místnosti <b>${Net.code}</b>…</p><div class="actions"><button onclick="netDestroy();showNetModal()">Zrušit</button></div>`;
   else if (!inRoom) {
     const can = G.scene === 'town';
     body = `<p class="muted small">Hrajte spolu podzemí (2–4 hráči). Každý hraje se svou postavou, zkušenosti, zlato a kořist se ukládají každému zvlášť.
