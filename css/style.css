@@ -207,7 +207,7 @@ body.touch-ui .hud-btns button { min-width: 38px; min-height: 34px; }
 .smith-row canvas { width: 24px; height: 24px; image-rendering: pixelated; }
 .durbar { height: 6px; background: var(--bg); border-radius: 3px; overflow: hidden; } .durbar div { height: 100%; }
 .rift-list { display: flex; flex-direction: column; gap: 6px; max-height: 55vh; overflow-y: auto; }
-.rift-row { display: grid; grid-template-columns: 80px 1fr; gap: 2px 12px; text-align: left; padding: 10px 12px; }
+.rift-row { display: grid; grid-template-columns: 112px 1fr; gap: 2px 12px; text-align: left; padding: 10px 12px; }
 .rift-row b { grid-row: span 2; font-size: 17px; align-self: center; color: #c8a0ff; }
 .rift-row span { font-size: 12px; color: var(--muted); } .rift-row .loot { color: #4fd05a; }
 .rift-row.top { border-color: var(--gold); }

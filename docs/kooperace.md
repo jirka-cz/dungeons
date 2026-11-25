@@ -7,7 +7,7 @@ Hráč si postavu vyexpí sám (jako dnes) a stejnou postavu pak použije ve spo
 | Etapa | Co | Stav |
 |---|---|---|
 | 1 | Jádro pro víc hrdinů (navenek beze změny), zesílení nepřátel, výběr úrovně riftu | **hotovo v 1.7.0** |
-| 2 | Založení a připojení do místnosti (kód místnosti) | čeká |
+| 2 | Založení a připojení do místnosti (kód místnosti), společné město, výběr úrovně s potvrzením ostatních | čeká |
 | 3 | Společný rift po síti: pohyb, souboj, XP a kořist každému zvlášť, zápis do uložení každého hráče | čeká |
 | 4 | Doladění: oživování spoluhráče, ukazatele spoluhráčů v HUD, odchod/příchod během riftu | čeká |
 
@@ -17,6 +17,7 @@ Hráč si postavu vyexpí sám (jako dnes) a stejnou postavu pak použije ve spo
 - **Prodleva** se schová předbíháním: vlastní pohyb a kouzla se ukážou hned, výsledek (poškození, smrt nepřítele) přijde od hostitele. O zásahu hráče rozhoduje jeho vlastní hra (spravedlivé uhýbání).
 - **Kořist každý svoje.**
 - **Po zabití bosse** se otevře portál do města (nikdo se nepřesouvá do další úrovně). Další úroveň u obelisku se odemkne všem hrdinům v riftu.
+- **Výběr úrovně v družině:** úroveň u obelisku může vybrat **kdokoli**. Vybere ji a potvrdí, ostatním vyskočí okno „Hráč X chce do Podzemí N“ s informací o úrovni (síla nepřátel, kořist) a tlačítky **Přijmout / Odmítnout**. Do podzemí se jde, až všichni přijmou. Výchozí doplnění (lze změnit): vybírá se z úrovní, které má odemčené ten, kdo vybírá; odmítnutí kýmkoli návrh zruší a navrhovatel uvidí, kdo odmítl; bez odpovědi do 30 s = odmítnuto; naráz běží jen jeden návrh. Patří do etapy 2.
 - **Společné město** je žádoucí – zařadit do etapy 2/3 (hráči se vidí ve městě, obchod/kovář/truhla zůstávají každému zvlášť, rift spouští hostitel u obelisku).
 
 ## Pravidla (platí od 1.7.0)

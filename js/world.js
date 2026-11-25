@@ -140,7 +140,7 @@ function genTown() {
   W.npcs = [
     { id: 'vendor', name: 'Obchodník', x: 7 * TILE + 8, y: 10 * TILE + 8, sprite: 'human', pal: { b: '#3a7a4a', d: '#24502e', h: '#c8c8c8' } },
     { id: 'smith', name: 'Kovář', x: 32 * TILE + 8, y: 10 * TILE + 8, sprite: 'dwarf', pal: { b: '#5a3a1a', m: '#5a5a5a', M: '#3a3a3a' } },
-    { id: 'obelisk', name: 'Obelisk riftů', x: 20 * TILE, y: 12 * TILE + 4, obj: true },
+    { id: 'obelisk', name: 'Obelisk podzemí', x: 20 * TILE, y: 12 * TILE + 4, obj: true },
     { id: 'stash', name: 'Truhla', x: 16 * TILE + 8, y: 17 * TILE, obj: true }
   ];
   W.spawn = { x: 20 * TILE, y: 15 * TILE };

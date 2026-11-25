@@ -125,7 +125,7 @@ const TALENTS = {
       Ci: tP('Štítonoš', 'Se štítem +5 % blok a +2 obrana.', 2, { sh_block: 0.05, sh_def: 2 }),
       CS3e: tE('Zesílené Zemětřesení', 'Zemětřesení +30 % plocha a zasažení jsou 4 s zranitelní.', { skr_quake: 0.3, skvuln_quake: 4 }),
       Cj: tP('Druhý dech', '+0,3 % života za sekundu.', 2, { regen: 0.003 }),
-      Ck: tC(['Nezlomný', 'Jednou za rift vstaneš z mrtvých se 40 % života.', { rebirth: 1 }], ['Krvavý obchod', '+3 % vysávání života.', { ls: 0.03 }])
+      Ck: tC(['Nezlomný', 'Jednou v každém podzemí vstaneš z mrtvých se 40 % života.', { rebirth: 1 }], ['Krvavý obchod', '+3 % vysávání života.', { ls: 0.03 }])
     } },
     specs: [
       { id: 'fury', name: 'Zuřivost', icon: '⚔', desc: 'Dvě zbraně, rozzuření a nekonečná smršť seků.', nodes: {
@@ -210,7 +210,7 @@ const TALENTS = {
       Ci: tP('Arkánní ozvěna', '+6 % šance, že základní útok vystřelí dvakrát.', 2, { doubleChance: 0.06 }),
       CS3e: tE('Zesílená Arkánní koule', 'Výbuch Arkánní koule +30 % plocha.', { skr_aorb: 0.3 }),
       Cj: tP('Mana z duší', 'Zabití obnoví 4 many.', 2, { killRes: 4 }),
-      Ck: tC(['Zastavený čas', 'Jednou za rift tě smrtelný zásah nezabije (vstaneš se 40 % života).', { rebirth: 1 }], ['Arkánní moc', '+15 % poškození dovedností (mimo základní útok).', { skillPct: 0.15 }])
+      Ck: tC(['Zastavený čas', 'Jednou v každém podzemí tě smrtelný zásah nezabije (vstaneš se 40 % života).', { rebirth: 1 }], ['Arkánní moc', '+15 % poškození dovedností (mimo základní útok).', { skillPct: 0.15 }])
     } },
     specs: [
       { id: 'fire', name: 'Oheň', icon: '🔥', desc: 'Výbuchy, hoření a kritické zásahy.', nodes: {
@@ -235,7 +235,7 @@ const TALENTS = {
         Pg: tP('Ohnivá mysl', 'Kritický zásah obnoví 2 many.', 2, { critRes: 2 }),
         S5e: tE('Zesílené Spalování', 'Spalování trvá o 4 s déle.', { skdur_combust: 4 }),
         S4c: tC(['Meteorický roj', 'Meteor má o 2 s kratší přebíjení.', { skcd_meteor: 2 }], ['Pád hvězdy', 'Meteor +40 % poškození.', { skd_meteor: 0.4 }]),
-        Ph: tC(['Fénix', 'Jednou za rift povstaneš z popela se 40 % života.', { rebirth: 1 }], ['Pyromanie', '+8 % ohnivé poškození a +3 % krit. šance.', { firePct: 0.08, crit: 0.03 }]),
+        Ph: tC(['Fénix', 'Jednou v každém podzemí povstaneš z popela se 40 % života.', { rebirth: 1 }], ['Pyromanie', '+8 % ohnivé poškození a +3 % krit. šance.', { firePct: 0.08, crit: 0.03 }]),
         S5c: tC(['Vzplanutí', 'Spalování má o 8 s kratší přebíjení.', { skcd_combust: 8 }], ['Ohnivá bouře', 'Během Spalování +20 % útok.', { combust_atkPct: 0.2 }]),
         Pi: tP('Vytrvalé plameny', 'Poškození v čase trvá o 1 s déle.', 2, { dotDur: 1 }),
         Pj: tP('Plamenný mág', '+5 % ohnivé poškození.', 2, { firePct: 0.05 }),
@@ -295,7 +295,7 @@ const TALENTS = {
       Ci: tP('Duševní pouto', 'Zabití obnoví 4 many.', 2, { killRes: 4 }),
       CS3e: tE('Zesílená Kataklyzma', 'Kataklyzma +25 % plocha a o 3 s kratší přebíjení.', { skr_cataclysm: 0.25, skcd_cataclysm: 3 }),
       Cj: tP('Krutost', '+8 % krit. poškození.', 2, { critDmg: 0.08 }),
-      Ck: tC(['Kámen duše', 'Jednou za rift vstaneš z mrtvých se 40 % života.', { rebirth: 1 }], ['Pakt s temnotou', '+15 % poškození dovedností (mimo základní útok).', { skillPct: 0.15 }])
+      Ck: tC(['Kámen duše', 'Jednou v každém podzemí vstaneš z mrtvých se 40 % života.', { rebirth: 1 }], ['Pakt s temnotou', '+15 % poškození dovedností (mimo základní útok).', { skillPct: 0.15 }])
     } },
     specs: [
       { id: 'aff', name: 'Kletby', icon: '☣', desc: 'Kletby, mor a pomalá smrt, která se šíří.', nodes: {
@@ -380,7 +380,7 @@ const TALENTS = {
       Ci: tP('Polní ošetření', '+0,3 % života za sekundu.', 2, { regen: 0.003 }),
       CS3e: tE('Zesílená Mrazivá past', 'Mrazivá past +30 % plocha a o 2 s kratší přebíjení.', { skr_ftrap: 0.3, skcd_ftrap: 2 }),
       Cj: tP('Stopař', '+10 % zlata a šance na předmět.', 2, { goldPct: 0.10, dropPct: 0.10 }),
-      Ck: tC(['Hra na mrtvého', 'Jednou za rift přežiješ smrtelný zásah (vstaneš se 40 % života).', { rebirth: 1 }], ['Lovecký instinkt', '+15 % poškození dovedností (mimo základní útok).', { skillPct: 0.15 }])
+      Ck: tC(['Hra na mrtvého', 'Jednou v každém podzemí přežiješ smrtelný zásah (vstaneš se 40 % života).', { rebirth: 1 }], ['Lovecký instinkt', '+15 % poškození dovedností (mimo základní útok).', { skillPct: 0.15 }])
     } },
     specs: [
       { id: 'mm', name: 'Lučištník', icon: '🎯', desc: 'Přesné šípy z dálky, průraz a popravy.', nodes: {
@@ -465,7 +465,7 @@ const TALENTS = {
       Ci: tP('Kořenitá obrana', '+3 obrana.', 2, { def: 3 }),
       CS3e: tE('Zesílená Dubová kůra', 'Dubová kůra trvá o 4 s déle.', { skdur_bark: 4 }),
       Cj: tP('Silný ent', '+15 % síla mazlíčků.', 2, { petPct: 0.15 }),
-      Ck: tC(['Znovuzrození', 'Jednou za rift vstaneš z mrtvých se 40 % života.', { rebirth: 1 }], ['Dar přírody', '+15 % poškození dovedností (mimo základní útok).', { skillPct: 0.15 }])
+      Ck: tC(['Znovuzrození', 'Jednou v každém podzemí vstaneš z mrtvých se 40 % života.', { rebirth: 1 }], ['Dar přírody', '+15 % poškození dovedností (mimo základní útok).', { skillPct: 0.15 }])
     } },
     specs: [
       { id: 'balance', name: 'Rovnováha', icon: '🌙', desc: 'Síla měsíce a hvězd z dálky.', nodes: {

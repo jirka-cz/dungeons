@@ -70,7 +70,7 @@ function spawnBoss(forceId) {
   ringFx(m.x, m.y, 70, '#ff4040', 0.8, 3); ringFx(m.x, m.y, 40, '#ffb060', 0.6, 2);
   beamFx(m.x, m.y, BOSS_LOOK[id].color, 0.9, 26);
   shake(5);
-  G.bannerBig = { text: B.name, sub: 'Strážce riftu', t: 0, color: '#ff6060' };
+  G.bannerBig = { text: B.name, sub: 'Strážce podzemí', t: 0, color: '#ff6060' };
   const AI = BOSS_AI[id];
   if (AI && AI.start) AI.start(m);
 }

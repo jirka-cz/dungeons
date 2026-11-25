@@ -72,10 +72,10 @@ function updateHud() {
   // horní panel
   if (G.scene === 'rift') {
     const R = G.rift;
-    $('area-name').textContent = `Rift ${R.level} · ${THEMES[R.theme].name}`;
+    $('area-name').textContent = `Podzemí ${R.level} · ${THEMES[R.theme].name}`;
     $('progress-wrap').hidden = false;
     $('progress-bar').style.width = riftProgressPct() + '%';
-    $('progress-txt').textContent = R.done ? 'Dokončeno – vstup do portálu' : R.bossSpawned ? 'Strážce riftu!' : `${riftProgressPct()} %`;
+    $('progress-txt').textContent = R.done ? 'Dokončeno – vstup do portálu' : R.bossSpawned ? 'Strážce podzemí!' : `${riftProgressPct()} %`;
     const b = R.boss;
     $('boss-wrap').hidden = !b;
     document.body.classList.toggle('boss-fight', !!b);

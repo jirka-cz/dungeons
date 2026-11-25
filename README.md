@@ -52,6 +52,7 @@ Město (obchodník, kovář, truhla, obelisk) → rift zvolené úrovně → pln
 - `PROJEKT.md` a `docs/` – dokumentace pro další vývoj
 
 ## Verze
+- **1.7.2** – rifty se ve hře jmenují „Podzemí“ (obelisk, HUD, okna, talenty, kalkulačka).
 - **1.7.1** – oprava: Ledová koule konečně rozstřikuje ledové úlomky; louže po dechu Pekelného démona a Gorgula (a další zóny vzniklé během jiných útoků) se už neztrácejí.
 - **1.7.0** – příprava na hru více hráčů: jádro hry počítá s více hrdiny v riftu (zatím jen interně, hraje se dál sám), každý další hráč přidá +10 % nepřátel, jejich života a poškození; obelisk nabízí nejvyšší odemčený, poslední dokončený nebo libovolný dokončený rift.
 - **1.6.1** – oprava: na malých mapách bylo občas málo nepřátel na 100 % postupu a boss se neobjevil; teď se nepřátelé vždy rozmístí a když přesto dojdou, boss se objeví i tak.

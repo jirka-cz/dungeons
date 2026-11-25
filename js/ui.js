@@ -69,7 +69,7 @@ function showMenu() {
     <div class="char-card ${i === G.save.current ? 'sel' : ''}" onclick="selectChar(${i})" ondblclick="playChar(${i})">
       <canvas width="64" height="64" data-race="${c.race}" data-cls="${c.cls}"></canvas>
       <div><b>${c.name}</b><div class="muted small">${RACES[c.race].name} – ${CLASSES[c.cls].name}</div>
-      <div class="small">Úroveň ${c.level} · rift ${c.maxRift}</div></div>
+      <div class="small">Úroveň ${c.level} · podzemí ${c.maxRift}</div></div>
       <button class="ghost del" onclick="event.stopPropagation();deleteChar(${i})" aria-label="Smazat">✕</button>
     </div>`).join('') || '<p class="muted">Zatím nemáš žádnou postavu.</p>';
   $('menu-play').hidden = !chars.length;
@@ -127,7 +127,7 @@ function showGameMenu() {
   const inRift = G.scene === 'rift';
   showModal(`<h2>Menu</h2><div class="menu-list">
     ${inRift ? `<button class="primary" onclick="closeMenu();startRecall()">⌂ Teleport do města (5 s)</button>
-      <p class="muted small" style="margin:-4px 0 4px;text-align:center">${G.rift.done ? 'Rift je dokončený.' : 'Rozehraný rift propadne.'} Pohyb nebo útok teleport přeruší.</p>` : ''}
+      <p class="muted small" style="margin:-4px 0 4px;text-align:center">${G.rift.done ? 'Podzemí je dokončené.' : 'Rozehrané podzemí propadne.'} Pohyb nebo útok teleport přeruší.</p>` : ''}
     <button onclick="closeMenu()">Pokračovat</button>
     <button onclick="showCharacter()">Postava a batoh (I)</button>
     <button onclick="showTalents()">Talenty a dovednosti (K)</button>
@@ -138,7 +138,7 @@ function showGameMenu() {
 }
 
 function confirmToMenu() {
-  askConfirm('Odejít na výběr postav?' + (G.scene === 'rift' ? ' Rozehraný rift propadne.' : ''), 'Odejít', () => { persist(); showMenu(); });
+  askConfirm('Odejít na výběr postav?' + (G.scene === 'rift' ? ' Rozehrané podzemí propadne.' : ''), 'Odejít', () => { persist(); showMenu(); });
 }
 
 // ---------- Předměty ----------
@@ -214,7 +214,7 @@ function charStatsHtml(st) {
       const tip = `${ATTRS[k].name}: ${ATTRS[k].desc}` + (isMain ? ` Tvůj hlavní atribut: +${Math.round(st.mainVal)} % útoku.` : '');
       return `<div class="${isMain ? 'main' : ''}" data-tip="${tip}"><span>${ATTRS[k].name}${isMain ? ' ★' : ''}</span><b>${v}</b></div>`;
     }).join('')}</div>
-    <div class="xpline">Úroveň <b>${ch.level}</b> · ${fmt(ch.xp)} / ${fmt(need)} XP · nejvyšší rift <b>${ch.maxRift}</b></div>`;
+    <div class="xpline">Úroveň <b>${ch.level}</b> · ${fmt(ch.xp)} / ${fmt(need)} XP · nejvyšší podzemí <b>${ch.maxRift}</b></div>`;
   const C = CLASSES[ch.cls], caster = isCasterClass(ch.cls);
   const regenTxt = st.resRegen > 0 ? `+${st.resRegen.toFixed(1).replace('.', ',')} / s` : `útoky +${P(st.genMul - 1)}`;
   const basic = statRows([
@@ -351,8 +351,8 @@ function showVendor() {
       <button class="primary" onclick="buyItem(${it.uid});UI.sel=null;showVendor()">Koupit za ${fmt(it.price)} ${GI}</button>
       ${b.slot ? `<button onclick="buyItem(${it.uid},'${b.slot}');UI.sel=null;showVendor()">Koupit a nasadit</button>` : ''}</div>`);
   } else if (it) det = itemHtml(it, `<div class="item-act"><button onclick="sellItem('inv',${it.uid});UI.sel=null;showVendor()">Prodat +${fmt(sellValue(it))} ${GI}</button></div>`);
-  showModal(`<h2>Obchodník <span class="muted small">zboží pro třídu ${CLASSES[G.char.cls].name}, úroveň riftu ${G.char.maxRift}</span></h2>
-    <p>Máš <b class="gold">${fmt(G.save.gold)} ●</b>. Zboží se obnoví po každém návratu z riftu.</p>
+  showModal(`<h2>Obchodník <span class="muted small">zboží pro třídu ${CLASSES[G.char.cls].name}, úroveň podzemí ${G.char.maxRift}</span></h2>
+    <p>Máš <b class="gold">${fmt(G.save.gold)} ●</b>. Zboží se obnoví po každém návratu z podzemí.</p>
     <div class="two-bags">
       <div><div class="bag-head"><b>Zboží</b></div><div class="bag shop" data-drop="sell">${cells || '<p class="muted small">Vyprodáno.</p>'}</div>
         <div class="sell-zone big" data-drop="sell">Sem přetáhni pro prodej ${GI}</div></div>
@@ -390,11 +390,11 @@ function showRiftSelect() {
   const ch = G.char, max = ch.maxRift, done = max - 1;
   UI.riftSel = clamp(UI.riftSel || done || 1, 1, max);
   const row = (L, note, top) => `<button class="rift-row ${top ? 'top' : ''}" onclick="hideModal();startRift(${L})">
-      <b>Rift ${L}</b><span>${note}</span><span class="loot">${riftLootText(L)}</span></button>`;
-  const rows = [row(max, max > 1 ? 'Nejvyšší odemčený – posuň se dál' : 'První rift', true)];
-  if (done >= 1) rows.push(row(done, 'Poslední dokončený'));
+      <b>Podzemí ${L}</b><span>${note}</span><span class="loot">${riftLootText(L)}</span></button>`;
+  const rows = [row(max, max > 1 ? 'Nejvyšší odemčené – posuň se dál' : 'První podzemí', true)];
+  if (done >= 1) rows.push(row(done, 'Poslední dokončené'));
   const pick = max > 1 ? `<div class="rift-pick">
-      <div class="rp-head">Libovolný dokončený rift</div>
+      <div class="rp-head">Libovolné dokončené podzemí</div>
       <div class="rp-ctl">
         <button onclick="riftSelStep(-10)">−10</button><button onclick="riftSelStep(-1)">−</button>
         <input id="rift-lvl" type="number" inputmode="numeric" min="1" max="${max}" value="${UI.riftSel}" oninput="riftSelSet(this.value)" onkeydown="if(event.key==='Enter'){hideModal();startRift(UI.riftSel)}">
@@ -402,8 +402,8 @@ function showRiftSelect() {
         <button class="primary" onclick="hideModal();startRift(UI.riftSel)">Vstoupit</button>
       </div>
       <div id="rift-info" class="rp-info">${riftInfoText(UI.riftSel)}</div></div>` : '';
-  showModal(`<h2>Obelisk riftů</h2>
-    <p class="muted small">Zabíjej nepřátele, dokud se nenaplní ukazatel postupu. Pak se objeví strážce riftu, náhodný boss. Po jeho porážce se odemkne další úroveň.
+  showModal(`<h2>Obelisk podzemí</h2>
+    <p class="muted small">Zabíjej nepřátele, dokud se nenaplní ukazatel postupu. Pak se objeví strážce podzemí, náhodný boss. Po jeho porážce se odemkne další úroveň.
       Vyšší úroveň znamená silnější nepřátele, ale lepší kořist, víc zlata a zkušeností.</p>
     <div class="rift-list">${rows.join('')}</div>
     ${pick}
@@ -714,8 +714,8 @@ function showLegend() {
     ${row('M / Tab', 'Velká mapa.')}${row('T', 'Teleport do města (5 s, pohyb ho přeruší).')}${row('Esc', 'Menu s teleportem do města.')}
     <h3>Mobil</h3>
     ${row('Joystick vlevo', 'Pohyb.')}${row('Automaticky', 'Základní útok sám míří na nejbližšího nepřítele v dosahu.')}${row('Velké tlačítko', 'Drž = dojdi k nejbližšímu nepříteli a útoč.')}${row('Kolečka', 'Dovednosti, lektvar a portál.')}
-    <h3>Rift</h3>
-    ${row('Ukazatel nahoře', 'Postup riftu. Elitní nepřátelé dávají víc. Na 100 % se objeví strážce riftu.')}
+    <h3>Podzemí</h3>
+    ${row('Ukazatel nahoře', 'Postup v podzemí. Elitní nepřátelé dávají víc. Na 100 % se objeví strážce podzemí.')}
     ${row('<span style="color:#ff3030">Červený kruh</span>', 'Varování: sem za chvíli dopadne útok. Uteč!')}
     ${row('<span style="color:#7aa0ff">Modré jméno</span>', 'Elitní nepřítel se schopnostmi, víc života, lepší kořist.')}
     ${row('<span style="color:#ff5050">●</span>', 'Koule zdraví: seber ji a vyléčíš se.')}
@@ -728,7 +728,7 @@ function showLegend() {
     ${row('Běsnění', 'Po 2 minutách boss útočí rychleji a silněji.')}
     ${Object.values(BOSSES).map(B => row(`<b>${B.name}</b>`, B.desc)).join('')}
     <h3>Elementy</h3>${Object.keys(ELEMENTS).map(k => row(`<span style="color:${ELEMENTS[k].color}">${ELEMENTS[k].icon}</span>`, `<b>${ELEMENTS[k].name}</b>${k === 'phys' ? ' – tlumí ho zbroj' : k === 'chaos' ? ' – ignoruje zbroj i odolnosti' : ''}`)).join('')}
-    <h3>Rarity</h3>${RARITY_ORDER.map(r => row(`<span style="color:${RARITIES[r].color}">■</span>`, `<b style="color:${RARITIES[r].color}">${RARITIES[r].name}</b> – od riftu ${RARITIES[r].minRift}${r === 'orange' || r === 'diamond' ? ', jen pro určité třídy' : ''}`)).join('')}
+    <h3>Rarity</h3>${RARITY_ORDER.map(r => row(`<span style="color:${RARITIES[r].color}">■</span>`, `<b style="color:${RARITIES[r].color}">${RARITIES[r].name}</b> – od podzemí ${RARITIES[r].minRift}${r === 'orange' || r === 'diamond' ? ', jen pro určité třídy' : ''}`)).join('')}
     <h3>Atributy a zbroj</h3>${ATTR_ORDER.map(k => row(`<b>${ATTRS[k].short}</b>`, `<b>${ATTRS[k].name}</b>: ${ATTRS[k].desc}`)).join('')}
     ${row('★', 'Hlavní atribut tvé třídy navíc přidá +1 % útoku za bod.')}
     ${Object.values(ARMOR_WEIGHT).map(w => row('🛡', `<b>${w.name}</b>: ${w === ARMOR_WEIGHT.heavy ? 'víc obrany (válečník)' : 'méně obrany, ale odolnosti proti živlům (kouzelníci)'}. Nosit může každý.`)).join('')}

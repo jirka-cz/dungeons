@@ -20,7 +20,7 @@
 ## HUD a okna
 - **HUD:** koule života a zdroje, XP lišta, lišta dovedností (SVG ikony), buffy, ukazatel postupu riftu, tlačítka Postava / Talenty / Celá obrazovka / Menu. Na tlačítku Talenty svítí tečka, když jsou volné body.
 - **Okna** (`showModal` v `js/ui.js`):
-  - Menu, Tvorba postavy, Herní menu, Postava, Talenty, Obchod, Kovář, Truhla, Volba riftu, Nastavení, Legenda;
+  - Menu, Tvorba postavy, Herní menu, Postava, Talenty, Obchod, Kovář, Truhla, Volba podzemí (obelisk), Nastavení, Legenda;
   - každé má nahoře křížek ✕.
 - **Nastavení:**
   - zvuk;

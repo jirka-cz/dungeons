@@ -7,7 +7,7 @@ Tohle je hlavní vstupní bod pro každý nový chat s Claudem. Popisuje, co hra
 - Hraje se na počítači i na mobilu (na výšku i na šířku).
 - Zdarma pro kamarády. Každý má vlastní uložené postavy v prohlížeči (localStorage) a může je přenést exportním kódem.
 - Autor (Jirka) neprogramuje. Všechno vzniká přes zadání v češtině, Claude píše kód, testuje ho a vysvětluje změny srozumitelně.
-- Aktuální verze: **1.7.1** (konstanta `GAME_VERSION` v `js/data.js`).
+- Aktuální verze: **1.7.2** (konstanta `GAME_VERSION` v `js/data.js`).
 
 ## Kde hra běží
 | Co | Kde |
@@ -72,6 +72,7 @@ Každé větší téma má vlastní dokument a vlastní chat (viz `docs/CHATY.md
 - **Omezení rasa/třída:** člověk bez černokněžníka a druida; trpaslík bez mága, černokněžníka a druida; elf bez černokněžníka a válečníka; ork bez druida a mága; nemrtvý bez lovce a druida.
 - **Na mobilu se útočí automaticky na nejbližšího nepřítele.**
 - **Kooperace:** 2–4 hráči. Každý další hráč = +10 % nepřátel, jejich života a poškození. Postava se vyexpí sólo a stejná se použije ve společné hře. Kořist každý svoje. Po bossovi portál do města (žádný přesun dál) a další úroveň se odemkne všem v riftu.
+- **Rifty se ve hře jmenují „Podzemí“** (rod střední: „Podzemí 12“, „Podzemí dokončeno!“, „strážce podzemí“). V kódu a dokumentaci zůstává slovo rift.
 - **Texty ve hře jsou česky** a stručné. V okně talentů nepsat zbytečné nápovědy („Odemyká“, „Nejkratší cesta“ apod.).
 
 ## Jak pracovat (pro Clauda)
