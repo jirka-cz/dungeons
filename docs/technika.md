@@ -33,6 +33,8 @@ Předpoklady: Node.js a Python s Playwrightem (`pip install playwright` a `pytho
 | `tests/mobauto.py`, `mob2.py` | dotykové ovládání a automatický útok |
 | `tests/flows.py`, `panels.py` | průchod menu a okny |
 | `tests/racecls.py`, `autosell.py`, `shrine.py` | omezení rasa/třída, automatický prodej, svatyně |
+| `tests/bossfight.py` | souboje s každým bossem dvěma styly – „stand“ (jen stojí) a „dodge“ (uhýbá); vypíše čas, smrti, lektvary. Volba `dbg` vypíše poškození podle útoků |
+| `tests/bosses_shots.py` | snímky všech bossů (nástup, velký útok, 2. fáze); `mobile` = telefon na výšku |
 | `tests/items.py` | atributy, váha zbroje, legendárky a sety podle tříd, chytrá kořist, migrace, snímky okna postavy |
 
 ## Nasazení

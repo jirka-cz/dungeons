@@ -88,6 +88,10 @@ function drawVfx(g) {
         light(v.x, v.y, 40, v.color); break;
       case 'line':
         g.lineWidth = v.w; g.beginPath(); g.moveTo(v.x, v.y); g.lineTo(v.x1, v.y1); g.stroke(); break;
+      case 'ghost':   // přízračná kopie spritu (teleport, výpad, stín)
+        g.globalAlpha = (1 - p) * 0.5;
+        drawSprite(g, v.sprite, Math.round(v.x - 8 * v.scale), Math.round(v.y - 16 * v.scale + 1), v.scale, { flip: v.flip, palOverride: v.pal, tint: v.color, alpha: (1 - p) * 0.5 });
+        break;
       case 'flash':
         g.globalAlpha = (1 - p) * 0.6; g.beginPath(); g.arc(v.x, v.y, v.r, 0, Math.PI * 2); g.fill(); break;
     }

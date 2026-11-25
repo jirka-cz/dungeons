@@ -7,7 +7,7 @@ Tohle je hlavní vstupní bod pro každý nový chat s Claudem. Popisuje, co hra
 - Hraje se na počítači i na mobilu (na výšku i na šířku).
 - Zdarma pro kamarády. Každý má vlastní uložené postavy v prohlížeči (localStorage) a může je přenést exportním kódem.
 - Autor (Jirka) neprogramuje. Všechno vzniká přes zadání v češtině, Claude píše kód, testuje ho a vysvětluje změny srozumitelně.
-- Aktuální verze: **1.5.0** (konstanta `GAME_VERSION` v `js/data.js`).
+- Aktuální verze: **1.6.0** (konstanta `GAME_VERSION` v `js/data.js`).
 
 ## Kde hra běží
 | Co | Kde |
@@ -28,7 +28,7 @@ Každé větší téma má vlastní dokument a vlastní chat (viz `docs/CHATY.md
 | Talenty | `docs/talenty.md` | stromy, uzly, body, okno talentů, kalkulačka |
 | Postavy | `docs/postavy.md` | rasy, třídy, dovednosti, mazlíčci, úrovně, staty |
 | Město | `docs/mesto.md` | obchodník, kovář, truhla, obelisk, odolnost |
-| Dungeony | `docs/dungeony.md` | rifty, mapy, nepřátelé, elity, bossové, svatyně, obtížnost |
+| Dungeony | `docs/dungeony.md` | rifty, mapy, nepřátelé, elity, bossové a jejich mechaniky, svatyně, obtížnost |
 | Předměty | `docs/predmety.md` | rarity, atributy, zbroj, afixy, legendárky a sety podle tříd, chytrá kořist, automatický prodej |
 | Rozhraní | `docs/rozhrani.md` | ovládání PC/mobil, HUD, okna, nastavení, celá obrazovka |
 | Technika | `docs/technika.md` | engine, ukládání a migrace, testy, nasazení, verze |
@@ -36,7 +36,7 @@ Každé větší téma má vlastní dokument a vlastní chat (viz `docs/CHATY.md
 ## Struktura kódu
 Čisté HTML + JavaScript + CSS, bez knihoven a bez sestavování. Skripty jsou globální (bez modulů) a načítají se v tomto pořadí (`index.html`):
 
-`data → classes → talents → icons → items → sprites → world → fx → sfx → save → entities → skills → rift → inventory → ui → hud → engine`
+`data → classes → talents → icons → items → sprites → world → fx → sfx → save → entities → skills → rift → bosses → inventory → ui → hud → engine`
 
 | Soubor | Role |
 |---|---|
@@ -51,7 +51,8 @@ Každé větší téma má vlastní dokument a vlastní chat (viz `docs/CHATY.md
 | `js/save.js` | ukládání, migrace starších uložení, export/import |
 | `js/entities.js` | výpočet statů, souboj, AI nepřátel, mazlíčci, projektily, kořist, XP |
 | `js/skills.js` | sesílání dovedností a jejich efekty |
-| `js/rift.js` | průběh riftu, strážce, smrt a oživení |
+| `js/rift.js` | průběh riftu, svatyně, konec souboje s bossem, smrt a oživení |
+| `js/bosses.js` | bossové: výběr, fáze, štít, vyčerpání, přerušení, běsnění, útoky, mechaniky a animace |
 | `js/inventory.js` | výbava, batoh, truhla, obchod, oprava |
 | `js/ui.js` | okna (menu, postava, talenty, obchod, nastavení…) |
 | `js/hud.js` | HUD, lišta dovedností, dotykové ovládání |

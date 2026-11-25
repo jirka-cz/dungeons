@@ -176,6 +176,10 @@ function resFactor(m, elem, st, extraPen) {
 function dealDamage(m, raw, elem, o = {}) {
   if (!m || m.dead) return 0;
   const st = G.st;
+  if (m.immune) {   // boss nebo objekt je nezranitelný
+    if (!(m.immTxtT > G.time)) { m.immTxtT = G.time + 0.6; floatText(m.x, m.y - m.r * 2 - 6, 'Nezranitelný', '#a0a0b0', 0.9); }
+    m.hitT = 0.06; return 0;
+  }
   raw *= st.elemMul[elem] || 1;
   if (m.hp < m.maxHp * 0.3) raw *= 1 + st.execPct;
   if (m.stunT > 0) raw *= 1 + st.stunDmg;
@@ -183,8 +187,19 @@ function dealDamage(m, raw, elem, o = {}) {
   if (fam && st.vs[fam]) raw *= 1 + st.vs[fam];
   if ((m.elite || m.boss) && st.eliteDmg) raw *= 1 + st.eliteDmg;
   if (m.vulnT > 0) raw *= 1.2 + (st.mods.vulnPct || 0);
-  const dmg = Math.max(1, Math.round(raw * rand(0.9, 1.1) * resFactor(m, elem, st, o.armorPen)));
+  if (m.exposedT > 0) raw *= BOSS_EXPOSED_MUL;   // vyčerpaný boss
+  if (m.dr) raw *= 1 - m.dr;                     // ochrana (např. od kostlivců Kostěného krále)
+  let dmg = Math.max(1, Math.round(raw * rand(0.9, 1.1) * resFactor(m, elem, st, o.armorPen)));
+  if (m.shield > 0) {   // štít pohltí poškození
+    const a = Math.min(m.shield, dmg);
+    m.shield -= a; dmg -= a;
+    m.hitT = 0.12;
+    if (!o.dot) floatText(m.x, m.y - m.r * 2 - 6, fmt(a), '#c8c8d0', 0.9);
+    if (m.shield <= 0 && m.boss) bossShieldBroken(m);
+    if (dmg <= 0) return a;
+  }
   m.hp -= dmg;
+  if (m.boss) { if (m.channel) m.channel.dmg += dmg; bossClampHp(m); }
   m.hitT = 0.12;
   m.aggro = true;
   if (!o.dot) m.knock = 0.08;
@@ -241,7 +256,9 @@ function slowMonster(m, pct, dur) {
   m.slowT = Math.max(m.slowT, dur);
 }
 function stunMonster(m, dur, kind) {
-  if (m.dead || m.stunImm > 0) return;
+  if (m.dead) return;
+  if (m.boss && m.channel) bossInterrupt(m);
+  if (m.stunImm > 0 || m.obj || m.immune || (m.boss && m.act && m.act.lock)) return;
   if (m.boss) dur *= 0.4;
   m.stunT = dur; m.stunImm = dur + 1.2; m.stunKind = kind;
   m.wind = 0;
@@ -257,7 +274,7 @@ function healHero(n, quiet) {
 }
 
 // Zasažení hrdiny
-function hurtHero(raw, elem, src) {
+function hurtHero(raw, elem, src, pctHp) {
   const h = G.hero, st = G.st;
   if (h.dead || h.invuln > 0 || G.scene !== 'rift') return 0;
   if (Math.random() < st.dodge) { floatText(h.x, h.y - 20, 'Úhyb', '#9fd3ff', 0.9); return 0; }
@@ -265,6 +282,7 @@ function hurtHero(raw, elem, src) {
   const def = Math.max(0, st.def) * (elem === 'phys' ? 1 : 0.5);
   const res = elem === 'phys' ? 0 : (st.res[elem] || 0);
   let dmg = raw * rand(0.9, 1.1) * (k / (k + def)) * (1 - res) * st.dmgTaken;
+  if (pctHp) dmg += st.maxHp * pctHp * (1 - res) * st.dmgTaken;
   if (src && (src.elite || src.boss)) dmg *= st.eliteTaken;
   let blocked = false;
   if (Math.random() < st.block) { dmg *= 0.5; blocked = true; }
@@ -272,6 +290,7 @@ function hurtHero(raw, elem, src) {
     const absorb = Math.min(dmg * Math.min(0.9, st.mods.manaShield), h.res * 2);
     h.res -= absorb / 2; dmg -= absorb;
   }
+  if (!isFinite(dmg)) return 0;   // pojistka proti chybným číslům
   dmg = Math.max(1, Math.round(dmg));
   h.hp -= dmg;
   h.hitT = 0.15;
@@ -356,6 +375,8 @@ function killMonster(m) {
   // odměny
   const L = G.rift.level;
   gainXP(m.xp * 2.5 * riftMult(RIFT.xp, L) * st.xpMul);
+  if (m.onDeath) m.onDeath(m);
+  if (m.obj) { if (Math.random() < 0.25) G.loot.push({ kind: 'globe', x: m.x, y: m.y, t: 0 }); return; }
   if (!m.minion || Math.random() < 0.3) dropGold(m.x, m.y, m.gold * st.goldMul * rand(0.7, 1.3) * (m.boss ? 15 : 1));
   if (!m.boss) addProgress(m.pts);
   const dropC = (m.elite ? RIFT.eliteDrop : RIFT.dropChance) * st.dropMul * (1 + RIFT.dropPerLevel * L);
@@ -425,7 +446,7 @@ function monsterShoot(m, tx, ty, o = {}) {
   G.projs.push({
     x: m.x, y: m.y, vx: Math.cos(a), vy: Math.sin(a), speed: o.speed || P.speed || 140, dmg: o.dmg || m.atk, elem: o.elem || P.elem || m.atkElem,
     size: o.size || 2, color: o.color || P.color || ELEMENTS[m.atkElem].color, friendly: false, range: o.range || 260, traveled: 0, owner: m, arrow: m.type === 'archer',
-    pool: o.pool, slow: o.slow
+    pool: o.pool, slow: o.slow, pct: o.pct, seek: o.seek, hook: o.hook, burst: o.burst, chain: o.chain, orbFx: o.orbFx, trail: o.orbFx
   });
 }
 
@@ -440,6 +461,7 @@ function updateMonster(m, dt) {
     if (d.tick <= 0) { d.tick += 1; dealDamage(m, d.dps, d.elem, { dot: true }); if (m.dead) return; }
     if (d.t <= 0) delete m.dots[k];
   }
+  if (m.obj) return updateBossObject(m, dt);
   if (m.stunT > 0) return;
   const d = dist(m, h);
   if (!m.aggro && d < 150 && (m.fly || lineOfSight(G.world, m.x, m.y, h.x, h.y))) alertPack(m);
@@ -551,18 +573,19 @@ function dust(x, y) { if (Math.random() < 0.5) particle(x + rand(-3, 3), y, { vx
 
 // ---------- Nebezpečné zóny nepřátel (s varováním na zemi) ----------
 
-function hazard(o) { G.hazards.push(Object.assign({ t: 0, dur: 0, tickT: 0 }, o)); }
+function hazard(o) { const z = Object.assign({ t: 0, dur: 0, tickT: 0 }, o); G.hazards.push(z); return z; }
 function hazardLine(x, y, ang, len, delay) { G.hazards.push({ line: true, x, y, ang, len, t: 0, delay, dur: 0, dmg: 0 }); }
 
 function updateHazards(dt) {
-  const h = G.hero;
+  const h = G.hero, A = G.st.areaTaken;
+  const inside = z => dist(z, h) < z.r + h.r;
   G.hazards = G.hazards.filter(z => {
     z.t += dt;
     if (z.line) return z.t < z.delay;
     if (z.wave) {   // rozpínající se vlna (otřes)
       if (z.t < z.delay) return true;
       z.cur = (z.t - z.delay) * z.speed;
-      if (!z.hit && Math.abs(dist(z, h) - z.cur) < 7) { z.hit = true; hurtHero(z.dmg * G.st.areaTaken, z.elem, z.src); if (z.stun) freezeHero(z.stun); }
+      if (!z.hit && Math.abs(dist(z, h) - z.cur) < 7) { z.hit = true; hurtHero(z.dmg * A, z.elem, z.src, (z.pct || 0) * A); if (z.stun) freezeHero(z.stun); }
       return z.cur < z.maxR;
     }
     if (z.cone) {   // kužel (dech)
@@ -570,27 +593,46 @@ function updateHazards(dt) {
         z.fired = true;
         const d = dist(z, h), a = Math.atan2(h.y - z.y, h.x - z.x);
         const da = Math.abs(((a - z.ang + Math.PI * 3) % (Math.PI * 2)) - Math.PI);
-        if (d < z.len && da < z.arc / 2) hurtHero(z.dmg * G.st.areaTaken, z.elem, z.src);
-        for (let i = 0; i < 40; i++) { const aa = z.ang + rand(-z.arc / 2, z.arc / 2), s2 = rand(60, 200); particle(z.x, z.y - 8, { vx: Math.cos(aa) * s2, vy: Math.sin(aa) * s2, life: 0.5, color: pick([z.color, '#ffd060', '#ff4020']), size: 2, glow: true, drag: 0.92 }); }
+        if (d < z.len && da < z.arc / 2) hurtHero(z.dmg * A, z.elem, z.src, (z.pct || 0) * A);
+        for (let i = 0; i < 40; i++) { const aa = z.ang + rand(-z.arc / 2, z.arc / 2), s2 = rand(60, 200); particle(z.x, z.y - 8, { vx: Math.cos(aa) * s2, vy: Math.sin(aa) * s2, life: 0.5, color: pick([z.color, z.color2 || '#ffd060', z.color3 || '#ff4020']), size: 2, glow: true, drag: 0.92 }); }
         if (z.pools) for (let i = 1; i <= 3; i++) hazard({ x: z.x + Math.cos(z.ang) * z.len * i / 4, y: z.y + Math.sin(z.ang) * z.len * i / 4, r: 14, delay: 0, dur: 3, dps: z.dmg * 0.25, elem: z.elem, color: z.color, pool: true });
       }
       return z.t < z.delay + 0.1;
     }
+    if (z.safe) {   // bezpečná zóna: kdo je venku, dostane zásah
+      if (!z.fired && z.t >= z.delay) {
+        z.fired = true;
+        if (!inside(z)) { hurtHero(z.dmg, z.elem, z.src, z.pct || 0); if (z.freeze) freezeHero(z.freeze); }
+        else floatText(h.x, h.y - 28, 'V bezpečí', '#ffd890', 0.9);
+        if (z.onFire) z.onFire(z);
+      }
+      return z.t < z.delay + 0.3;
+    }
+    if (z.pillar) {   // sloup světla: smyje prokletí
+      if (h.curse && inside(z)) { h.curse.clean += dt; if (h.curse.clean > 0.5) { h.curse = null; floatText(h.x, h.y - 28, 'Prokletí smyto', '#fff0b0', 1); burst(h.x, h.y - 6, '#fff0b0', 24, 70, { glow: true }); } }
+      light(z.x, z.y - 10, 40, '#fff0b0');
+      if (Math.random() < dt * 10) particle(z.x + rand(-z.r, z.r) * 0.6, z.y, { vy: -50, life: 0.6, color: '#fff0b0', size: 1, glow: true });
+      return z.t < z.dur;
+    }
+    if (z.follow && z.t < z.delay + z.dur) {   // zóna, která pronásleduje hrdinu
+      const d = dist(z, h) || 1, mv = Math.min(d, z.follow * dt);
+      z.x += (h.x - z.x) / d * mv; z.y += (h.y - z.y) / d * mv;
+    }
     if (!z.fired && z.t >= z.delay) {
       z.fired = true;
-      if (z.dmg) {
-        if (dist(z, h) < z.r + h.r) { hurtHero(z.dmg * G.st.areaTaken, z.elem, z.src); if (z.freeze) freezeHero(z.freeze); if (z.slow) slowHero(z.slow, 3); }
-        burst(z.x, z.y, z.color, z.orb ? 16 : 22, 90, { glow: true });
-        ringFx(z.x, z.y, z.r, z.color, 0.3, 2);
-        if (z.r > 25) shake(1.5);
+      if (z.dmg || z.pct) {
+        if (inside(z)) { hurtHero(z.dmg * A, z.elem, z.src, (z.pct || 0) * A); if (z.freeze) freezeHero(z.freeze); if (z.slow) slowHero(z.slow, z.slowT || 3); if (z.onHit) z.onHit(z); }
+        if (!z.quiet) { burst(z.x, z.y, z.color, z.orb || z.spike ? 12 : 22, 90, { glow: !z.spike }); ringFx(z.x, z.y, z.r, z.color, 0.3, 2); }
+        if (z.r > 25 && !z.quiet) shake(1.5);
       }
+      if (z.onFire) z.onFire(z);
     }
     if (z.fired && z.dur > 0 && z.dps) {
       z.tickT -= dt;
-      if (z.tickT <= 0) { z.tickT = 0.5; if (dist(z, h) < z.r + h.r * 0.5) hurtHero(z.dps * 0.5 * G.st.areaTaken, z.elem, null); }
-      if (Math.random() < dt * 6) particle(z.x + rand(-z.r, z.r) * 0.7, z.y + rand(-z.r, z.r) * 0.5, { vy: -12, life: 0.5, color: z.color, size: 1, glow: z.elem === 'fire' });
+      if (z.tickT <= 0) { z.tickT = 0.5; if (dist(z, h) < z.r + h.r * 0.5) { hurtHero(z.dps * 0.5 * A, z.elem, null, (z.pctTick || 0) * A); if (z.slow) slowHero(z.slow, 1); } }
+      if (Math.random() < dt * 6) particle(z.x + rand(-z.r, z.r) * 0.7, z.y + rand(-z.r, z.r) * 0.5, { vy: -12, life: 0.5, color: z.color, size: 1, glow: z.elem === 'fire' || z.elem === 'shadow' });
     }
-    return z.t < z.delay + Math.max(z.dur, 0.05);
+    return z.t < z.delay + Math.max(z.dur, z.spike ? 0.45 : 0.05);
   });
 }
 
@@ -602,6 +644,11 @@ function slowHero(p, t) { G.hero.slowP = p; G.hero.slowT = t * (1 - (G.st.ccRed 
 function updateProjectiles(dt) {
   const W = G.world;
   G.projs = G.projs.filter(p => {
+    if (p.seek && !p.friendly) {   // nepřátelská střela, která tě sleduje
+      const h = G.hero, a = Math.atan2(h.y - p.y, h.x - p.x), cur = Math.atan2(p.vy, p.vx);
+      const da = ((a - cur + Math.PI * 3) % (Math.PI * 2)) - Math.PI, na = cur + clamp(da, -p.seek * dt, p.seek * dt);
+      p.vx = Math.cos(na); p.vy = Math.sin(na);
+    }
     if (p.homing) {
       const t = nearestMonster(p.x, p.y, 90);
       if (t) {
@@ -639,8 +686,10 @@ function updateProjectiles(dt) {
         }
       }
     } else if (!G.hero.dead && Math.hypot(G.hero.x - p.x, G.hero.y - p.y) < G.hero.r + p.size + 3) {
-      hurtHero(p.dmg * G.st.rangedTaken, p.elem, p.owner);
+      hurtHero(p.dmg * G.st.rangedTaken, p.elem, p.owner, (p.pct || 0) * G.st.rangedTaken);
       if (p.slow) slowHero(p.slow, 2);
+      if (p.hook && !p.hook.dead) bossHooked(p.hook);
+      if (p.burst) { burst(p.x, p.y, p.color, 20, 80, { glow: true }); ringFx(p.x, p.y, 18, p.color, 0.3, 2); }
       if (p.pool) hazard({ x: p.x, y: p.y + 6, r: 16, delay: 0, dur: 3, dps: p.dmg * 0.3, elem: p.elem, color: p.color, pool: true });
       sparks(p.x, p.y - 7, p.color, 6);
       return false;
@@ -668,7 +717,7 @@ function projEnd(p) {
 
 function nearestMonster(x, y, maxD, filter) {
   let best = null, bd = maxD;
-  G.monsters.forEach(m => { if (m.dead || (filter && !filter(m))) return; const d = Math.hypot(m.x - x, m.y - y); if (d < bd) { bd = d; best = m; } });
+  G.monsters.forEach(m => { if (m.dead || m.immune || (filter && !filter(m))) return; const d = Math.hypot(m.x - x, m.y - y); if (d < bd) { bd = d; best = m; } });
   return best;
 }
 function monstersIn(x, y, r) { return G.monsters.filter(m => !m.dead && Math.hypot(m.x - x, m.y - y) < r + m.r); }

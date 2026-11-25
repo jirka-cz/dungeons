@@ -2,7 +2,7 @@
 
 const G = {
   save: null, char: null, scene: 'menu', world: null, mapImg: null, hero: null, st: null, mods: null,
-  monsters: [], projs: [], zones: [], hazards: [], loot: [], pets: [], traps: [], lootLog: [],
+  monsters: [], projs: [], zones: [], hazards: [], loot: [], pets: [], traps: [], lootLog: [], offstage: [], decals: [], darkness: 0,
   flow: null, flowT: 0, exploreT: 0, saveT: 0, uiT: 0,
   rift: { level: 0 }, cam: { x: 0, y: 0 }, vw: VIEW_W, vh: VIEW_H, scale: 3, time: 0,
   input: { mx: 0, my: 0, l: false, r: false, lDownT: 0, keys: new Set(), joy: { x: 0, y: 0, on: false }, atk: false, shift: false },
@@ -116,7 +116,7 @@ function clickWorld(touch) {
 // Automatický cíl pro dotykové ovládání a klávesy bez kurzoru
 function autoTarget(range = 190) {
   const h = G.hero;
-  if (h.target && !h.target.dead && dist(h.target, h) < range) return h.target;
+  if (h.target && !h.target.dead && !h.target.immune && dist(h.target, h) < range) return h.target;
   const ok = m => lineOfSight(G.world, h.x, h.y, m.x, m.y);
   if (G.mods && G.mods.targetWeakest) {   // pro budoucí talent lovce: cíl s nejméně životy
     let best = null;
@@ -215,6 +215,8 @@ function update(dt) {
       if (!m.aggro && Math.abs(m.x - h.x) > 260 && Math.abs(m.y - h.y) > 200) continue;
       updateMonster(m, dt);
     }
+    G.offstage.slice().forEach(m => { if (!m.dead) updateMonster(m, dt); });   // boss ve vzduchu / ve stínu
+    updateBossWorld(dt);
     separate();
     G.monsters = G.monsters.filter(m => !m.dead);
     updateProjectiles(dt); updateZones(dt); updateTraps(dt); updateHazards(dt);
@@ -236,7 +238,7 @@ function update(dt) {
 function heroControl(dt) {
   const h = G.hero, inp = G.input, K = inp.keys;
   if (inp.l) inp.lDownT += dt;
-  if (h.frozen > 0 || h.leap || h.dash) return;
+  if (h.frozen > 0 || h.leap || h.dash || h.hooked) return;
   // směr pohybu z klávesnice (WASD / šipky) nebo joysticku
   let mx = 0, my = 0;
   if (K.has('a') || K.has('arrowleft')) mx -= 1;
@@ -313,10 +315,10 @@ function separate() {
   const ms = G.monsters, h = G.hero;
   for (let i = 0; i < ms.length; i++) {
     const a = ms[i];
-    if (a.dead || !a.aggro || a.boss) continue;
+    if (a.dead || !a.aggro || a.boss || a.obj) continue;
     for (let j = i + 1; j < ms.length; j++) {
       const b = ms[j];
-      if (b.dead || !b.aggro) continue;
+      if (b.dead || !b.aggro || b.obj) continue;
       const dx = b.x - a.x, dy = b.y - a.y, d = Math.hypot(dx, dy), min = a.r + b.r;
       if (d > 0 && d < min) {
         const push = (min - d) / 2 / d;
@@ -407,8 +409,10 @@ function drawGroundLayer(g) {
     }
     g.globalAlpha = 1;
   });
+  drawDecals(g);
   // nebezpečí nepřátel (varování)
   G.hazards.forEach(z => {
+    if (drawBossHazard(g, z)) return;
     const p = z.delay ? Math.min(1, z.t / z.delay) : 1;
     if (z.line) {
       g.globalAlpha = 0.25 + p * 0.35; g.strokeStyle = '#ff3030'; g.lineWidth = 6;
@@ -477,6 +481,7 @@ function drawEntities(g) {
   const h = G.hero, t = G.time;
   const list = [];
   G.monsters.forEach(m => { if (inView(m.x, m.y)) list.push(m); });
+  G.offstage.forEach(m => { if (inView(m.x, m.y, 80)) list.push(m); });
   G.pets.forEach(p => { if (inView(p.x, p.y)) list.push(p); });
   if (G.scene === 'town') G.world.npcs.forEach(n => { if (!n.obj) list.push(n); });
   list.push(h);
@@ -500,6 +505,7 @@ function drawEntities(g) {
 }
 
 function drawMonster(g, m) {
+  if (m.boss) return drawBoss(g, m);
   const t = G.time, s = m.scale, size = 16 * s;
   const walking = m.walk > 0 && m.stunT <= 0;
   let ox = 0, oy = 0;
@@ -509,12 +515,19 @@ function drawMonster(g, m) {
   if (m.atkAnim > 0) { ox += m.face * 3; m.atkAnim -= 1 / 60; }
   if (m.knock > 0) ox -= m.face * 1;
   if (m.fuse !== undefined) ox += Math.sin(t * 60) * 1;
+  // objekty bossů: vznášení, pulzování, záře
+  let alpha;
+  if (m.obj) {
+    if (m.clone) { oy -= 5 + Math.sin(t * 2.5 + m.bob) * 2; alpha = 0.78 + Math.sin(t * 7 + m.bob) * 0.1; light(m.x, m.y - 14, 24, '#bfefff'); }
+    else if (m.obj === 'phylactery') { oy -= 3 + Math.sin(t * 3 + m.bob) * 2; light(m.x, m.y - 8, 30, '#7ff0ff'); }
+    else if (m.obj === 'eggsac') { if (m.hatch < 2) ox += Math.sin(t * 40) * 1; light(m.x, m.y - 6, 14, '#8be07a'); }
+  }
   drawShadow(g, m.x, m.y, m.r * 0.9);
   if (m.elite) { g.strokeStyle = m.tint; g.globalAlpha = 0.5; g.beginPath(); g.ellipse(m.x, m.y, m.r + 2, (m.r + 2) * 0.4, 0, 0, Math.PI * 2); g.stroke(); g.globalAlpha = 1; }
   if (m.boss) { g.strokeStyle = '#ff4040'; g.globalAlpha = 0.5 + Math.sin(t * 4) * 0.2; g.beginPath(); g.ellipse(m.x, m.y, m.r + 4, (m.r + 4) * 0.4, 0, 0, Math.PI * 2); g.stroke(); g.globalAlpha = 1; }
   const flash = m.hitT > 0 || (m.wind > 0 && Math.floor(t * 20) % 2) || (m.fuse !== undefined && Math.floor(t * 16) % 2);
   drawSprite(g, m.sprite, Math.round(m.x - size / 2 + ox), Math.round(m.y - size + 1 + oy - (m.z || 0)), s,
-    { flip: m.face < 0, flash, t, palOverride: m.pal, tint: m.tint, frozen: m.stunT > 0 && m.stunKind === 'freeze' });
+    { flip: m.face < 0, flash, t, palOverride: m.pal, tint: m.tint, frozen: m.stunT > 0 && m.stunKind === 'freeze', alpha });
   // stavy
   if (m.stunT > 0 && m.stunKind === 'stun') for (let i = 0; i < 3; i++) { const a = t * 5 + i * 2.1; g.fillStyle = '#ffe08a'; g.fillRect(m.x + Math.cos(a) * 6, m.y - size - 2 + Math.sin(a) * 2, 2, 2); }
   Object.values(m.dots).forEach((d, j) => { if (Math.random() < 0.3) particle(m.x + rand(-m.r, m.r), m.y - rand(0, size), { vy: -15, life: 0.4, color: ELEMENTS[d.elem].color, size: 1 }); });
@@ -542,8 +555,17 @@ function drawHero(g) {
   if (h.channel > 0) { h.channel -= 1 / 60; g.strokeStyle = '#7dffb0'; g.globalAlpha = 0.6; g.beginPath(); g.arc(h.x, h.y - 6, 10 + Math.sin(t * 20) * 2, 0, Math.PI * 2); g.stroke(); g.globalAlpha = 1; }
 }
 
+function drawChain(g, x0, y0, x1, y1) {
+  g.strokeStyle = '#6a6a72'; g.lineWidth = 2; g.beginPath(); g.moveTo(x0, y0); g.lineTo(x1, y1); g.stroke();
+  g.lineWidth = 1; g.fillStyle = '#b0b0b8';
+  const n = Math.floor(Math.hypot(x1 - x0, y1 - y0) / 6);
+  for (let i = 1; i < n; i++) g.fillRect(Math.round(x0 + (x1 - x0) * i / n) - 1, Math.round(y0 + (y1 - y0) * i / n) - 1, 2, 2);
+}
 function drawProjectiles(g) {
+  const hk = G.hero && G.hero.hooked;
+  if (hk && !hk.m.dead) drawChain(g, hk.m.x, hk.m.y - 14, G.hero.x, G.hero.y - 8);
   G.projs.forEach(q => {
+    if (q.chain && !q.chain.dead) drawChain(g, q.chain.x, q.chain.y - 14, q.x, q.y - 7);
     if (!inView(q.x, q.y)) return;
     const p = { x: q.x, y: q.y - 7, vx: q.vx, vy: q.vy, size: q.size, color: q.color, arrow: q.arrow, friendly: q.friendly };
     g.fillStyle = 'rgba(0,0,0,0.3)'; g.fillRect(Math.round(q.x) - 1, Math.round(q.y), 3, 1);
@@ -563,7 +585,8 @@ function drawProjectiles(g) {
 
 function drawLighting(g, camX, camY) {
   const town = G.scene === 'town';
-  const amb = town ? 0.3 : THEMES[G.world.theme].ambient;
+  const dark = town ? 0 : G.darkness || 0;
+  const amb = town ? 0.3 : THEMES[G.world.theme].ambient + (0.97 - THEMES[G.world.theme].ambient) * dark;
   lg.globalCompositeOperation = 'source-over';
   lg.clearRect(0, 0, G.vw, G.vh);
   lg.fillStyle = `rgba(4,2,10,${amb})`; lg.fillRect(0, 0, G.vw, G.vh);
@@ -576,7 +599,7 @@ function drawLighting(g, camX, camY) {
     lg.fillStyle = gr; lg.fillRect(sx - r, sy - r, r * 2, r * 2);
   };
   const h = G.hero;
-  hole(h.x, h.y - 6, town ? 160 : 125, 1);
+  hole(h.x, h.y - 6, town ? 160 : 125 * (1 - dark * 0.6), 1);
   FX.lights.forEach(l => hole(l.x, l.y, l.r, 0.85));
   g.drawImage(lc, 0, 0);
   // barevná záře
@@ -616,15 +639,16 @@ function drawOverlay(camX, camY) {
   G.monsters.forEach(m => {
     if (m.dead || m.boss || !inView(m.x, m.y, 0)) return;
     const top = m.y - 16 * m.scale - (m.fly ? 8 : 0) - 4;
-    if (m.elite || m.hp < m.maxHp || m === hovered) {
-      const w = (m.elite ? 26 : 16) * S / 3, x = sx(m.x) - w / 2, y = sy(top);
+    if (m.elite || m.obj || m.hp < m.maxHp || m === hovered) {
+      const w = (m.elite || m.obj ? 26 : 16) * S / 3, x = sx(m.x) - w / 2, y = sy(top);
       ctx.fillStyle = 'rgba(0,0,0,0.7)'; ctx.fillRect(x - d, y - d, w + 2 * d, 4 * d + 2 * d);
-      ctx.fillStyle = m.elite ? '#4a7aff' : '#d03030'; ctx.fillRect(x, y, w * Math.max(0, m.hp / m.maxHp), 4 * d);
+      ctx.fillStyle = m.obj ? '#e0a030' : m.elite ? '#4a7aff' : '#d03030'; ctx.fillRect(x, y, w * Math.max(0, m.hp / m.maxHp), 4 * d);
     }
-    if (m.elite || m === hovered) {
+    if (m.elite || (m.obj && !m.clone) || m === hovered) {
       ctx.font = `600 ${10 * d}px system-ui`; ctx.lineWidth = 3 * d; ctx.strokeStyle = '#000';
-      ctx.fillStyle = m.elite ? '#7aa0ff' : '#e0e0e0';
-      ctx.strokeText(m.name, sx(m.x), sy(top) - 4 * d); ctx.fillText(m.name, sx(m.x), sy(top) - 4 * d);
+      ctx.fillStyle = m.obj ? '#ffc060' : m.elite ? '#7aa0ff' : '#e0e0e0';
+      const nm = m.obj === 'eggsac' ? `${m.name} ${Math.ceil(Math.max(0, m.hatch))} s` : m.name;
+      ctx.strokeText(nm, sx(m.x), sy(top) - 4 * d); ctx.fillText(nm, sx(m.x), sy(top) - 4 * d);
     }
   });
   // teleport do města: ukazatel sesílání
@@ -661,6 +685,7 @@ function drawOverlay(camX, camY) {
     ctx.strokeText(t.text, sx(t.x), y); ctx.fillText(t.text, sx(t.x), y);
   });
   ctx.globalAlpha = 1;
+  drawBossOverlay(sx, sy, d);
   // velký nápis (začátek riftu, boss, dokončení)
   if (G.bannerBig) {
     const b = G.bannerBig, a = b.t < 0.3 ? b.t / 0.3 : b.t > 2.4 ? (3 - b.t) / 0.6 : 1;

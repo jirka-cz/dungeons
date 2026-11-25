@@ -1,6 +1,6 @@
 // Herní data a balanc. Změna čísla = jiná obtížnost.
 
-const GAME_VERSION = '1.5.0';
+const GAME_VERSION = '1.6.0';
 const TILE = 16;                 // velikost dlaždice v px
 const VIEW_W = 460, VIEW_H = 260; // logické rozlišení světa (zvětšuje se pixelově)
 
@@ -87,19 +87,47 @@ const ELITE_AFFIXES = {
 };
 const ELITE_MULT = { hp: 2.6, atk: 1.25, xp: 4, pts: 4, gold: 3 };
 
-// Strážci riftu (náhodný boss na konci)
+// Strážci riftu (náhodný boss na konci). Logika a animace jsou v js/bosses.js.
+// phases: útoky v 1., 2. a 3. fázi (fáze se mění na 66 % a 33 % života), sig: velký útok s varováním, sigCd: jak často.
 const BOSSES = {
-  colossus: { name: 'Kamenný kolos', fam: 'construct', sprite: 'golem', scale: 2.2, hp: 380, atk: 11, spd: 20, r: 14, res: { phys: 0.5, nature: 0.3 }, atkElem: 'phys',
-              attacks: ['slam', 'quakeRing', 'rocks'], desc: 'Drtivé údery, otřesy a padající kameny.' },
-  lich:     { name: 'Lich Mor\'thal', fam: 'undead', sprite: 'cultist', pal: { r: '#3a2a5a', R: '#22183a', s: '#c8d0c0', e: '#7ff0ff', y: '#7ff0ff' }, scale: 2, hp: 320, atk: 10, spd: 26, r: 11,
-              res: { shadow: 0.5, frost: 0.3, fire: -0.25 }, atkElem: 'shadow', attacks: ['boltFan', 'frostNova', 'summonSkel', 'teleport'], desc: 'Stínové střely, mrazivá nova a vyvolávání kostlivců.' },
-  demon:    { name: 'Pekelný démon', fam: 'demon',  sprite: 'imp', scale: 2.6, hp: 350, atk: 11, spd: 30, r: 13, res: { fire: 0.6, frost: -0.3 }, atkElem: 'fire',
-              attacks: ['breath', 'meteors', 'charge'], desc: 'Ohnivý dech, déšť meteorů a výpady.' },
-  queen:    { name: 'Pavoučí královna', fam: 'beast', sprite: 'spider', pal: { b: '#5a2a6e', B: '#38184a', e: '#ff4040' }, scale: 2.4, hp: 340, atk: 10, spd: 34, r: 13,
-              res: { nature: 0.6, fire: -0.3 }, atkElem: 'nature', attacks: ['spit', 'web', 'brood'], desc: 'Jedovaté plivance, pavučiny a pavoučí potěr.' },
-  bonelord: { name: 'Kostěný král', fam: 'undead', sprite: 'skeleton', pal: { c: '#c8a030', C: '#8a6a1a', e: '#ff5050', w: '#f0ead8' }, scale: 2.2, hp: 360, atk: 10, spd: 30, r: 12,
-              res: { phys: 0.35, shadow: 0.5, fire: -0.2 }, atkElem: 'phys', attacks: ['whirlwind', 'leapSlam', 'summonSkel'], desc: 'Smrtící vír, skoky a vyvolávání mrtvých.' }
+  colossus: { name: 'Kamenný kolos', fam: 'construct', sprite: 'golem', scale: 2.2, hp: 720, atk: 11, spd: 20, r: 14, res: { phys: 0.5, nature: 0.3 }, atkElem: 'phys',
+              phases: [['slam', 'rocks', 'quakeRing'], ['slam', 'fissure', 'rocks', 'quakeRing'], ['fissure', 'rocks', 'slam', 'fissure', 'quakeRing']], sig: 'earthquake', sigCd: 15,
+              desc: 'Drtivé údery, praskliny v zemi a padající kameny. Při změně fáze se obalí kamenným štítem – rozbij ho, než spustí lavinu.' },
+  lich:     { name: 'Lich Mor\'thal', fam: 'undead', sprite: 'cultist', pal: { r: '#3a2a5a', R: '#22183a', s: '#c8d0c0', e: '#7ff0ff', y: '#7ff0ff' }, scale: 2, hp: 610, atk: 10, spd: 26, r: 11,
+              res: { shadow: 0.5, frost: 0.3, fire: -0.25 }, atkElem: 'shadow', float: true,
+              phases: [['boltFan', 'summonSkel', 'frostNova', 'teleport'], ['boltFan', 'soulOrbs', 'frostNova', 'teleport', 'summonSkel'], ['soulOrbs', 'boltFan', 'teleport', 'frostNova', 'soulOrbs']], sig: 'soulStorm', sigCd: 16,
+              desc: 'Udržuje si odstup. Sesílá Bouři duší – přeruš ji. Při změně fáze je nezranitelný, dokud nezničíš fylakterie.' },
+  demon:    { name: 'Pekelný démon', fam: 'demon',  sprite: 'imp', scale: 2.6, hp: 670, atk: 11, spd: 30, r: 13, res: { fire: 0.6, frost: -0.3 }, atkElem: 'fire',
+              phases: [['breath', 'charge', 'meteors'], ['breath', 'firePulse', 'meteors', 'charge'], ['ringOfFire', 'breath', 'firePulse', 'meteors', 'charge']], sig: 'tripleCharge', sigCd: 14,
+              desc: 'Ohnivý dech, výpady a meteory. Při změně fáze vzlétne, dopadne na tebe a otevře pekelné brány.' },
+  queen:    { name: 'Pavoučí královna', fam: 'beast', sprite: 'spider', pal: { b: '#5a2a6e', B: '#38184a', e: '#ff4040' }, scale: 2.4, hp: 640, atk: 10, spd: 34, r: 13,
+              res: { nature: 0.6, fire: -0.3 }, atkElem: 'nature',
+              phases: [['spit', 'web', 'eggs'], ['spit', 'web', 'eggs', 'spit', 'brood'], ['spit', 'eggs', 'web', 'brood', 'spit']], sig: 'ascend', sigCd: 18,
+              desc: 'Klade vajíčka (znič je, než se vylíhnou), plive jed, šplhá do stropu a prší z ní jed.' },
+  bonelord: { name: 'Kostěný král', fam: 'undead', sprite: 'skeleton', pal: { c: '#c8a030', C: '#8a6a1a', e: '#ff5050', w: '#f0ead8' }, scale: 2.2, hp: 690, atk: 10, spd: 30, r: 12,
+              res: { phys: 0.35, shadow: 0.5, fire: -0.2 }, atkElem: 'phys',
+              phases: [['boneSpear', 'leapSlam', 'whirlwind'], ['summonSkel', 'boneSpear', 'leapSlam', 'whirlwind'], ['boneSpear', 'whirlwind', 'summonSkel', 'leapSlam', 'boneSpear']], sig: 'royalWhirl', sigCd: 15,
+              desc: 'Kostěná kopí, skoky a vír, který tě vtahuje. Jeho kostlivci mu dávají ochranu – zabij je.' },
+  frostwitch: { name: 'Ledová vědma Ysolda', fam: 'humanoid', sprite: 'icequeen', scale: 2, hp: 610, atk: 10, spd: 28, r: 11, res: { frost: 0.6, fire: -0.3 }, atkElem: 'frost', float: true,
+              phases: [['iceShards', 'icicles', 'blizzard'], ['iceShards', 'icicles', 'blizzard', 'iceShards'], ['icicles', 'iceShards', 'blizzard', 'icicles']], sig: 'absoluteZero', sigCd: 17,
+              desc: 'Ledové střepy, rampouchy a vánice, která tě pronásleduje. Absolutní nula – utíkej do tepla. Při změně fáze vytvoří ledové přeludy.' },
+  gorgul:   { name: 'Hnilobný Gorgul', fam: 'undead', sprite: 'bloater', pal: { g: '#7a6a8a', G: '#4e3e5e', p: '#b0d050', e: '#ffd020' }, scale: 2.6, hp: 740, atk: 11, spd: 22, r: 14,
+              res: { nature: 0.5, fire: -0.25 }, atkElem: 'nature',
+              phases: [['hook', 'vomit', 'bloaters'], ['hook', 'vomit', 'devour', 'bloaters'], ['hook', 'bloaters', 'vomit', 'devour', 'hook']], sig: 'bellyFlop', sigCd: 15,
+              desc: 'Hák tě přitáhne k němu, zvrací jed a posílá nadutce. Ve 2. fázi požírá své služebníky a léčí se.' },
+  shade:    { name: 'Xal\'Vor, Pán stínů', fam: 'demon', sprite: 'shade', scale: 2.2, hp: 620, atk: 10, spd: 34, r: 11, res: { shadow: 0.6, phys: 0.2, arcane: -0.3 }, atkElem: 'shadow', float: true,
+              phases: [['shadowOrbs', 'shadowStep', 'voidZones'], ['shadowOrbs', 'curse', 'shadowStep', 'voidZones'], ['shadowStep', 'shadowOrbs', 'curse', 'voidZones', 'shadowStep']], sig: 'eclipse', sigCd: 17,
+              desc: 'Pohltí světlo, mizí ve stínech a útočí zezadu. Prokletí smyješ jen ve sloupu světla. Zatmění musíš přerušit.' }
 };
+// Pomocné objekty bossů (nehýbou se, nedávají postup ani kořist)
+const BOSS_OBJECTS = {
+  phylactery: { name: 'Fylakterie',    sprite: 'crystal', pal: { c: '#7ff0ff', C: '#2a8ab0' }, r: 7, hpPct: 0.035 },
+  eggsac:     { name: 'Vaječný kokon', sprite: 'egg',     r: 7, hpPct: 0.025 },
+  hellgate:   { name: 'Pekelná brána', sprite: 'gate',    r: 8, hpPct: 0.04 }
+};
+const BOSS_PHASES = [0.66, 0.33];   // přechod do 2. a 3. fáze
+const BOSS_ENRAGE = 120;            // po 120 s boss běsní (víc poškození, rychlejší)
+const BOSS_EXPOSED_MUL = 1.5;       // vyčerpaný boss dostává +50 % poškození
 
 // ---------- Škálování riftu ----------
 const RIFT = {

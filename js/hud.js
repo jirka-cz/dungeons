@@ -78,10 +78,17 @@ function updateHud() {
     $('progress-txt').textContent = R.done ? 'Dokončeno – vstup do portálu' : R.bossSpawned ? 'Strážce riftu!' : `${riftProgressPct()} %`;
     const b = R.boss;
     $('boss-wrap').hidden = !b;
-    if (b) { $('boss-name').textContent = b.name; $('boss-bar').style.width = Math.max(0, b.hp / b.maxHp * 100) + '%'; }
+    document.body.classList.toggle('boss-fight', !!b);
+    if (b) {
+      $('boss-name').textContent = b.name; $('boss-bar').style.width = Math.max(0, b.hp / b.maxHp * 100) + '%';
+      $('boss-shield').style.width = (b.shield > 0 ? Math.min(100, b.shield / b.maxHp * 100 * 3) : 0) + '%';
+      $('boss-status').textContent = bossStatusText(b);
+      const w = $('boss-wrap');
+      w.classList.toggle('exposed', b.exposedT > 0); w.classList.toggle('immune', !!b.immune); w.classList.toggle('enraged', !!b.enraged);
+    }
   } else {
     $('area-name').textContent = 'Městečko';
-    $('progress-wrap').hidden = true; $('boss-wrap').hidden = true;
+    $('progress-wrap').hidden = true; $('boss-wrap').hidden = true; document.body.classList.remove('boss-fight');
   }
   // buffy
   $('buffs').innerHTML = h.buffs.map(b => `<span class="buff" style="border-color:${b.color || '#888'}">${buffIcon(b)} ${b.t === Infinity ? '∞' : Math.ceil(b.t) + 's'}</span>`).join('');

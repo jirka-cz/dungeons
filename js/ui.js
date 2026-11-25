@@ -700,6 +700,13 @@ function showLegend() {
     ${row('<span style="color:#7aa0ff">Modré jméno</span>', 'Elitní nepřítel se schopnostmi, víc života, lepší kořist.')}
     ${row('<span style="color:#ff5050">●</span>', 'Koule zdraví: seber ji a vyléčíš se.')}
     ${Object.values(SHRINES).map(S => row(`<span style="color:${S.color}">${S.glyph}</span>`, `<b>${S.name}</b>: ${S.desc}`)).join('')}
+    <h3>Bossové</h3>
+    ${row('Fáze', 'Na 66 % a 33 % života boss zařve a spustí svou mechaniku.')}
+    ${row('<span style="color:#ffe060">Vyčerpaný</span>', 'Po velkém útoku, rozbití štítu nebo přerušení chvíli stojí a dostává +50 % poškození.')}
+    ${row('Ukazatel nad bossem', 'Sesílá kouzlo: přeruš ho omráčením, zmrazením nebo rychlým poškozením, nebo uteč z červeného kruhu.')}
+    ${row('<span style="color:#ffc060">Zlatý kruh</span>', 'Bezpečné místo před velkým útokem.')}
+    ${row('Běsnění', 'Po 2 minutách boss útočí rychleji a silněji.')}
+    ${Object.values(BOSSES).map(B => row(`<b>${B.name}</b>`, B.desc)).join('')}
     <h3>Elementy</h3>${Object.keys(ELEMENTS).map(k => row(`<span style="color:${ELEMENTS[k].color}">${ELEMENTS[k].icon}</span>`, `<b>${ELEMENTS[k].name}</b>${k === 'phys' ? ' – tlumí ho zbroj' : k === 'chaos' ? ' – ignoruje zbroj i odolnosti' : ''}`)).join('')}
     <h3>Rarity</h3>${RARITY_ORDER.map(r => row(`<span style="color:${RARITIES[r].color}">■</span>`, `<b style="color:${RARITIES[r].color}">${RARITIES[r].name}</b> – od riftu ${RARITIES[r].minRift}${r === 'orange' || r === 'diamond' ? ', jen pro určité třídy' : ''}`)).join('')}
     <h3>Atributy a zbroj</h3>${ATTR_ORDER.map(k => row(`<b>${ATTRS[k].short}</b>`, `<b>${ATTRS[k].name}</b>: ${ATTRS[k].desc}`)).join('')}

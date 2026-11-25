@@ -45,7 +45,16 @@ h2 { font-size: 19px; margin: 0 0 10px; } h3 { font-size: 15px; margin: 14px 0 6
 #progress-bar { height: 100%; background: linear-gradient(90deg, #6a3ae0, #b070ff); transition: width .2s; }
 #progress-txt { position: absolute; inset: 0; font-size: 11px; line-height: 13px; text-shadow: 0 1px 2px #000; }
 #boss-wrap { margin-top: 6px; } #boss-name { font-weight: 700; color: #ff7070; text-shadow: 0 1px 2px #000; font-size: 14px; }
-.bossbar { height: 12px; background: rgba(0,0,0,0.7); border: 1px solid #7a2a2a; border-radius: 6px; overflow: hidden; margin-top: 2px; }
+.bossbar { position: relative; height: 12px; background: rgba(0,0,0,0.7); border: 1px solid #7a2a2a; border-radius: 6px; overflow: hidden; margin-top: 2px; }
+#boss-shield { position: absolute; left: 0; top: 0; height: 100%; width: 0; background: repeating-linear-gradient(45deg, rgba(220,220,235,0.85) 0 4px, rgba(160,160,180,0.85) 4px 8px); }
+.bossbar .bph { position: absolute; top: 0; bottom: 0; width: 2px; background: rgba(255,230,160,0.7); }
+#boss-status { font-size: 11px; color: #e0c8a0; text-shadow: 0 1px 2px #000; margin-left: 8px; font-weight: 600; }
+#boss-status:empty { display: none; }
+body.touch-ui #boss-name { display: block; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+body.touch-ui #boss-status { display: block; margin-left: 0; font-size: 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#boss-wrap.exposed #boss-bar { background: linear-gradient(90deg, #c09010, #ffe060); }
+#boss-wrap.immune #boss-bar { background: linear-gradient(90deg, #505060, #9090a8); }
+#boss-wrap.enraged #boss-name { color: #ff3030; }
 #boss-bar { height: 100%; background: linear-gradient(90deg, #a01818, #ff4040); }
 #top-right { position: absolute; top: 8px; right: 8px; display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
 #minimap { image-rendering: pixelated; border: 1px solid var(--border); border-radius: 6px; width: 138px; background: rgba(0,0,0,0.6); }
@@ -58,6 +67,9 @@ h2 { font-size: 19px; margin: 0 0 10px; } h3 { font-size: 15px; margin: 14px 0 6
 .buff { font-size: 12px; background: rgba(0,0,0,0.6); border: 1px solid; border-radius: 6px; padding: 1px 6px; }
 #loot-log { position: absolute; left: 10px; bottom: 120px; font-size: 12px; text-shadow: 0 1px 2px #000; pointer-events: none; max-width: 40vw; }
 #banner { position: absolute; top: 90px; left: 50%; transform: translateX(-50%); background: rgba(10,8,18,0.85); border: 1px solid; border-radius: 8px; padding: 6px 14px; font-weight: 600; pointer-events: none; }
+body.boss-fight #banner { top: 112px; }
+body.touch-ui.boss-fight #banner { top: 118px; }
+body.touch-ui #banner { font-size: 13px; max-width: 86vw; width: max-content; text-align: center; }
 #bottom { position: absolute; left: 50%; bottom: 8px; transform: translateX(-50%); display: flex; align-items: flex-end; gap: 10px; pointer-events: none; }
 #bottom > * { pointer-events: auto; }
 .orb { position: relative; width: 84px; height: 84px; border-radius: 50%; overflow: hidden; background: #1a0a0a; border: 3px solid #5a4a3a;

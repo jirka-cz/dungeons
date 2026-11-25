@@ -42,7 +42,8 @@ Město (obchodník, kovář, truhla, obelisk) → rift zvolené úrovně → pln
 - `js/sfx.js` – syntetizované zvuky (WebAudio, bez souborů)
 - `js/entities.js` – staty, souboj, AI nepřátel, mazlíčci, projektily, kořist, XP
 - `js/skills.js` – sesílání dovedností
-- `js/rift.js` – průběh riftu, strážci, smrt
+- `js/rift.js` – průběh riftu, svatyně, smrt
+- `js/bosses.js` – bossové: fáze, mechaniky, útoky a animace
 - `js/inventory.js` – výbava, batoh, truhla, obchod, oprava
 - `js/ui.js`, `js/hud.js` – rozhraní a HUD
 - `js/engine.js` – herní smyčka, ovládání, kamera, vykreslování
@@ -51,6 +52,7 @@ Město (obchodník, kovář, truhla, obelisk) → rift zvolené úrovně → pln
 - `PROJEKT.md` a `docs/` – dokumentace pro další vývoj
 
 ## Verze
+- **1.6.0** – předělaní bossové: 3 fáze, velké útoky s varováním (část poškození v % života), vyčerpání (+50 % poškození), přerušitelná kouzla, běsnění po 2 minutách; každý boss má vlastní mechaniku a animace (kamenný štít, fylakterie, pekelné brány, vajíčka, garda, ledové přeludy, hák, tma a prokletí); 3 noví bossové: Ledová vědma Ysolda, Hnilobný Gorgul a Xal'Vor, Pán stínů; stejný boss se neopakuje 3 rifty po sobě.
 - **1.5.0** – vysoké hodnoty afixů jsou vzácné (legendárky mají nejlepší šanci), procenta celkově menší; vzácné rarity vzácnější; bonus riftu ke kořisti roste se zpomalením místo bez omezení.
 - **1.4.0** – atribut Duch přejmenován na Moudrost; rebalanc odolností: nejvýš 10 % proti jednomu živlu na předmět (i u legendárek), nižší odolnosti z lehké zbroje, plášťů a afixů, intelekt +0,2 % za bod; starší předměty se při načtení upraví.
 - **1.3.0** – atribut Duch (obnova many a zdroje), rychlost sesílání a rychlost útoku zbraní, velká sada náhodných bonusů (poškození se zbraní, dovednosti, proti elitám, nemrtvým, šelmám a démonům, cena a obnova zdroje, obrana proti střelám a plošným útokům…), přehled zdroje v okně postavy.
