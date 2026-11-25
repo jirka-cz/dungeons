@@ -8,8 +8,9 @@ const G = {
   input: { mx: 0, my: 0, l: false, r: false, lDownT: 0, keys: new Set(), joy: { x: 0, y: 0, on: false }, atk: false, shift: false },
   portal: null, banner: null, bannerBig: null, touch: false, headless: false, mapBig: false,
   // více hrdinů: heroes = všichni v riftu, me = hrdina tohoto hráče, party = další členové družiny pro příští rift
-  heroes: [], me: null, party: [], partyMul: 1, remoteCtx: false
+  heroes: [], me: null, party: [], partyMul: 1, remoteCtx: false, nidSeq: 0
 };
+function newNid() { return ++G.nidSeq; }
 
 // ---------- Více hrdinů ----------
 // Herní kód pracuje s „aktuálním hrdinou“ (G.hero, G.char, G.st, G.mods). Mimo herní smyčku je to vždy
@@ -28,13 +29,13 @@ function withHero(h, fn) {
 }
 // Spustí fn(h) pro každého hrdinu v jeho kontextu (alive = jen živí)
 function eachHero(fn, alive) {
-  for (const h of G.heroes.slice()) { if (alive && h.dead) continue; withHero(h, () => fn(h)); }
+  for (const h of G.heroes.slice()) { if (h.ghost || h.rep || (alive && h.dead)) continue; withHero(h, () => fn(h)); }
 }
 function heroSt(h) { return h === G.hero ? G.st : h.st; }
 function isHero(h) { return !!h && G.heroes.includes(h); }
 function nearestHero(x, y, alive = true) {
   let best = null, bd = 1e9;
-  for (const h of G.heroes) { if (alive && h.dead) continue; const d = Math.hypot(h.x - x, h.y - y); if (d < bd) { bd = d; best = h; } }
+  for (const h of G.heroes) { if (h.ghost || h.rep || (alive && h.dead)) continue; const d = Math.hypot(h.x - x, h.y - y); if (d < bd) { bd = d; best = h; } }
   return best;
 }
 function heroSave() { return (G.hero && G.hero.save) || G.save; }
@@ -214,6 +215,7 @@ function useBarSlot(i) {
 function usePotion() {
   const h = G.hero;
   if (!h || h.dead || G.scene !== 'rift') return;
+  if (Net.clientRift && h === G.me) return netPotion();
   if (h.potionCd > 0) { floatText(h.x, h.y - 30, `Lektvar za ${Math.ceil(h.potionCd)} s`, '#aaa', 0.8); return; }
   h.potionCd = POTION_CD;
   sfx('potion');
@@ -224,6 +226,7 @@ function usePotion() {
 // ---------- Aktualizace ----------
 
 function update(dt) {
+  if (Net.clientRift) return guestUpdate(dt);   // host v podzemí hostitele: hru počítá hostitel
   G.time += dt;
   const me = G.me || G.hero;
   // každý hrdina ve svém kontextu (místní hráč se ovládá vstupem, ostatní přes h.control)
@@ -231,8 +234,9 @@ function update(dt) {
   if (G.scene === 'rift') {
     G.rift.time += dt;
     G.flowT -= dt;
-    if (G.flowT <= 0) { G.flowT = 0.35; G.flow = flowFieldMulti(G.world, G.heroes.filter(x => !x.dead).concat(G.heroes.length ? [] : [me]), 34); }
-    const near = m => G.heroes.some(x => Math.abs(m.x - x.x) <= 260 || Math.abs(m.y - x.y) <= 200);
+    if (G.flowT <= 0) { G.flowT = 0.35; G.flow = flowFieldMulti(G.world, G.heroes.filter(x => !x.dead && !x.ghost), 34); }
+    const near = m => G.heroes.some(x => !x.ghost && (Math.abs(m.x - x.x) <= 260 || Math.abs(m.y - x.y) <= 200));
+    updateCoopRevive(dt);
     for (const m of G.monsters) {
       if (m.dead) continue;
       if (!m.aggro && !near(m)) continue;
@@ -262,6 +266,7 @@ function update(dt) {
 
 // Časovače, život, zdroj, ovládání a dovednosti jednoho hrdiny (běží v jeho kontextu)
 function updateHero(h, dt) {
+  if (h.ghost) { netGhostStep(h, dt); return; }   // spoluhráč ve městě: jen se plynule posouvá
   const st = G.st;
   h.castLock -= dt; h.atkCd = (h.atkCd || 0) - dt; h.moveLock = (h.moveLock || 0) - dt; h.invuln -= dt; h.potionCd -= dt; h.frozen -= dt; h.hitT -= dt; h.atkAnim -= dt; h.slowT = (h.slowT || 0) - dt; h.resWarn = (h.resWarn || 0) - dt;
   for (const k in h.cds) h.cds[k] -= dt;
@@ -275,6 +280,20 @@ function updateHero(h, dt) {
     if (h === G.me) heroControl(dt);
     else if (h.control) h.control(dt);
     updateHeroSkills(dt);
+  }
+}
+
+// Oživení spoluhráče: postav se k padlému na 2 s a vstane na místě (jen v družině)
+function updateCoopRevive(dt) {
+  if (G.heroes.length < 2) return;
+  for (const d of G.heroes) {
+    if (!d.dead || d.ghost) continue;
+    const helper = G.heroes.find(o => o !== d && !o.dead && !o.ghost && dist(o, d) < 20);
+    if (helper) {
+      d.revT = (d.revT || 0) + dt;
+      if (Math.random() < 0.4) particle(d.x + rand(-6, 6), d.y - rand(0, 12), { vy: -30, life: 0.5, color: '#fff0b0', size: 1, glow: true });
+      if (d.revT >= COOP_REVIVE_T) { d.revT = 0; withHero(d, () => reviveHero(true)); floatText(d.x, d.y - 30, 'Oživen!', '#fff0b0', 1.2); }
+    } else d.revT = Math.max(0, (d.revT || 0) - dt * 2);
   }
 }
 
@@ -554,6 +573,7 @@ function drawEntities(g) {
 
 function drawMonster(g, m) {
   if (m.boss) return drawBoss(g, m);
+  if (!m.sprite) return;
   const t = G.time, s = m.scale, size = 16 * s;
   const walking = m.walk > 0 && m.stunT <= 0;
   let ox = 0, oy = 0;
@@ -709,6 +729,13 @@ function drawOverlay(camX, camY) {
     const tx = `Návrat do města ${(RECALL_TIME - h.recall.t).toFixed(1)} s`;
     ctx.strokeText(tx, sx(h.x), y0 - 4 * d); ctx.fillText(tx, sx(h.x), y0 - 4 * d);
   }
+  // oživování padlého spoluhráče
+  G.heroes.forEach(o => {
+    if (!o.dead || !(o.revT > 0) || !inView(o.x, o.y, 0)) return;
+    const p = Math.min(1, o.revT / COOP_REVIVE_T);
+    ctx.strokeStyle = 'rgba(0,0,0,0.7)'; ctx.lineWidth = 5 * d; ctx.beginPath(); ctx.arc(sx(o.x), sy(o.y - 8), 12 * d, 0, Math.PI * 2); ctx.stroke();
+    ctx.strokeStyle = '#fff0b0'; ctx.lineWidth = 3 * d; ctx.beginPath(); ctx.arc(sx(o.x), sy(o.y - 8), 12 * d, -Math.PI / 2, -Math.PI / 2 + p * Math.PI * 2); ctx.stroke();
+  });
   // jména spoluhráčů
   G.heroes.forEach(o => {
     if (o === G.hero || !inView(o.x, o.y, 0)) return;
@@ -758,7 +785,7 @@ function drawOverlay(camX, camY) {
     ctx.font = `800 ${32 * d}px Georgia, serif`; ctx.lineWidth = 5 * d; ctx.strokeStyle = '#000'; ctx.fillStyle = '#ff6060';
     ctx.strokeText('Zemřel jsi', canvas.width / 2, canvas.height * 0.4); ctx.fillText('Zemřel jsi', canvas.width / 2, canvas.height * 0.4);
     ctx.font = `600 ${14 * d}px system-ui`; ctx.fillStyle = '#e0c0c0';
-    const txt = `Oživení za ${Math.ceil(G.hero.deadT)} s · předměty ztratily 10 % odolnosti`;
+    const txt = `Oživení za ${Math.ceil(G.hero.deadT)} s${G.heroes.length > 1 ? ' (spoluhráč tě oživí rychleji)' : ''} · předměty ztratily 10 % odolnosti`;
     ctx.strokeText(txt, canvas.width / 2, canvas.height * 0.4 + 28 * d); ctx.fillText(txt, canvas.width / 2, canvas.height * 0.4 + 28 * d);
   }
 }
@@ -796,6 +823,8 @@ function drawMinimap() {
 // ---------- Scény ----------
 
 function goTown() {
+  if (Net.clientRift) return netGuestLeaveRift();             // host: odchází z podzemí hostitele
+  if (netIsHost() && G.scene === 'rift') netEndRiftForGuests();  // hostitel: s ním odchází celá družina
   persist();
   sfx('portal');
   enterTown();
@@ -824,7 +853,8 @@ function frame(now) {
   const dt = Math.min(0.05, (now - (lastT || now)) / 1000);
   lastT = now;
   if ((G.scene === 'rift' || G.scene === 'town') && G.hero) {
-    if (!modalOpen()) update(dt);
+    if (!modalOpen() || netLive()) update(dt);   // ve hře více hráčů se nezastavuje ani s otevřeným oknem
+    netTick(dt);
     render();
     G.uiT -= dt;
     if (G.uiT <= 0) { G.uiT = 0.08; updateHud(); drawMinimap(); }

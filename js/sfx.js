@@ -30,6 +30,7 @@ function noise(dur, vol, freq, q = 1, type = 'bandpass', delay = 0) {
 
 const SFX_PRIVATE = new Set(['gold', 'pickup', 'levelup', 'rare', 'hurt', 'death', 'potion']);
 function sfx(name) {
+  if (typeof netSfx === 'function') netSfx(name, SFX_PRIVATE.has(name));   // hostitel posílá zvuky hostům
   if (!SFX.ctx || G.headless || !G.save || G.save.settings.sound === false) return;
   if (G.remoteCtx && SFX_PRIVATE.has(name)) return;   // osobní zvuky spoluhráčů (zlato, sebrání, zranění…) neslyšíš
   const now = performance.now();

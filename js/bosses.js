@@ -62,7 +62,7 @@ function spawnBoss(forceId) {
     dots: {}, slowT: 0, slowPct: 0, stunT: 0, stunImm: 0, cd: 2, spec: 3.2, sigT: 9, wind: 0, aggro: true, face: 1, hitT: 0, bob: 0,
     attackIdx: 0, phase: 1, fightT: 0, animT: 0, shield: 0, exposedT: 0, introT: 1.4, immune: true, sq: 0
   };
-  m.hp = m.maxHp;
+  m.hp = m.maxHp; m.nid = newNid();
   bossFace(m);
   G.monsters.push(m);
   sfx('boss');
@@ -355,7 +355,7 @@ function spawnBossObject(type, x, y, boss, o = {}) {
     aggro: true, face: 1, hitT: 0, bob: Math.random() * 6, t: 0, walk: 0
   };
   Object.assign(m, o);
-  m.hp = m.maxHp;
+  m.hp = m.maxHp; m.nid = newNid();
   G.monsters.push(m);
   burst(m.x, m.y, BOSS_LOOK[boss.boss].color, 20, 70, { glow: true });
   return m;

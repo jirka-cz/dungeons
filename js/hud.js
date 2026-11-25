@@ -38,8 +38,29 @@ function buffIcon(b) {
   return ex ? `<span class="bf-i">${giSvg(ex, b.color)}</span>` : (b.glyph || '✦');
 }
 
+// Rámečky spoluhráčů (jméno, úroveň, život, kde jsou)
+function buildPartyFrames() {
+  const el = $('party');
+  if (!el) return;
+  const others = Net.role ? Net.members.filter(m => m.id !== Net.myId) : [];
+  el.hidden = !others.length;
+  el.innerHTML = others.map(m => `<div class="pf" data-id="${m.id}"><div class="pf-top"><span class="pf-dot" style="background:${CLASSES[m.cls] ? CLASSES[m.cls].colors[0] : '#888'}"></span><b>${m.name}</b> <span class="pf-lvl">${m.level}</span><span class="pf-where"></span></div><div class="pf-bar"><div class="pf-fill"></div></div></div>`).join('');
+}
+function updatePartyFrames() {
+  const el = $('party');
+  if (!el || el.hidden) return;
+  el.querySelectorAll('.pf').forEach(f => {
+    const id = f.dataset.id, m = Net.members.find(x => x.id === id), h = G.heroes.find(x => x.netId === id);
+    const same = !!h && !h.ghost;
+    const hp = same ? Math.max(0, h.hp / Math.max(1, h.mhp || heroSt(h)?.maxHp || 1)) : 1;
+    f.querySelector('.pf-fill').style.width = (same && h.dead ? 0 : hp * 100) + '%';
+    f.classList.toggle('dead', same && !!h.dead);
+    f.querySelector('.pf-where').textContent = same && h.dead ? ' † padl' : m && m.scene === 'rift' ? (G.scene === 'rift' ? '' : ' · v podzemí') : (G.scene === 'rift' ? ' · ve městě' : '');
+  });
+}
+
 function onSceneChange() {
-  buildHud();
+  buildHud(); buildPartyFrames();
   $('top-center').classList.toggle('town', G.scene === 'town');
   updateHud();
 }
@@ -90,6 +111,7 @@ function updateHud() {
     $('area-name').textContent = 'Městečko';
     $('progress-wrap').hidden = true; $('boss-wrap').hidden = true; document.body.classList.remove('boss-fight');
   }
+  updatePartyFrames();
   // buffy
   $('buffs').innerHTML = h.buffs.map(b => `<span class="buff" style="border-color:${b.color || '#888'}">${buffIcon(b)} ${b.t === Infinity ? '∞' : Math.ceil(b.t) + 's'}</span>`).join('');
   // kořist

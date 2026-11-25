@@ -7,7 +7,7 @@ Tohle je hlavní vstupní bod pro každý nový chat s Claudem. Popisuje, co hra
 - Hraje se na počítači i na mobilu (na výšku i na šířku).
 - Zdarma pro kamarády. Každý má vlastní uložené postavy v prohlížeči (localStorage) a může je přenést exportním kódem.
 - Autor (Jirka) neprogramuje. Všechno vzniká přes zadání v češtině, Claude píše kód, testuje ho a vysvětluje změny srozumitelně.
-- Aktuální verze: **1.7.2** (konstanta `GAME_VERSION` v `js/data.js`).
+- Aktuální verze: **1.8.0** (konstanta `GAME_VERSION` v `js/data.js`).
 
 ## Kde hra běží
 | Co | Kde |
@@ -37,7 +37,7 @@ Každé větší téma má vlastní dokument a vlastní chat (viz `docs/CHATY.md
 ## Struktura kódu
 Čisté HTML + JavaScript + CSS, bez knihoven a bez sestavování. Výjimka (schválená): pro hru více hráčů se použije knihovna PeerJS na spojení přes kód místnosti. Skripty jsou globální (bez modulů) a načítají se v tomto pořadí (`index.html`):
 
-`data → classes → talents → icons → items → sprites → world → fx → sfx → save → entities → skills → rift → bosses → inventory → ui → hud → engine`
+`data → classes → talents → icons → items → sprites → world → fx → sfx → save → entities → skills → rift → bosses → inventory → ui → hud → lib/peerjs.min → net → engine`
 
 | Soubor | Role |
 |---|---|
@@ -56,7 +56,9 @@ Každé větší téma má vlastní dokument a vlastní chat (viz `docs/CHATY.md
 | `js/bosses.js` | bossové: výběr, fáze, štít, vyčerpání, přerušení, běsnění, útoky, mechaniky a animace |
 | `js/inventory.js` | výbava, batoh, truhla, obchod, oprava |
 | `js/ui.js` | okna (menu, postava, talenty, obchod, nastavení…) |
-| `js/hud.js` | HUD, lišta dovedností, dotykové ovládání |
+| `js/hud.js` | HUD, lišta dovedností, rámečky spoluhráčů, dotykové ovládání |
+| `js/net.js` | hra více hráčů: místnost, společné město, hlasování o podzemí, snímky stavu, odměny hostům |
+| `js/lib/peerjs.min.js` | knihovna PeerJS 1.5.5 (MIT), vlastní kopie – spojení přes WebRTC |
 | `js/engine.js` | herní smyčka, více hrdinů (`withHero`, `G.heroes`, `G.me`), ovládání, kamera, vykreslování |
 | `css/style.css` | veškerý vzhled |
 | `kalkulacka/index.html` | samostatná kalkulačka talentů, používá `../js/classes.js`, `talents.js`, `icons.js` |

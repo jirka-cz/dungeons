@@ -20,7 +20,7 @@
 ## HUD a okna
 - **HUD:** koule života a zdroje, XP lišta, lišta dovedností (SVG ikony), buffy, ukazatel postupu riftu, tlačítka Postava / Talenty / Celá obrazovka / Menu. Na tlačítku Talenty svítí tečka, když jsou volné body.
 - **Okna** (`showModal` v `js/ui.js`):
-  - Menu, Tvorba postavy, Herní menu, Postava, Talenty, Obchod, Kovář, Truhla, Volba podzemí (obelisk), Nastavení, Legenda;
+  - Menu, Tvorba postavy, Herní menu, Postava, Talenty, Obchod, Kovář, Truhla, Volba podzemí (obelisk), Nastavení, Legenda, Hrát s přáteli (místnost), Návrh podzemí (hlasování);
   - každé má nahoře křížek ✕.
 - **Nastavení:**
   - zvuk;
@@ -49,3 +49,10 @@
 
 ## Testy
 `python3 tests/controls.py`, `tests/czkeys.py`, `tests/mobauto.py`, `tests/mob2.py`, `tests/panels.py`, `tests/land_tal.py`. Vizuální změny vždy ověřit snímky: počítač, mobil na výšku, mobil na šířku.
+
+## Hra více hráčů (od 1.8.0)
+- **Herní menu → 👥 Hrát s přáteli:** založit místnost (velký kód k přeposlání) nebo se připojit kódem; seznam hráčů (třída, úroveň, ve městě / v podzemí), Opustit místnost.
+- **Rámečky spoluhráčů** vlevo (jméno, úroveň, život, „† padl“, „v podzemí / ve městě“). Na mobilu níž, aby nepřekážely.
+- **Návrh podzemí:** u obelisku tlačítko „Navrhnout“; ostatním okno s úrovní, informací o síle a odpočtem 30 s (Přijmout / Odmítnout); navrhovatel vidí, kdo už souhlasí, a může návrh zrušit.
+- Nad spoluhráči jejich jméno, kroužek oživování nad padlým.
+- V družině se hra s otevřeným oknem nezastavuje.

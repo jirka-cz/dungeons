@@ -52,6 +52,7 @@ Město (obchodník, kovář, truhla, obelisk) → rift zvolené úrovně → pln
 - `PROJEKT.md` a `docs/` – dokumentace pro další vývoj
 
 ## Verze
+- **1.8.0** – hra více hráčů (2–4): v menu „Hrát s přáteli“ se založí místnost s kódem nebo se k ní připojí; společné město, výběr podzemí s potvrzením ostatních (30 s), společné podzemí po internetu (u hostitele běží hra, každý si odnese své XP, zlato a kořist), rámečky spoluhráčů, oživení spoluhráče u těla, návrat do rozehraného podzemí.
 - **1.7.2** – rifty se ve hře jmenují „Podzemí“ (obelisk, HUD, okna, talenty, kalkulačka).
 - **1.7.1** – oprava: Ledová koule konečně rozstřikuje ledové úlomky; louže po dechu Pekelného démona a Gorgula (a další zóny vzniklé během jiných útoků) se už neztrácejí.
 - **1.7.0** – příprava na hru více hráčů: jádro hry počítá s více hrdiny v riftu (zatím jen interně, hraje se dál sám), každý další hráč přidá +10 % nepřátel, jejich života a poškození; obelisk nabízí nejvyšší odemčený, poslední dokončený nebo libovolný dokončený rift.

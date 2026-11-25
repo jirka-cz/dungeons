@@ -325,6 +325,7 @@ function damageItem(it, n) {
   if (it.dur === undefined) return;
   const was = it.dur;
   it.dur = Math.max(0, it.dur - n);
+  if (it.dur !== was) netReward({ dur: [it.uid, it.dur] });
   if (was > 0 && it.dur === 0) { toast(`${it.name} se rozbil! Oprav ho u kováře.`); invalidate(); }
   else if (was > it.maxDur * 0.2 && it.dur <= it.maxDur * 0.2) toast(`${it.name}: nízká odolnost`);
 }
@@ -356,6 +357,7 @@ function spawnMonster(typeId, x, y, o = {}) {
     m.name = o.elite.map(a => ELITE_AFFIXES[a].name).join(' ') + ' ' + def.name.toLowerCase();
   }
   if (o.minion) m.minion = true;
+  m.nid = newNid();
   G.monsters.push(m);
   return m;
 }
@@ -595,6 +597,7 @@ function dust(x, y) { if (Math.random() < 0.5) particle(x + rand(-3, 3), y, { vx
 
 // Projde seznam G[key] a nechá jen položky, pro které fn vrátí true. Co během toho nově vznikne
 // (úlomky Ledové koule, louže po dechu bosse…), se zachová – dřív se to ztrácelo.
+const NET_LENIENCY = 3;   // px, o kolik menší zásah plošných útoků na hrdinu hosta (zpoždění sítě)
 function filterKeepNew(key, fn) {
   const cur = G[key]; G[key] = [];
   const kept = cur.filter(fn);
@@ -606,7 +609,7 @@ function hazardLine(x, y, ang, len, delay) { G.hazards.push({ line: true, x, y, 
 
 // Nebezpečí zasahují všechny hrdiny. Zásah se počítá v kontextu zasaženého (jeho odolnosti).
 function updateHazards(dt) {
-  const inside = (z, h) => dist(z, h) < z.r + h.r;
+  const inside = (z, h) => dist(z, h) < z.r + h.r - (h.netId ? NET_LENIENCY : 0);   // host po síti: drobná tolerance kvůli zpoždění
   const A = () => G.st.areaTaken;
   filterKeepNew('hazards', z => {
     z.t += dt;
@@ -616,7 +619,7 @@ function updateHazards(dt) {
       z.cur = (z.t - z.delay) * z.speed;
       if (!z.hitSet) z.hitSet = new Set();
       eachHero(h => {
-        if (!z.hitSet.has(h) && Math.abs(dist(z, h) - z.cur) < 7) { z.hitSet.add(h); hurtHero(z.dmg * A(), z.elem, z.src, (z.pct || 0) * A()); if (z.stun) freezeHero(z.stun); }
+        if (!z.hitSet.has(h) && Math.abs(dist(z, h) - z.cur) < 7 - (h.netId ? NET_LENIENCY : 0)) { z.hitSet.add(h); hurtHero(z.dmg * A(), z.elem, z.src, (z.pct || 0) * A()); if (z.stun) freezeHero(z.stun); }
       }, true);
       return z.cur < z.maxR;
     }
@@ -772,7 +775,7 @@ function monstersIn(x, y, r) { return G.monsters.filter(m => !m.dead && Math.hyp
 
 function spawnPet(type, life) {
   const P = PETS[type], h = G.hero;
-  const p = { kind: 'pet', type, def: P, x: h.x + rand(-12, 12), y: h.y + rand(-12, 12), r: 5, cd: 0.5, life: life || Infinity, face: 1, walk: 0, scale: P.scale, owner: h };
+  const p = { kind: 'pet', type, def: P, x: h.x + rand(-12, 12), y: h.y + rand(-12, 12), r: 5, cd: 0.5, life: life || Infinity, face: 1, walk: 0, scale: P.scale, owner: h, nid: newNid() };
   const fp = nearestFree(G.world, p.x, p.y, 4); p.x = fp.x; p.y = fp.y;
   G.pets.push(p);
   burst(p.x, p.y, '#ffffff', 10, 50);
@@ -835,7 +838,7 @@ function updateLoot(dt) {
     l.t += dt;
     if (l.owner && !isHero(l.owner)) return false;   // majitel odešel
     for (const h of (l.owner ? [l.owner] : G.heroes)) {
-      if (h.dead) continue;
+      if (h.dead || h.ghost || h.rep) continue;
       if (withHero(h, () => lootStep(l, h, dt))) return false;
     }
     return true;
@@ -846,7 +849,7 @@ function lootStep(l, h, dt) {
   const d = Math.hypot(l.x - h.x, l.y - h.y);
   if (l.kind === 'gold' && d < 40) { l.x += (h.x - l.x) * dt * 8; l.y += (h.y - l.y) * dt * 8; }
   if (d < 12 && l.t > 0.3) {
-    if (l.kind === 'gold') { sfx('gold'); heroSave().gold += l.amount; floatText(h.x, h.y - 26, '+' + fmt(l.amount) + ' zlata', '#e0c040', 0.8); return true; }
+    if (l.kind === 'gold') { sfx('gold'); heroSave().gold += l.amount; netReward({ gold: l.amount }); floatText(h.x, h.y - 26, '+' + fmt(l.amount) + ' zlata', '#e0c040', 0.8); return true; }
     if (l.kind === 'globe') { sfx('potion'); healHero(G.st.maxHp * GLOBE_HEAL * G.st.healMul); burst(l.x, l.y, '#ff5050', 12, 50); return true; }
     if (l.kind === 'item') {
       if (pickupItem(l.item)) return true;
@@ -860,6 +863,7 @@ function pickupItem(it) {
   const ch = G.char, sv = heroSave(), s = sv.settings || { autoSell: {} };
   if (s.autoSell && s.autoSell[it.rarity]) {
     const g = sellValue(it); sv.gold += g;
+    netReward({ gold: g, log: [it.name, RARITIES[it.rarity].color, `prodáno +${fmt(g)} zlata`] });
     addLootLog(it, `prodáno +${fmt(g)} zlata`);
     return true;
   }
@@ -867,7 +871,8 @@ function pickupItem(it) {
   ch.inv.push(it);
   sfx('pickup');
   addLootLog(it, 'do batohu');
-  if (RARITY_ORDER.indexOf(it.rarity) >= 2 && !G.remoteCtx) G.banner = { text: `${RARITIES[it.rarity].name}: ${it.name}`, color: RARITIES[it.rarity].color, t: 0 };
+  netReward({ item: it, log: [it.name, RARITIES[it.rarity].color, 'do batohu'] });
+  if (RARITY_ORDER.indexOf(it.rarity) >= 2) personalBanner('banner', { text: `${RARITIES[it.rarity].name}: ${it.name}`, color: RARITIES[it.rarity].color, t: 0 });
   return true;
 }
 
@@ -881,6 +886,7 @@ function addLootLog(it, note) {
 
 function gainXP(n) {
   const ch = G.char;
+  netReward({ xp: Math.round(n) });
   ch.xp += Math.round(n);
   while (ch.xp >= xpToNext(ch.level)) {
     ch.xp -= xpToNext(ch.level);

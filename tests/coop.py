@@ -68,6 +68,15 @@ JS = r"""
   Math.random = r0;
   out.checks.dmg = { solo: d1, duo: d2, ratio: +(d2 / d1).toFixed(2) };
 
+  // oživení spoluhráče u těla: 2 s vedle něj = vstane na místě s polovinou života
+  G.party = [mkMember('Kamarád', 'elf', 'hunter')]; startRift(1);
+  { const mt = G.heroes[1]; mt.control = null; G.monsters.forEach(m => m.dead = true); G.monsters = [];
+    withHero(mt, () => { mt.hp = 1; hurtHero(1e6, 'phys', null); });
+    const dead = mt.dead, deadT = mt.deadT, px = mt.x, py = mt.y;
+    G.me.x = mt.x + 8; G.me.y = mt.y; G.me.control = null;
+    for (let i = 0; i < 70; i++) update(1/30);
+    out.checks.revive = { wasDead: dead, deadT, alive: !mt.dead, samePlace: Math.hypot(mt.x - px, mt.y - py) < 1, hpPct: Math.round(mt.hp / mt.st.maxHp * 100) }; }
+
   // 2) hraní s jedním spoluhráčem
   const mate = mkMember('Kamarád', cfg.mateRace || 'elf', cfg.mateCls || 'hunter');
   G.party = [mate];
@@ -115,6 +124,7 @@ async def main():
         res = await pg.evaluate(JS, cfg)
         print('scale', json.dumps(res['checks']['scale'], ensure_ascii=False))
         print('dmg', res['checks']['dmg'])
+        print('revive', res['checks']['revive'])
         for l in res['levels']: print(json.dumps(l, ensure_ascii=False))
         await pg.wait_for_timeout(300)
         await pg.screenshot(path=SHOTS + '/coop.png')

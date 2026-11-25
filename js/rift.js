@@ -18,7 +18,7 @@ function addPartyHero(member, x, y) {
   const h = { x, y, r: 5, z: 0, face: 1, hp: 1, res: 0, cds: {}, buffs: [], castLock: 0, potionCd: 0, walk: 0, path: null, dest: null,
               target: null, invuln: 0, frozen: 0, whirl: 0, hitT: 0, atkAnim: 0,
               char: member.char, save: member.save || { gold: 0, nextUid: 1e9, settings: { autoSell: {} } }, name: member.name || member.char.name,
-              control: member.control || null, member, st: null, mods: null };
+              control: member.control || null, member, st: null, mods: null, netId: member.netId || undefined };
   const p = nearestFree(G.world, x, y, h.r); h.x = p.x; h.y = p.y;
   G.heroes.push(h);
   withHero(h, () => {
@@ -137,7 +137,7 @@ function updateShrinesFor(h) {
     h.buffs.push({ id: 'shrine_' + s.type, name: S.name, stats: S.stats, t: S.dur, dur: S.dur, color: S.color, glyph: S.glyph });
     invalidate(); G.st = heroStats();
     sfx('levelup'); beamFx(s.x, s.y, S.color, 0.8, 16); burst(s.x, s.y - 8, S.color, 40, 90, { glow: true });
-    if (!G.remoteCtx) G.bannerBig = { text: S.name, sub: S.desc, t: 0.4, color: S.color };
+    personalBanner('bannerBig', { text: S.name, sub: S.desc, t: 0.4, color: S.color });
   });
 }
 
@@ -179,6 +179,7 @@ function bossDefeated(m) {
   eachHero(h => {
     const ch = G.char, w = ch.maxRift;
     ch.maxRift = Math.max(ch.maxRift, R.level + 1);
+    netReward({ maxRift: ch.maxRift });
     gainXP(60 * riftMult(RIFT.xp, R.level) * G.st.xpMul);
     if (h === G.me) { was = w; now = ch.maxRift; }
   });
@@ -197,7 +198,7 @@ function heroDeath() {
     return;
   }
   sfx('death');
-  h.dead = true; h.deadT = 3; h.hp = 0; h.path = null; h.dest = null; h.target = null; h.whirl = 0;
+  h.dead = true; h.deadT = G.heroes.filter(x => !x.ghost).length > 1 ? COOP_DEAD_T : 3; h.revT = 0; h.hp = 0; h.path = null; h.dest = null; h.target = null; h.whirl = 0;
   if (h === G.me) G.rift.deaths++;
   EQUIP_ORDER.forEach(s => { const it = G.char.equip[s]; if (it && it.dur > 0) damageItem(it, Math.ceil(it.maxDur * RIFT.deathDurability)); });
   debris(h.x, h.y, CLASSES[G.char.cls].colors.concat(['#f2c39b']), 20);
@@ -208,11 +209,13 @@ function heroDeath() {
   invalidate();
 }
 
-function reviveHero() {
+// atPlace = oživil ho spoluhráč (vstane na místě s polovinou života), jinak na začátku podzemí
+function reviveHero(atPlace) {
   const h = G.hero, W = G.world;
   G.st = heroStats();
-  h.dead = false; h.hp = G.st.maxHp; h.res = Math.max(h.res, CLASSES[G.char.cls].res.start);
-  h.x = W.spawn.x; h.y = W.spawn.y; h.invuln = 2; h.frozen = 0;
+  h.dead = false; h.hp = G.st.maxHp * (atPlace ? 0.5 : 1); h.res = Math.max(h.res, CLASSES[G.char.cls].res.start);
+  if (!atPlace) { h.x = W.spawn.x; h.y = W.spawn.y; }
+  h.invuln = 2; h.frozen = 0; h.revT = 0;
   G.pets.forEach(p => { if (p.owner === h) { p.x = h.x; p.y = h.y; } });
   burst(h.x, h.y, '#ffffff', 30, 70, { glow: true });
 }

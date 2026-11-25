@@ -41,6 +41,11 @@ Předpoklady: Node.js a Python s Playwrightem (`pip install playwright` a `pytho
 | `tests/riftsel.py` | výběr riftu u obelisku (nejvyšší, poslední, libovolný), snímky počítač/mobil |
 | `tests/items.py` | atributy, váha zbroje, legendárky a sety podle tříd, chytrá kořist, migrace, snímky okna postavy |
 
+## Hra více hráčů – testy a provoz
+- `js/net.js` + `js/lib/peerjs.min.js`. Prohlížeče se spojují přes bezplatný server PeerJS (`0.peerjs.com`) a jeho TURN servery. Hra sama žádný server nemá.
+- Test přes skutečné WebRTC: `python3 tests/net.py '{"secs":110}'` – spustí lokální server PeerJS (`tests/peer_server.js`, potřebuje `npm install peer`) a stránku přes `http.server`; hra se otevře s `?peer=127.0.0.1:9000`. Tři okna (počítač, mobil na šířku, mobil na výšku). Snímky `net_*.png`.
+- Pokud `peer` není nainstalovaný globálně, spustit s `NODE_PATH=<složka>/node_modules`.
+
 ## Nasazení
 - GitHub Pages z větve `main`, složka `/ (root)`. Soubor `.nojekyll` vypíná zpracování Jekyllem.
 - Po pushi se hra aktualizuje během 1–2 minut. Hráčům stačí obnovit stránku.

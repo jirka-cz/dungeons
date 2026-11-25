@@ -40,7 +40,7 @@ function runConfirm() { const a = confirmAction; confirmAction = null; if (a) a(
 
 let toastTimer;
 function toast(msg) {
-  if (G.remoteCtx) return;   // zprávy o spoluhráčích (rozbitý předmět, plný batoh, úroveň) se tomuto hráči neukazují
+  if (G.remoteCtx) { netToastRemote(msg); return; }   // zprávu o hostovi dostane jen on   // zprávy o spoluhráčích (rozbitý předmět, plný batoh, úroveň) se tomuto hráči neukazují
   const t = $('toast');
   t.textContent = msg; t.classList.add('show');
   clearTimeout(toastTimer);
@@ -61,6 +61,7 @@ function drawIcons() {
 // ---------- Hlavní menu: výběr a tvorba postavy ----------
 
 function showMenu() {
+  if (Net.role || Net.peer) netLeave();
   G.scene = 'menu';
   hideModal();
   $('hud').hidden = true; $('menu').hidden = false;
@@ -129,6 +130,7 @@ function showGameMenu() {
     ${inRift ? `<button class="primary" onclick="closeMenu();startRecall()">⌂ Teleport do města (5 s)</button>
       <p class="muted small" style="margin:-4px 0 4px;text-align:center">${G.rift.done ? 'Podzemí je dokončené.' : 'Rozehrané podzemí propadne.'} Pohyb nebo útok teleport přeruší.</p>` : ''}
     <button onclick="closeMenu()">Pokračovat</button>
+    <button onclick="showNetModal()">👥 Hrát s přáteli${Net.role ? ` (místnost ${Net.code})` : ''}</button>
     <button onclick="showCharacter()">Postava a batoh (I)</button>
     <button onclick="showTalents()">Talenty a dovednosti (K)</button>
     <button onclick="showLegend()">Legenda a ovládání</button>
@@ -388,8 +390,14 @@ function itemBySrcByUid(uid) { return allWorn().find(x => x.uid === uid); }
 
 function showRiftSelect() {
   const ch = G.char, max = ch.maxRift, done = max - 1;
+  // družina je v podzemí hostitele → jen návrat k ní
+  if (Net.role === 'guest' && Net.hostScene === 'rift') {
+    showModal(`<h2>Obelisk podzemí</h2><p>Družina je v <b>Podzemí ${Net.hostLevel}</b>.</p>
+      <div class="actions"><button class="primary" onclick="hideModal();netSend({ t: 'rejoin' })">Připojit se k družině</button><button onclick="closeMenu()">Zavřít</button></div>`);
+    return;
+  }
   UI.riftSel = clamp(UI.riftSel || done || 1, 1, max);
-  const row = (L, note, top) => `<button class="rift-row ${top ? 'top' : ''}" onclick="hideModal();startRift(${L})">
+  const row = (L, note, top) => `<button class="rift-row ${top ? 'top' : ''}" onclick="hideModal();riftGo(${L})">
       <b>Podzemí ${L}</b><span>${note}</span><span class="loot">${riftLootText(L)}</span></button>`;
   const rows = [row(max, max > 1 ? 'Nejvyšší odemčené – posuň se dál' : 'První podzemí', true)];
   if (done >= 1) rows.push(row(done, 'Poslední dokončené'));
@@ -397,18 +405,21 @@ function showRiftSelect() {
       <div class="rp-head">Libovolné dokončené podzemí</div>
       <div class="rp-ctl">
         <button onclick="riftSelStep(-10)">−10</button><button onclick="riftSelStep(-1)">−</button>
-        <input id="rift-lvl" type="number" inputmode="numeric" min="1" max="${max}" value="${UI.riftSel}" oninput="riftSelSet(this.value)" onkeydown="if(event.key==='Enter'){hideModal();startRift(UI.riftSel)}">
+        <input id="rift-lvl" type="number" inputmode="numeric" min="1" max="${max}" value="${UI.riftSel}" oninput="riftSelSet(this.value)" onkeydown="if(event.key==='Enter'){hideModal();riftGo(UI.riftSel)}">
         <button onclick="riftSelStep(1)">+</button><button onclick="riftSelStep(10)">+10</button>
-        <button class="primary" onclick="hideModal();startRift(UI.riftSel)">Vstoupit</button>
+        <button class="primary" onclick="hideModal();riftGo(UI.riftSel)">${netLive() ? 'Navrhnout' : 'Vstoupit'}</button>
       </div>
       <div id="rift-info" class="rp-info">${riftInfoText(UI.riftSel)}</div></div>` : '';
   showModal(`<h2>Obelisk podzemí</h2>
     <p class="muted small">Zabíjej nepřátele, dokud se nenaplní ukazatel postupu. Pak se objeví strážce podzemí, náhodný boss. Po jeho porážce se odemkne další úroveň.
       Vyšší úroveň znamená silnější nepřátele, ale lepší kořist, víc zlata a zkušeností.</p>
+    ${netLive() ? '<p class="net-note">Hraješ v družině: vybranou úroveň musí potvrdit ostatní hráči.</p>' : ''}
     <div class="rift-list">${rows.join('')}</div>
     ${pick}
     <div class="actions"><button onclick="closeMenu()">Zavřít</button></div>`, true);
 }
+// Vstup do podzemí: sólo hned, v družině návrh, který potvrdí ostatní
+function riftGo(L) { if (netLive()) netPropose(L); else startRift(L); }
 function riftLootText(L) { return `Kořist +${Math.round(riftMf(L) * 100)} %, předměty úr. ${riftIlvl(L)}`; }
 function riftInfoText(L) { return `Nepřátelé: život ×${riftMult(RIFT.hp, L).toFixed(1)}, poškození ×${riftMult(RIFT.atk, L).toFixed(1)} · <span class="loot">${riftLootText(L)}</span>`; }
 function riftSelSet(v, fromStep) {

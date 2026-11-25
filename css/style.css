@@ -385,3 +385,22 @@ textarea { width: 100%; margin-top: 10px; background: var(--bg); color: var(--te
   .tal-main .ttab small { display: none; } .tal-main .ttab-ic { font-size: 18px; }
   .tal-main .tdesc-line { display: none; }
 }
+
+/* ---------- Hra více hráčů ---------- */
+#party { position: absolute; left: 8px; top: 34%; display: flex; flex-direction: column; gap: 6px; pointer-events: none; width: 140px; }
+.pf { background: rgba(10,8,18,0.72); border: 1px solid #3a3448; border-radius: 6px; padding: 4px 6px; font-size: 11px; text-shadow: 0 1px 2px #000; }
+.pf-top { display: flex; align-items: center; gap: 4px; white-space: nowrap; overflow: hidden; }
+.pf-dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+.pf-lvl { color: var(--muted); } .pf-where { color: var(--muted); font-size: 10px; overflow: hidden; text-overflow: ellipsis; }
+.pf-bar { height: 5px; background: #2a1414; border-radius: 3px; margin-top: 3px; overflow: hidden; } .pf-fill { height: 100%; background: #d03030; width: 100%; transition: width 0.15s; }
+.pf.dead { opacity: 0.6; } .pf.dead b { color: #a08080; }
+body.touch-ui #party { top: auto; bottom: 46%; width: 120px; }
+.net-box { border: 1px solid #3a3448; border-radius: 6px; padding: 10px 12px; margin: 10px 0; background: rgba(255,255,255,0.03); }
+.net-box p { margin: 4px 0 8px; }
+.net-join { display: flex; gap: 8px; }
+.net-join input { width: 110px; text-transform: uppercase; letter-spacing: 3px; text-align: center; font: inherit; font-size: 18px; padding: 6px; border-radius: 6px; border: 1px solid var(--border); background: var(--bg); color: var(--text); }
+.net-code { font-size: 16px; margin: 6px 0 10px; } .net-code b { font-size: 26px; letter-spacing: 4px; color: var(--gold); margin-left: 6px; user-select: all; }
+.net-list, .vote-list { list-style: none; padding: 0; margin: 8px 0; display: flex; flex-direction: column; gap: 6px; }
+.net-list li { padding: 6px 8px; border: 1px solid #2e2a3a; border-radius: 6px; } .net-list .muted { display: block; margin-left: 16px; }
+.vote-list .ok { color: #4fd05a; } .vote-time { color: var(--gold); margin: 6px 0; font-weight: 600; }
+.net-note { font-size: 12px; color: #8fe0ff; margin: 6px 0; }

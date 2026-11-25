@@ -15,6 +15,7 @@ function skillBlocked(id) {
 function castSkill(id, tx, ty, target) {
   const h = G.hero, st = G.st;
   if (G.scene === 'town') return false;
+  if (Net.clientRift && h === G.me) return netCast(id, tx, ty, target);   // host: kouzlo spočítá hostitel
   if (skillBlocked(id)) {
     if (skillBlocked(id) === 'res' && !h.resWarn) { h.resWarn = 0.8; floatText(h.x, h.y - 30, `Málo: ${CLASSES[G.char.cls].res.name.toLowerCase()}`, CLASSES[G.char.cls].res.color, 0.8); }
     return false;
@@ -43,13 +44,15 @@ function castSkill(id, tx, ty, target) {
       invalidate(); G.st = heroStats(); floatText(h.x, h.y - 30, 'Zatmění!', '#d8c0ff', 0.9);
     }
   }
-  sfx(S.type === 'melee' || S.type === 'whirl' ? 'swing' : S.arrow ? 'arrow' : S.type === 'nova' ? 'nova' : S.type === 'teleport' ? 'blink' : S.type === 'heal' ? 'potion' : S.type === 'buff' ? 'levelup' : ELEM_SFX[S.elem] || 'shoot');
+  sfx(skillSfx(S));
   // dvojitý útok u primárních útoků
   if (S.primary && st.double && Math.random() < st.double) later(h, 120, () => doSkill(S, tx, ty, ang, target));
   return true;
 }
 
 // Odložená akce hrdiny (dvojitý útok, nova se zpožděním) – proběhne v jeho kontextu, pokud je pořád v riftu a živý
+function skillSfx(S) { return S.type === 'melee' || S.type === 'whirl' ? 'swing' : S.arrow ? 'arrow' : S.type === 'nova' ? 'nova' : S.type === 'teleport' ? 'blink' : S.type === 'heal' ? 'potion' : S.type === 'buff' ? 'levelup' : ELEM_SFX[S.elem] || 'shoot'; }
+
 function later(h, ms, fn) {
   setTimeout(() => { if (isHero(h) && !h.dead && G.scene === 'rift') withHero(h, fn); }, ms);
 }
