@@ -148,7 +148,8 @@ function itemHtml(it, actions) {
   for (const k in it.affixes) own[k] = (own[k] || 0) + it.affixes[k];
   const leg = it.leg ? LEGENDARIES.find(l => l.id === it.leg) : null;
   const broken = it.dur === 0;
-  let lines = Object.keys(own).map(k => `<div>${statLine(k, own[k])}</div>`).join('') +
+  const mains = classMainStats(G.char.cls);
+  let lines = Object.keys(own).map(k => `<div${mains.includes(k) ? ' class="main-attr"' : ''}>${statLine(k, own[k])}</div>`).join('') +
     (leg ? Object.keys(leg.stats).map(k => `<div class="leg">${statLine(k, leg.stats[k])}</div>`).join('') : '');
   if (it.set) {
     const s = SETS[it.set], have = setCounts(G.char)[it.set] || 0;
@@ -156,7 +157,9 @@ function itemHtml(it, actions) {
       `<div class="set-b ${have >= +n ? 'on' : ''}">(${n}) ${Object.keys(s.bonus[n]).map(k => statLine(k, s.bonus[n][k])).join(', ')}</div>`).join('');
   }
   const durTxt = it.dur !== undefined ? `<div class="dur ${broken ? 'broken' : it.dur < it.maxDur * 0.25 ? 'low' : ''}">Odolnost ${it.dur}/${it.maxDur}${broken ? ' – rozbitý, nedává staty' : ''}</div>` : '';
-  const cant = !canClassUse(it, G.char.cls) ? `<div class="broken">Nevhodné pro třídu ${CLASSES[G.char.cls].name}</div>` : '';
+  const only = itemClasses(it), usable = canClassUse(it, G.char.cls);
+  const cant = only ? `<div class="cls-only ${usable ? '' : 'broken'}">Pouze: ${only.map(c => CLASSES[c].name).join(', ')}</div>`
+    : !usable ? `<div class="broken">Nevhodné pro třídu ${CLASSES[G.char.cls].name}</div>` : '';
   return `<div class="item ${broken ? 'is-broken' : ''}" style="border-color:${r.color}">
     <div class="item-head"><b style="color:${r.color}">${it.name}</b><span class="muted small">${kindLabel(it)} · úr. ${it.ilvl}</span></div>
     <div class="item-stats">${lines}${durTxt}${cant}</div>${actions || ''}</div>`;
@@ -205,6 +208,11 @@ function charStatsHtml(st) {
     <div data-tip="Útok: základ poškození všech dovedností."><span>Útok</span><b>${fmt(st.atk)}</b></div>
     <div data-tip="Obrana: snižuje fyzické poškození naplno a elementální napůl."><span>Obrana</span><b>${fmt(st.def)}</b></div>
     <div data-tip="Maximální život."><span>Život</span><b>${fmt(st.maxHp)}</b></div></div>
+    <div class="attrs">${ATTR_ORDER.map(k => {
+      const isMain = CLASSES[ch.cls].main.includes(k), v = Math.round(st.attrs[k]);
+      const tip = `${ATTRS[k].name}: ${ATTRS[k].desc}` + (isMain ? ` Tvůj hlavní atribut: +${Math.round(st.mainVal)} % útoku.` : '');
+      return `<div class="${isMain ? 'main' : ''}" data-tip="${tip}"><span>${ATTRS[k].name}${isMain ? ' ★' : ''}</span><b>${v}</b></div>`;
+    }).join('')}</div>
     <div class="xpline">Úroveň <b>${ch.level}</b> · ${fmt(ch.xp)} / ${fmt(need)} XP · nejvyšší rift <b>${ch.maxRift}</b></div>`;
   const basic = statRows([
     ['Rychlost útoku', `${st.spd.toFixed(2)} / s`],
@@ -676,7 +684,10 @@ function showLegend() {
     ${row('<span style="color:#ff5050">●</span>', 'Koule zdraví: seber ji a vyléčíš se.')}
     ${Object.values(SHRINES).map(S => row(`<span style="color:${S.color}">${S.glyph}</span>`, `<b>${S.name}</b>: ${S.desc}`)).join('')}
     <h3>Elementy</h3>${Object.keys(ELEMENTS).map(k => row(`<span style="color:${ELEMENTS[k].color}">${ELEMENTS[k].icon}</span>`, `<b>${ELEMENTS[k].name}</b>${k === 'phys' ? ' – tlumí ho zbroj' : k === 'chaos' ? ' – ignoruje zbroj i odolnosti' : ''}`)).join('')}
-    <h3>Rarity</h3>${RARITY_ORDER.map(r => row(`<span style="color:${RARITIES[r].color}">■</span>`, `<b style="color:${RARITIES[r].color}">${RARITIES[r].name}</b> – od riftu ${RARITIES[r].minRift}`)).join('')}
+    <h3>Rarity</h3>${RARITY_ORDER.map(r => row(`<span style="color:${RARITIES[r].color}">■</span>`, `<b style="color:${RARITIES[r].color}">${RARITIES[r].name}</b> – od riftu ${RARITIES[r].minRift}${r === 'orange' || r === 'diamond' ? ', jen pro určité třídy' : ''}`)).join('')}
+    <h3>Atributy a zbroj</h3>${ATTR_ORDER.map(k => row(`<b>${ATTRS[k].short}</b>`, `<b>${ATTRS[k].name}</b>: ${ATTRS[k].desc}`)).join('')}
+    ${row('★', 'Hlavní atribut tvé třídy navíc přidá +1 % útoku za bod.')}
+    ${Object.values(ARMOR_WEIGHT).map(w => row('🛡', `<b>${w.name}</b>: ${w === ARMOR_WEIGHT.heavy ? 'víc obrany (válečník)' : 'méně obrany, ale odolnosti proti živlům (kouzelníci)'}. Nosit může každý.`)).join('')}
     <div class="actions"><button onclick="closeMenu()">Zavřít</button></div>`, true);
 }
 

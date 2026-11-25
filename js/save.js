@@ -15,7 +15,7 @@ function newSave() {
 
 function newChar(name, race, cls, save) {
   const ch = { id: Date.now() + Math.floor(Math.random() * 1000), name, race, cls, level: 1, xp: 0, talents: {}, equip: {}, inv: [], maxRift: 1,
-               bar: [CLASSES[cls].base[0], CLASSES[cls].base[1], null, null, null, null], talentVer: 2, created: Date.now() };
+               bar: [CLASSES[cls].base[0], CLASSES[cls].base[1], null, null, null, null], talentVer: 2, classItems12: true, created: Date.now() };
   const w = starterWeapon(cls, save.nextUid++);
   ch.equip[w.slot === 'weapon' ? 'main' : 'off'] = w;
   return ch;
@@ -36,6 +36,19 @@ function migrateSave(s) {
   if (!(s.settings || {}).sellFix103) { for (const r in out.settings.autoSell) out.settings.autoSell[r] = false; out.settings.sellFix103 = true; }
   out.chars.forEach(ch => {
     ch.bar = ch.bar || [null, null, null, null, null, null]; ch.talents = ch.talents || {}; ch.inv = ch.inv || []; ch.equip = ch.equip || {};
+    // v1.2: legendárky a sety jsou jen pro určité třídy – nevhodné nasazené kusy se přesunou do batohu (nebo do truhly)
+    if (!ch.classItems12) {
+      const moved = [];
+      Object.keys(ch.equip).forEach(sl => {
+        const it = ch.equip[sl];
+        if (!it || canClassUse(it, ch.cls)) return;
+        delete ch.equip[sl];
+        if (ch.inv.length < INV_MAX || out.stash.length >= STASH_MAX) ch.inv.push(it); else out.stash.push(it);
+        moved.push(it.name);
+      });
+      ch.classItems12 = true;
+      if (moved.length) out._notice = (out._notice ? out._notice + ' ' : '') + `Legendárky a sety jsou nově jen pro určité třídy. Postava ${ch.name} je už nemůže nosit, najdeš je v batohu nebo v truhle: ${moved.join(', ')}.`;
+    }
     // v1.1: úplně nové talentové stromy – body se vrátí
     if (ch.talentVer !== 2) {
       const had = Object.keys(ch.talents).length > 0;

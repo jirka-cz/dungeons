@@ -178,6 +178,12 @@ body.touch-ui .hud-btns button { min-width: 38px; min-height: 34px; }
 .big3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 6px; }
 .big3 div { display: flex; flex-direction: column; align-items: center; background: var(--panel-2); border-radius: 8px; padding: 6px 2px; }
 .big3 span { font-size: 11px; color: var(--muted); } .big3 b { font-size: 20px; color: var(--gold); }
+.attrs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; margin-bottom: 6px; }
+.attrs div { display: flex; flex-direction: column; align-items: center; background: var(--panel-2); border-radius: 8px; padding: 4px 2px; border: 1px solid transparent; }
+.attrs span { font-size: 10px; color: var(--muted); white-space: nowrap; } .attrs b { font-size: 15px; color: var(--text); }
+.attrs div.main { border-color: var(--gold); } .attrs div.main b { color: var(--gold); }
+.item-stats .main-attr { color: var(--gold); }
+.item-stats .cls-only { color: #c8b6ff; font-size: 12px; margin-top: 3px; } .item-stats .cls-only.broken { color: #ff5050; }
 .xpline { font-size: 12px; color: var(--muted); margin-bottom: 6px; }
 .srows h4 { font-size: 12px; color: var(--gold); margin: 10px 0 2px; font-weight: 600; }
 .srow { display: flex; justify-content: space-between; gap: 8px; font-size: 13px; padding: 3px 0; border-bottom: 1px solid rgba(58,49,80,0.5); }

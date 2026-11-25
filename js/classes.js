@@ -1,10 +1,12 @@
 // Třídy, zdroje, aktivní dovednosti a talentové stromy.
 //
+// main = hlavní atribut (+1 % útoku za bod; druid bere vyšší z intelektu a obratnosti),
+// armor = preferovaná zbroj pro chytrou kořist (heavy = těžká, light = lehká, null = obojí).
 // Každá třída má 2 výchozí dovednosti (základní útok + jednu další), ostatní odemykají talenty (js/talents.js).
 
 const CLASSES = {
   warrior: {
-    name: 'Válečník', hp: 1.2, atk: 1.0, def: 3, spd: 0.95, elem: 'phys',
+    name: 'Válečník', hp: 1.2, atk: 1.0, def: 3, spd: 0.95, elem: 'phys', main: ['str'], armor: 'heavy',
     res: { name: 'Zuřivost', color: '#d8402a', max: 100, regen: -2, start: 0 },
     weapons: ['sword', 'axe', 'mace', 'greatsword', 'hammer', 'shield'], starter: 'sword',
     colors: ['#a9b2bd', '#646c77'],
@@ -12,7 +14,7 @@ const CLASSES = {
     desc: 'Bojovník zblízka. Útoky generují zuřivost. Zuřivost (dvě zbraně) nebo Zbraně (obouručka).',
   },
   mage: {
-    name: 'Mág', hp: 0.92, atk: 1.25, def: -1, spd: 1.0, elem: 'arcane',
+    name: 'Mág', hp: 0.92, atk: 1.25, def: -1, spd: 1.0, elem: 'arcane', main: ['int'], armor: 'light',
     res: { name: 'Mana', color: '#3a6ae0', max: 100, regen: 3.5, start: 100 },
     weapons: ['wand', 'staff', 'orb', 'dagger', 'sword'], starter: 'wand',
     colors: ['#6a4ae0', '#43309a'],
@@ -20,7 +22,7 @@ const CLASSES = {
     desc: 'Kouzelník na dálku s arkánní magií. Oheň, nebo Mráz.',
   },
   warlock: {
-    name: 'Černokněžník', hp: 1.0, atk: 1.1, def: 0, spd: 1.0, ls: 0.04, elem: 'shadow',
+    name: 'Černokněžník', hp: 1.0, atk: 1.1, def: 0, spd: 1.0, ls: 0.04, elem: 'shadow', main: ['int'], armor: 'light',
     res: { name: 'Mana', color: '#7a3ae0', max: 100, regen: 3, start: 100 },
     weapons: ['wand', 'dagger', 'staff', 'orb'], starter: 'wand',
     colors: ['#2c3a86', '#11132a'],
@@ -28,7 +30,7 @@ const CLASSES = {
     desc: 'Temná magie, vysává 4 % života. Kletby, nebo Démonologie.',
   },
   hunter: {
-    name: 'Lovec', hp: 0.95, atk: 1.0, def: 0, spd: 1.15, elem: 'phys', pet: 'wolf',
+    name: 'Lovec', hp: 0.95, atk: 1.0, def: 0, spd: 1.15, elem: 'phys', pet: 'wolf', main: ['agi'], armor: null,
     res: { name: 'Soustředění', color: '#d8a030', max: 100, regen: 4, start: 100 },
     weapons: ['bow', 'dagger', 'sword', 'axe'], starter: 'bow',
     colors: ['#4a7a3a', '#5a3a1e'],
@@ -36,7 +38,7 @@ const CLASSES = {
     desc: 'Střelec s věrným vlkem a pastmi. Lučištník, nebo Pán šelem.',
   },
   druid: {
-    name: 'Druid', hp: 1.05, atk: 0.95, def: 2, spd: 1.0, regen: 0.004, elem: 'nature',
+    name: 'Druid', hp: 1.05, atk: 0.95, def: 2, spd: 1.0, regen: 0.004, elem: 'nature', main: ['int', 'agi'], armor: null,
     res: { name: 'Duch', color: '#3ab060', max: 100, regen: 3, start: 100 },
     weapons: ['staff', 'mace', 'orb', 'dagger'], starter: 'staff',
     colors: ['#7a5a2a', '#3e6a2a'],

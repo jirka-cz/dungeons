@@ -64,6 +64,13 @@ function heroStats(ch) {
   if (Object.keys(active).length) applyConds(m, active);
   if (m.loneWolf) m.atkPct += m.loneWolf;
   const r = RACES[ch.race], c = CLASSES[ch.cls], L = ch.level - 1;
+  // Atributy: hlavní atribut třídy +1 % útoku za bod, vedlejší účinky platí pro všechny
+  const mainVal = Math.max(0, ...(c.main || []).map(k => m[k] || 0));
+  m.atkPct += mainVal * ATTR_FX.mainAtk;
+  m.def += m.str * ATTR_FX.strDef;
+  m.crit += m.agi * ATTR_FX.agiCrit;
+  m.resAll += m.int * ATTR_FX.intRes;
+  m.hpPct += m.sta * ATTR_FX.staHp;
   const atk = (r.atk * c.atk * (1 + LVL_ATK * L) + m.atk) * (1 + m.atkPct);
   const elemMul = { chaos: 1 };
   ['phys', 'fire', 'frost', 'shadow', 'nature', 'arcane'].forEach(e => elemMul[e] = 1 + m[e + 'Pct']);
@@ -96,6 +103,7 @@ function heroStats(ch) {
     resMax: c.res.max + (m.resMax || 0), resRegen: c.res.regen > 0 ? c.res.regen * (1 + (m.resRegenPct || 0)) : c.res.regen,
     genMul: 1 + (m.genPct || 0), cdr: Math.min(0.5, (m.cdr || 0) + (m.skillCd || 0) * 0.1), skillMul: 1 + (m.skillPct || 0),
     petSpd: m.petSpd || 0, petLs: m.petLs || 0,
+    attrs: { str: m.str, agi: m.agi, int: m.int, sta: m.sta }, mainVal,
     moveSpeed: 64 * (1 + (m.msPct || 0)) * (G.hero && G.hero.whirl > 0 ? 1.3 : 1),
     mods: m
   };

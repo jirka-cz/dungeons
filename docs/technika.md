@@ -14,7 +14,8 @@
 - **Migrace** v `migrateSave`:
   - verze < 5 (idle 0.x) začíná nově, zlato zůstane;
   - `talentVer 2` vrátí body po přestavbě stromů;
-  - `sellFix103` jednou vypne automatický prodej.
+  - `sellFix103` jednou vypne automatický prodej;
+  - `classItems12` (u postavy) přesune nasazené legendárky a sety, které třída už nesmí nosit, do batohu (nebo truhly).
 - Když se mění struktura uložení, vždy přidat migraci, aby kamarádům nezmizely postavy.
 
 ## Testy (`tests/`)
@@ -23,7 +24,7 @@ Předpoklady: Node.js a Python s Playwrightem (`pip install playwright` a `pytho
 | Test | Co ověřuje |
 |---|---|
 | `node tests/validate_talents.js` | všechny talenty, klíče statů a dovednosti existují a jsou implementované |
-| `tests/bot.py` | automatický hráč projde rifty, vypíše časy, smrti, chyby |
+| `tests/bot.py` | automatický hráč projde rifty, vypíše časy, smrti, chyby. Spouští se s JSON: `python3 tests/bot.py '{"cls":"mage","race":"human","start":1,"rifts":6,"maxTicks":30000,"branch":0}'` |
 | `tests/skills_smoke.py` | každá dovednost má účinek |
 | `tests/talents_ui.py`, `talents_mob.py`, `draft.py`, `land_tal.py` | okno talentů na počítači a mobilu, +/−, potvrzení, rozložení na šířku |
 | `tests/calc.py` | kalkulačka talentů |
@@ -31,6 +32,7 @@ Předpoklady: Node.js a Python s Playwrightem (`pip install playwright` a `pytho
 | `tests/mobauto.py`, `mob2.py` | dotykové ovládání a automatický útok |
 | `tests/flows.py`, `panels.py` | průchod menu a okny |
 | `tests/racecls.py`, `autosell.py`, `shrine.py` | omezení rasa/třída, automatický prodej, svatyně |
+| `tests/items.py` | atributy, váha zbroje, legendárky a sety podle tříd, chytrá kořist, migrace, snímky okna postavy |
 
 ## Nasazení
 - GitHub Pages z větve `main`, složka `/ (root)`. Soubor `.nojekyll` vypíná zpracování Jekyllem.

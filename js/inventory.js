@@ -6,7 +6,7 @@ function currentElems() {
   if (CLASSES[c.cls].pet) els.add('phys');
   return [...els];
 }
-function scoreOf(it) { return itemScore(it, currentElems()); }
+function scoreOf(it) { return itemScore(it, currentElems(), G.char.cls); }
 function hasTitanGrip() { return heroStats().titanGrip; }
 
 function slotsFor(it) {
