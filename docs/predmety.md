@@ -148,6 +148,29 @@ Většinu vzácných předmětů dává boss. Čísla jsou spočítaná z herní
 - Nastavuje se po raritách v Nastavení i v okně postavy.
 - Ve výchozím stavu je vypnutý pro všechny rarity (rozhodnutí v1.0.3, migrace `sellFix103`).
 
+### Vzhled předmětů (v1.12)
+- Ikony jsou hladké bílé symboly z game-icons.net (`js/item-icons.js`), každý typ předmětu má vlastní (meč, dýka, obouruční meč, sekera, palcát, kladivo, hůlka, hůl, luk, štít, kniha kouzel, helma, kápě, čelenka, kyrys, kroužková zbroj, kožená vesta, róba, kovové rukavice, rukavice, nohavice, kalhoty, boty, sandály, plášť, pláštěnka, amulet, talisman, prsten, pečetní prsten).
+- **Dlaždice podle rarity** (styl C1): pozadí prosvícené barvou rarity a rámeček v její barvě, legendární a diamantové jemně září.
+- **Očarování** (O1): kulatý znak živlu vpravo dole podle nejsilnějšího statu (`ENCHANTS`, `itemEnchant`): oheň, mráz, jed (příroda), stín, magie, zlato (zlato a lepší kořist), krev (vysávání). Šedé předměty očarování nemají. V popisku řádek „Očarování: …“.
+- **Sety** (S1): znak setu v jeho barvě vlevo nahoře (`color`, `glyph` v `SETS`): Titán bronzový štít, Arcimág modrá hvězda, Stínový lovec zelená kápě, Pakt Prázdnoty fialový pentagram, Strážce Hvozdu zelený list.
+- **Ohnisko** se od v1.12 jmenuje **Kniha kouzel** (starší předměty si název nechávají).
+
+### Mýtický tier (v1.12)
+- Nejvzácnější rarita (`mythic`, barva rudá). Nepadá losem rarity: **jen z bossů od podzemí 150, šance 1 %** na každého poraženého bosse (`MYTHIC_CHANCE`).
+- Každý mýtický předmět je díl **mýtického setu své třídy** (5 setů po 6 dílech, `mythic: true` v `SETS`), chytrá kořist 85 % pro vlastní třídu:
+
+| Třída | Set | Bonusy (1 / 3 / 6 dílů) |
+|---|---|---|
+| Válečník | Pekelný dobyvatel | +15 % útok, +10 % život / -12 % poškození, +25 % trny, +3 % vysávání / +50 % útok, +25 % dvojitý úder, +25 % život |
+| Mág | Oko věčného plamene | +20 % síla dovedností, +15 % oheň / -20 % přebíjení, +15 % sesílání, +30 % krit. poškození / +50 % útok, +20 % ignoruje odolnosti, +20 % dvojitý úder |
+| Černokněžník | Koruna spáleného krále | +20 % stín, +2 % vysávání / +40 % poškození v čase, +2 s, +5 % odolnosti / +50 % útok, +60 % mazlíčci, +4 % vysávání |
+| Lovec | Lov rudého měsíce | +5 % krit., +15 % mazlíčci / +40 % krit. poškození, +12 % rychlost zbraní, +15 % průraz / +50 % útok, poprava, +40 % mazlíčci |
+| Druid | Srdce hořícího hvozdu | +20 % příroda, +15 % léčení / regenerace, +12 % sesílání, +5 % odolnosti / +50 % útok, +60 % mazlíčci, +25 % život |
+
+- Statistiky: násobek základu 1,9, 4 afixy s nejlepším hodem (`q` 0,7), hlavní atribut třídy 2,2× afixu, odolnost 80.
+- **Vzhled:** bez rámečku, živý ohnivý prstenec (animace SVG) a rudě žhnoucí ikona; na zemi z předmětu stoupají jiskry.
+- **Efekty na postavě** (`mythicPieces`): **3 díly = planoucí oči**, **6 dílů = hořící postava**. V inventáři animace na panáčkovi (`startDollFx` v `js/ui.js`), v podzemí oči a plameny kolem hrdiny (`drawHero` v `js/engine.js`). Vidí to i spoluhráči.
+
 ## Kde v kódu
 - `js/items.js` – data, atributy, váha zbroje, generování předmětů (`makeItem`), třídy předmětů (`itemClasses`, `canClassUse`), popisky statů (`STAT_LABELS`), skóre, ceny;
 - `js/classes.js` – `main` (hlavní atribut) a `armor` (preferovaná zbroj) u tříd;

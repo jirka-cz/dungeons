@@ -53,9 +53,71 @@ function drawIcons() {
     drawIcon(g, cv.dataset.icon, 0, 0, cv.width / 12, cv.dataset.gem, !!cv.dataset.mono);
   });
   document.querySelectorAll('canvas[data-race]').forEach(cv => {
+    if (+cv.dataset.fx >= 3) { startDollFx(cv); return; }
     const g = cv.getContext('2d'); g.clearRect(0, 0, cv.width, cv.height);
     drawSprite(g, cv.dataset.race, 0, 0, cv.width / 16, { palOverride: classPal(cv.dataset.race, cv.dataset.cls) });
   });
+}
+
+// ---------- Mýtický set: oheň na postavě v inventáři (3 díly = planoucí oči, 6 dílů = hořící postava) ----------
+const DOLL_FX = { list: [], raf: 0 };
+const FIRE_COLS = ['255,220,140', '255,120,30', '210,40,15', '70,20,20'];
+function spriteEyes(race) {
+  const px = getSprite(race).px, eyes = [], edge = [];
+  for (let y = 0; y < 16; y++) for (let x = 0; x < 16; x++) {
+    const c = px[y][x]; if (!c || c === '.') continue;
+    if (c === 'e') eyes.push([x, y]);
+    if ([[1, 0], [-1, 0], [0, -1], [0, 1]].some(([dx, dy]) => { const X = x + dx, Y = y + dy; return X < 0 || Y < 0 || X > 15 || Y > 15 || px[Y][X] === '.'; })) edge.push([x, y]);
+  }
+  return { eyes, edge };
+}
+function startDollFx(cv) {
+  if (DOLL_FX.list.some(d => d.cv === cv)) return;
+  DOLL_FX.list.push(Object.assign({ cv, parts: [] }, spriteEyes(cv.dataset.race)));
+  if (!DOLL_FX.raf) DOLL_FX.raf = requestAnimationFrame(dollFxFrame);
+}
+function dollFxFrame(time) {
+  DOLL_FX.list = DOLL_FX.list.filter(d => d.cv.isConnected);
+  if (!DOLL_FX.list.length) { DOLL_FX.raf = 0; return; }
+  const tick = time / 1000;
+  DOLL_FX.list.forEach(d => {
+    const cv = d.cv, g = cv.getContext('2d'), W = cv.width, S = W / 16, lvl = +cv.dataset.fx, burn = lvl >= 6;
+    g.clearRect(0, 0, W, cv.height);
+    const spawn = (x, y, big) => d.parts.push({ x, y, vx: (Math.random() - 0.5) * S * 0.06, vy: -S * (0.06 + Math.random() * 0.09) * (big ? 1.3 : 1),
+      life: 0, max: 30 + Math.random() * 25, r: S * (big ? 0.42 : 0.3) * (0.6 + Math.random() * 0.6), front: Math.random() < 0.12 });
+    if (burn) {
+      const gr = g.createRadialGradient(W / 2, W * 0.62, S, W / 2, W * 0.56, W * 0.5);
+      gr.addColorStop(0, 'rgba(255,80,20,0.35)'); gr.addColorStop(1, 'rgba(255,40,10,0)'); g.fillStyle = gr; g.fillRect(0, 0, W, cv.height);
+      for (let i = 0; i < 4; i++) { const e = d.edge[Math.random() * d.edge.length | 0]; spawn((e[0] + Math.random()) * S, (e[1] + Math.random()) * S, true); }
+    }
+    if (Math.random() < 0.6 && d.eyes.length) { const e = d.eyes[Math.random() * d.eyes.length | 0]; spawn((e[0] + 0.5) * S, (e[1] + 0.3) * S, false); }
+    d.parts.forEach(p => { p.life++; p.x += p.vx + Math.sin((p.life + p.y) * 0.08) * S * 0.02; p.y += p.vy; });
+    d.parts = d.parts.filter(p => p.life < p.max);
+    const draw = front => {
+      g.globalCompositeOperation = 'lighter';
+      d.parts.forEach(p => {
+        if (p.front !== front) return;
+        const k = p.life / p.max, r = p.r * (1 - k * 0.6), col = FIRE_COLS[k < 0.25 ? 0 : k < 0.55 ? 1 : k < 0.8 ? 2 : 3], a = (front ? 0.35 : 0.6) * (1 - k);
+        const gr = g.createRadialGradient(p.x, p.y, 0, p.x, p.y, r * 1.6); gr.addColorStop(0, `rgba(${col},${a})`); gr.addColorStop(1, `rgba(${col},0)`);
+        g.fillStyle = gr; g.beginPath(); g.ellipse(p.x, p.y - r * 0.4, r * 1.1, r * 1.9, 0, 0, 7); g.fill();
+      });
+      g.globalCompositeOperation = 'source-over';
+    };
+    draw(false);
+    const eyeCol = Math.sin(tick * 9) > -0.3 ? '#ffe08a' : '#ff8a2a';
+    drawSprite(g, cv.dataset.race, 0, 0, S, { palOverride: Object.assign({}, classPal(cv.dataset.race, cv.dataset.cls), { e: eyeCol }) });
+    if (burn) { g.globalCompositeOperation = 'source-atop'; g.fillStyle = `rgba(255,90,30,${0.12 + 0.05 * Math.sin(tick * 5)})`; g.fillRect(0, 0, W, cv.height); g.globalCompositeOperation = 'source-over'; }
+    g.globalCompositeOperation = 'lighter';
+    d.eyes.forEach(([x, y]) => {
+      const cx = (x + 0.5) * S, cy = (y + 0.5) * S, rr = S * (1.6 + 0.3 * Math.sin(tick * 7));
+      const gr = g.createRadialGradient(cx, cy, 0, cx, cy, rr);
+      gr.addColorStop(0, 'rgba(255,220,140,0.9)'); gr.addColorStop(0.4, 'rgba(255,100,20,0.45)'); gr.addColorStop(1, 'rgba(255,40,10,0)');
+      g.fillStyle = gr; g.fillRect(cx - rr, cy - rr, rr * 2, rr * 2);
+    });
+    g.globalCompositeOperation = 'source-over';
+    draw(true);
+  });
+  DOLL_FX.raf = requestAnimationFrame(dollFxFrame);
 }
 
 // ---------- Hlavní menu: výběr a tvorba postavy ----------
@@ -156,7 +218,7 @@ function itemHtml(it, actions) {
     (leg ? Object.keys(leg.stats).map(k => `<div class="leg">${statLine(k, leg.stats[k])}</div>`).join('') : '');
   if (it.set) {
     const s = SETS[it.set], have = setCounts(G.char)[it.set] || 0;
-    lines += `<div class="set-name">${s.name} (${have}/6)</div>` + Object.keys(s.bonus).map(n =>
+    lines += `<div class="set-name" style="color:${s.color}"><span class="setb inl" style="--s:${s.color}">${giIcon(s.glyph, 'bi')}</span>${s.name} (${have}/6)${s.mythic ? ' · 3 díly: planoucí oči, 6 dílů: hořící postava' : ''}</div>` + Object.keys(s.bonus).map(n =>
       `<div class="set-b ${have >= +n ? 'on' : ''}">(${n}) ${Object.keys(s.bonus[n]).map(k => statLine(k, s.bonus[n][k])).join(', ')}</div>`).join('');
   }
   const durTxt = it.dur !== undefined ? `<div class="dur ${broken ? 'broken' : it.dur < it.maxDur * 0.25 ? 'low' : ''}">Odolnost ${it.dur}/${it.maxDur}${broken ? ' – rozbitý, nedává staty' : ''}</div>` : '';
@@ -164,15 +226,36 @@ function itemHtml(it, actions) {
   const cant = only ? `<div class="cls-only ${usable ? '' : 'broken'}">Pouze: ${only.map(c => CLASSES[c].name).join(', ')}</div>`
     : !usable ? `<div class="broken">Nevhodné pro třídu ${CLASSES[G.char.cls].name}</div>` : '';
   return `<div class="item ${broken ? 'is-broken' : ''}" style="border-color:${r.color}">
-    <div class="item-head"><b style="color:${r.color}">${it.name}</b><span class="muted small">${kindLabel(it)} · úr. ${it.ilvl}</span></div>
+    <div class="item-head"><b style="color:${r.color}">${it.name}</b><span class="muted small">${r.name} · ${kindLabel(it)} · úr. ${it.ilvl}</span>${(e => e ? `<span class="ench-line" style="color:${ENCHANTS[e].color}"><span class="ench inl" style="--e:${ENCHANTS[e].color}">${giIcon('ench_' + e, 'bi')}</span>Očarování: ${ENCHANTS[e].name}</span>` : '')(itemEnchant(it))}</div>
     <div class="item-stats">${lines}${durTxt}${cant}</div>${actions || ''}</div>`;
 }
 
+// ---------- Ikony předmětů (vektorové, styl C1: bílá ikona, dlaždice podle rarity) ----------
+const SLOT_GI = { sword: 'sword', shield: 'shield', helm: 'helm', amulet: 'amulet', cloak: 'cloak', chest: 'plate', gloves: 'gloves', legs: 'pants', boots: 'boots', ring: 'ring' };
+function giIcon(key, cls) { return `<svg class="${cls || 'ii'}" viewBox="0 0 512 512" aria-hidden="true">${ITEM_GI[key] || ITEM_GI.ring}</svg>`; }
+let mfireSeq = 0;
+// Animovaný ohnivý prstenec mýtického předmětu (varianta E2)
+function mythicFire() {
+  const id = 'mf' + (mfireSeq++), sd = 3 + (mfireSeq % 7), d = (3 + mfireSeq % 3);
+  return `<svg class="mfire" viewBox="0 0 64 64" aria-hidden="true"><defs><filter id="${id}" x="-20%" y="-20%" width="140%" height="140%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.08" numOctaves="3" seed="${sd}"><animate attributeName="baseFrequency" dur="${d}s" values="0.07;0.095;0.07" repeatCount="indefinite"/></feTurbulence>
+    <feDisplacementMap in="SourceGraphic" scale="14"><animate attributeName="scale" dur="1.7s" values="11;16;11" repeatCount="indefinite"/></feDisplacementMap><feGaussianBlur stdDeviation="0.6"/></filter></defs>
+    <g filter="url(#${id})"><circle cx="32" cy="32" r="29" fill="url(#mfire-grad)"><animate attributeName="opacity" dur="0.9s" values="1;.82;.95;1" repeatCount="indefinite"/></circle></g></svg>`;
+}
+// Vnitřek políčka: ikona + znak setu (vlevo nahoře) + znak očarování (vpravo dole) + oheň u mýtických
+function itemTileInner(it) {
+  const S = it.set && SETS[it.set], e = itemEnchant(it);
+  return (it.rarity === 'mythic' ? mythicFire() : '') + giIcon(it.type) +
+    (S ? `<span class="setb" style="--s:${S.color}" data-tip="${S.name}">${giIcon(S.glyph, 'bi')}</span>` : '') +
+    (e ? `<span class="ench" style="--e:${ENCHANTS[e].color}" data-tip="Očarování: ${ENCHANTS[e].name}">${giIcon('ench_' + e, 'bi')}</span>` : '');
+}
+function rarClass(it) { return `rar r-${it.rarity}`; }
+function miniTile(it) { return `<span class="mini ${rarClass(it)}" style="--c:${RARITIES[it.rarity].color}">${it.rarity === 'mythic' ? mythicFire() : ''}${giIcon(it.type)}</span>`; }
+
 function iconCell(it, slotIcon, src, selected, label, extra = '') {
-  const col = it ? RARITIES[it.rarity].color : 'var(--border)';
   const broken = it && it.dur === 0;
-  return `<div class="cell ${selected ? 'sel' : ''} ${it ? '' : 'empty'} ${broken ? 'is-broken' : ''}" style="border-color:${col}" data-src="${src}" ${extra}>
-    <canvas width="48" height="48" data-icon="${it ? itemIcon(it) : slotIcon}" data-gem="${it ? RARITIES[it.rarity].color : ''}" data-mono="${it ? '' : 1}"></canvas>
+  return `<div class="cell ${it ? rarClass(it) : 'empty'} ${selected ? 'sel' : ''} ${broken ? 'is-broken' : ''}" style="${it ? `--c:${RARITIES[it.rarity].color}` : ''}" data-src="${src}" ${extra}>
+    ${it ? itemTileInner(it) : giIcon(SLOT_GI[slotIcon] || 'ring', 'ii mono')}
     ${it && it.dur !== undefined && it.dur < it.maxDur * 0.25 ? `<span class="cell-dur ${broken ? 'b' : ''}"></span>` : ''}
     ${label ? `<span class="cell-label">${label}</span>` : ''}</div>`;
 }
@@ -265,11 +348,11 @@ function charStatsHtml(st) {
 function dollHtml(sel) {
   const ch = G.char, st = heroStats();
   const slot = s => iconCell(ch.equip[s], EQUIP_SLOTS[s].icon, `eq:${s}`, sel === `eq:${s}`, EQUIP_SLOTS[s].name, `data-drop="eq:${s}"`);
-  const twoH = ch.equip.main && itemHand(ch.equip.main) === 2 && !ch.equip.off && !st.titanGrip;
-  const offCell = twoH ? `<div class="cell ghost-2h" data-drop="eq:off" data-tip="Obouruční zbraň zabírá obě ruce."><canvas width="48" height="48" data-icon="${itemIcon(ch.equip.main)}" data-mono="1"></canvas><span class="cell-label">Levá ruka</span></div>` : slot('off');
+  const twoH = ch.equip.main && itemHand(ch.equip.main) === 2 && !ch.equip.off && !(st.titanGrip && TITAN_GRIP_TYPES.includes(ch.equip.main.type));
+  const offCell = twoH ? `<div class="cell ghost-2h" data-drop="eq:off" data-tip="Obouruční zbraň zabírá obě ruce.">${giIcon(ch.equip.main.type, 'ii mono')}<span class="cell-label">Levá ruka</span></div>` : slot('off');
   return `<div class="doll">
     <div class="doll-col">${['head', 'neck', 'cloak', 'chest', 'gloves'].map(slot).join('')}</div>
-    <div class="doll-mid"><canvas width="128" height="128" data-race="${ch.race}" data-cls="${ch.cls}" class="doll-hero"></canvas>
+    <div class="doll-mid"><canvas width="128" height="128" data-race="${ch.race}" data-cls="${ch.cls}" data-fx="${mythicPieces(ch)}" class="doll-hero"></canvas>
       <div class="doll-hands">${slot('main')}${offCell}</div></div>
     <div class="doll-col">${['ring1', 'ring2', 'legs', 'boots'].map(slot).join('')}</div></div>`;
 }
@@ -383,7 +466,7 @@ function showVendor() {
 function showSmith() {
   const rows = allWorn().filter(it => it.dur !== undefined).map(it => {
     const c = repairCost(it), pctv = it.dur / it.maxDur;
-    return `<div class="smith-row"><canvas width="24" height="24" data-icon="${itemIcon(it)}" data-gem="${RARITIES[it.rarity].color}"></canvas>
+    return `<div class="smith-row">${miniTile(it)}
       <span style="color:${RARITIES[it.rarity].color}">${it.name}</span>
       <div class="durbar"><div style="width:${pctv * 100}%;background:${pctv === 0 ? '#e04040' : pctv < 0.25 ? '#e0a040' : '#4fc46a'}"></div></div>
       <span class="small">${it.dur}/${it.maxDur}</span>
@@ -752,7 +835,7 @@ function showLegend() {
     ${row('Běsnění', 'Po 2 minutách boss útočí rychleji a silněji.')}
     ${Object.values(BOSSES).map(B => row(`<b>${B.name}</b>`, B.desc)).join('')}
     <h3>Elementy</h3>${Object.keys(ELEMENTS).map(k => row(`<span style="color:${ELEMENTS[k].color}">${ELEMENTS[k].icon}</span>`, `<b>${ELEMENTS[k].name}</b>${k === 'phys' ? ' – tlumí ho zbroj' : k === 'chaos' ? ' – ignoruje zbroj i odolnosti' : ''}`)).join('')}
-    <h3>Rarity</h3>${RARITY_ORDER.map(r => row(`<span style="color:${RARITIES[r].color}">■</span>`, `<b style="color:${RARITIES[r].color}">${RARITIES[r].name}</b> – od podzemí ${RARITIES[r].minRift}${r === 'orange' || r === 'diamond' ? ', jen pro určité třídy' : ''}`)).join('')}
+    <h3>Rarity</h3>${RARITY_ORDER.map(r => row(`<span style="color:${RARITIES[r].color}">■</span>`, `<b style="color:${RARITIES[r].color}">${RARITIES[r].name}</b> – od podzemí ${RARITIES[r].minRift}${r === 'mythic' ? ', jen z bossů (1 %), díly třídních setů: 3 díly = planoucí oči, 6 = hořící postava' : r === 'orange' || r === 'diamond' ? ', jen pro určité třídy' : ''}`)).join('')}
     <h3>Atributy a zbroj</h3>${ATTR_ORDER.map(k => row(`<b>${ATTRS[k].short}</b>`, `<b>${ATTRS[k].name}</b>: ${ATTRS[k].desc}`)).join('')}
     ${row('★', 'Hlavní atribut tvé třídy navíc přidá +1 % útoku za bod.')}
     ${Object.values(ARMOR_WEIGHT).map(w => row('🛡', `<b>${w.name}</b>: ${w === ARMOR_WEIGHT.heavy ? 'víc obrany (válečník)' : 'méně obrany, ale odolnosti proti živlům (kouzelníci)'}. Nosit může každý.`)).join('')}
@@ -863,8 +946,8 @@ function initDrag() {
       itip.hidden = true; $('tip').hidden = true;
       const ghost = document.createElement('div'); ghost.className = 'drag-ghost';
       if (down.src) {
-        const it = itemBySrc(down.src), cv = document.createElement('canvas'); cv.width = cv.height = 48;
-        drawIcon(cv.getContext('2d'), itemIcon(it), 0, 0, 4, RARITIES[it.rarity].color); ghost.appendChild(cv);
+        const it = itemBySrc(down.src);
+        ghost.innerHTML = `<div class="cell ${rarClass(it)}" style="--c:${RARITIES[it.rarity].color}">${itemTileInner(it)}</div>`;
         const [w] = down.src.split(':');
         if (w !== 'shop') slotsFor(it).forEach(s => { const el = document.querySelector(`#modal-box [data-drop="eq:${s}"]`); if (el) el.classList.add('drop-ok'); });
         document.querySelectorAll('#modal-box [data-drop="inv"], #modal-box [data-drop="stash"], #modal-box [data-drop="sell"]').forEach(el => el.classList.add('drop-ok'));

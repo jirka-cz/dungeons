@@ -21,6 +21,10 @@
   - `classItems12` (u postavy) přesune nasazené legendárky a sety, které třída už nesmí nosit, do batohu (nebo truhly).
 - Když se mění struktura uložení, vždy přidat migraci, aby kamarádům nezmizely postavy.
 
+## Ikony předmětů
+- `js/item-icons.js` generuje `tools/gen-item-icons.js` z balíčku `@iconify-json/game-icons` (`npm i @iconify-json/game-icons`, pak `NODE_PATH=<node_modules> node tools/gen-item-icons.js`). Mapování typ předmětu → ikona je v tom skriptu.
+- Pixelové ikony 12×12 (`ICONS` v `js/sprites.js`) zůstávají jen pro předměty ležící na zemi v podzemí.
+
 ## Testy (`tests/`)
 Předpoklady: Node.js a Python s Playwrightem (`pip install playwright` a `python3 -m playwright install chromium`). Spouštět z kořene repozitáře. Snímky obrazovky jdou do `/tmp/wd-shots` (jiné místo nastaví proměnná `WD_SHOTS`).
 
@@ -34,6 +38,7 @@ Předpoklady: Node.js a Python s Playwrightem (`pip install playwright` a `pytho
 | `tests/controls.py`, `czkeys.py` | ovládání, česká klávesnice, recall |
 | `tests/mobauto.py`, `mob2.py` | dotykové ovládání a automatický útok |
 | `tests/flows.py`, `panels.py` | průchod menu a okny |
+| `tests/visuals.py` | ikony předmětů, očarování a sety, mýtický tier (padání, efekty 3/6 dílů, snímky inventáře a podzemí), trpasličí úchop |
 | `tests/racecls.py`, `autosell.py`, `shrine.py` | omezení rasa/třída, automatický prodej, svatyně |
 | `tests/bossfight.py` | souboje s každým bossem dvěma styly – „stand“ (jen stojí) a „dodge“ (uhýbá); vypíše čas, smrti, lektvary. Volba `dbg` vypíše poškození podle útoků |
 | `tests/bosses_shots.py` | snímky všech bossů (nástup, velký útok, 2. fáze); `mobile` = telefon na výšku |

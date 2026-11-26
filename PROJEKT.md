@@ -7,7 +7,7 @@ Tohle je hlavní vstupní bod pro každý nový chat s Claudem. Popisuje, co hra
 - Hraje se na počítači i na mobilu (na výšku i na šířku).
 - Zdarma pro kamarády. Každý má vlastní uložené postavy v prohlížeči (localStorage) a může je přenést exportním kódem.
 - Autor (Jirka) neprogramuje. Všechno vzniká přes zadání v češtině, Claude píše kód, testuje ho a vysvětluje změny srozumitelně.
-- Aktuální verze: **1.11.0** (konstanta `GAME_VERSION` v `js/data.js`).
+- Aktuální verze: **1.12.0** (konstanta `GAME_VERSION` v `js/data.js`).
 
 ## Kde hra běží
 | Co | Kde |
@@ -45,6 +45,7 @@ Každé větší téma má vlastní dokument a vlastní chat (viz `docs/CHATY.md
 | `js/classes.js` | třídy, zdroje (zuřivost, mana…), základní dovednosti, mazlíčci, přebíjení |
 | `js/talents.js` | 35 dalších dovedností, talentové stromy, výpočet bodů a platnosti |
 | `js/icons.js` | SVG ikony z game-icons.net (vygenerováno, ručně needitovat velké bloky) |
+| `js/item-icons.js` | ikony předmětů, očarování a setů z game-icons.net (generuje `tools/gen-item-icons.js`, ručně needitovat) |
 | `js/items.js` | typy předmětů, rarity, afixy, legendárky, sety, popisky statů, ceny |
 | `js/sprites.js` | pixel art postav, nepřátel a objektů |
 | `js/world.js` | generátor map (jeskyně, krypty), město, kolize, hledání cest |

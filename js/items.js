@@ -27,7 +27,7 @@ const ITEM_TYPES = {
   staff:      { noun: 'Hůl:f',              icon: 'staff',      hand: 2 },
   bow:        { noun: 'Luk:m',              icon: 'bow',        hand: 2 },
   shield:     { noun: 'Štít:m',             icon: 'shield', base: [['block', 0.05, 0.0005, false, 0.2], ['def', 1, 0.15]] },
-  orb:        { noun: 'Ohnisko:n',          icon: 'orb',    base: [['skillPct', 0.06, 0.002, false, 0.4]] },
+  orb:        { noun: 'Kniha kouzel:f',          icon: 'orb',    base: [['skillPct', 0.06, 0.002, false, 0.4]] },
   helm:       { noun: 'Helma:f',            icon: 'helm', armor: 'heavy' },
   hood:       { noun: 'Kápě:f',             icon: 'hood', armor: 'light' },
   circlet:    { noun: 'Čelenka:f',          icon: 'helm', armor: 'light' },
@@ -78,6 +78,16 @@ const WEAPON_SUF = { sword: 'šermíře', axe: 'sekerníka', mace: 'drtiče', da
 
 const WEAPON_ATK = { 1: 3, 2: 5.7 };   // obouruční zbraň ≈ 1,9× jednoruční
 const OFFHAND_WEAPON_MULT = 0.7;       // zbraň v levé ruce dává 70 % útoku
+const OFFHAND_2H_MULT = 0.5;           // obouruční zbraň v levé ruce (Titánský stisk / trpaslík) dává 50 % útoku
+const TITAN_GRIP_TYPES = ['greatsword', 'hammer'];   // dvě obouruční zbraně jde držet jen u zbraní na blízko (ne luk, ne hůl)
+// Smí být tahle kombinace v rukou? tg = má Titánský stisk (talent nebo trpaslík)
+function handsOk(main, off, tg) {
+  if (!main || !off) return true;
+  const m2 = itemHand(main) === 2, o2 = off.slot === 'weapon' && itemHand(off) === 2;
+  if (!m2 && !o2) return true;
+  if (!tg) return false;
+  return (!m2 || TITAN_GRIP_TYPES.includes(main.type)) && (!o2 || TITAN_GRIP_TYPES.includes(off.type));
+}
 
 // Sloty postavy: které druhy předmětů přijímají
 const EQUIP_SLOTS = {
@@ -104,9 +114,22 @@ const RARITIES = {
   green:   { name: 'Neobvyklý',  color: '#4fd05a', weight: 30,  minRift: 1,  mult: 1.15, aff: 1, q: 3, sell: 5,  price: 150, dur: 40 },
   purple:  { name: 'Epický',     color: '#b75cff', weight: 6,   minRift: 4,  mult: 1.35, aff: 2, q: 2.2, sell: 18, price: 600, dur: 50 },
   orange:  { name: 'Legendární', color: '#ff9a1f', weight: 1,   minRift: 10, mult: 1.60, aff: 3, q: 1.3, sell: 60, price: 2000, dur: 60 },
-  diamond: { name: 'Diamantový', color: '#5ff0ff', weight: 0.3, minRift: 16, mult: 1.50, aff: 2, q: 1.3, sell: 70, price: 3000, dur: 60 }
+  diamond: { name: 'Diamantový', color: '#5ff0ff', weight: 0.3, minRift: 16, mult: 1.50, aff: 2, q: 1.3, sell: 70, price: 3000, dur: 60 },
+  // Mýtický: nepadá losem rarity, jen z bossů od podzemí 150 (MYTHIC_CHANCE), vždy díl mýtického setu
+  mythic:  { name: 'Mýtický',    color: '#ff4a1a', weight: 0,   minRift: 150, mult: 1.90, aff: 4, q: 0.7, sell: 150, price: 0,  dur: 80 }
 };
-const RARITY_ORDER = ['gray', 'green', 'purple', 'orange', 'diamond'];
+const RARITY_ORDER = ['gray', 'green', 'purple', 'orange', 'diamond', 'mythic'];
+const MYTHIC_CHANCE = 0.01;   // šance, že boss od podzemí 150 pustí mýtický předmět
+// Očarování: podle nejsilnějšího z těchto statů dostane předmět znak v rohu (O1)
+const ENCHANTS = {
+  fire:   { name: 'Oheň',  color: '#ff7a2a', stats: ['firePct'] },
+  frost:  { name: 'Mráz',  color: '#8fd8ff', stats: ['frostPct'] },
+  nature: { name: 'Jed',   color: '#7ad04a', stats: ['naturePct'] },
+  shadow: { name: 'Stín',  color: '#a070ff', stats: ['shadowPct'] },
+  arcane: { name: 'Magie', color: '#ff6ad8', stats: ['arcanePct'] },
+  gold:   { name: 'Zlato', color: '#ffd84a', stats: ['goldPct', 'mfPct'] },
+  blood:  { name: 'Krev',  color: '#e03a3a', stats: ['ls'] }
+};
 
 // Náhodné afixy (inspirace Diablo 3, WoW, Grim Dawn).
 // v0 = hodnota na úrovni 1 (roste do úrovně 100), w = váha (jak často padá, výchozí 1), slots = jen na těchto druzích,
@@ -192,7 +215,7 @@ const LEGENDARIES = [
   // Mág
   { id: 'eternalfire', cls: ['mage'],                        slot: 'weapon',  type: 'staff',   name: 'Hůl věčného plamene',     stats: { firePct: 0.3, resPen: 0.1 } },
   { id: 'frostking',   cls: ['mage'],                        slot: 'head',    type: 'circlet', name: 'Koruna Mrazivého krále',  stats: { hpPct: 0.10, slowAura: 0.2, freezeChance: 0.05 } },
-  { id: 'starfall',    cls: ['mage'],                        slot: 'offhand', type: 'orb',     name: 'Ohnisko Hvězdného prachu', stats: { arcanePct: 0.25, skillCd: 1 } },
+  { id: 'starfall',    cls: ['mage'],                        slot: 'offhand', type: 'orb',     name: 'Kniha Hvězdného prachu', stats: { arcanePct: 0.25, skillCd: 1 } },
   { id: 'runerobe',    cls: ['mage', 'warlock'],             slot: 'chest',   type: 'robe',    name: 'Róba Tisíce run',         stats: { resAll: 0.05, skillPct: 0.15, castPct: 0.12 } },
   // Černokněžník
   { id: 'void',        cls: ['warlock'],                     slot: 'ring',    type: 'signet',  name: 'Prsten Prázdnoty',        stats: { shadowPct: 0.25, dotPct: 0.25 } },
@@ -208,38 +231,86 @@ const LEGENDARIES = [
 ];
 
 // Sety: 6 dílů, bonusy za 1, 3 a 6 nasazených dílů. pieces: druh → [jméno, typ]. cls = kdo je smí nosit.
+// color a glyph = barva a znak setu (znak v rohu ikony), mythic = mýtický set (rarita mythic, efekty ohně při 3 a 6 dílech)
 const SETS = {
   titan: {
-    name: 'Zbroj Titána', cls: ['warrior'],
+    name: 'Zbroj Titána', cls: ['warrior'], color: '#e0a050', glyph: 'set_titan',
     pieces: { head: ['Titánova helma', 'helm'], chest: ['Titánův kyrys', 'plate'], legs: ['Titánovy nohavice', 'greaves'],
               boots: ['Titánovy boty', 'boots'], cloak: ['Titánův plášť', 'mantle'], neck: ['Titánova pečeť', 'talisman'] },
     bonus: { 1: { hpPct: 0.10 }, 3: { def: 8, thorns: 0.10, block: 0.05 }, 6: { hpPct: 0.25, dmgRed: 0.2 } }
   },
   archmage: {
-    name: 'Odkaz Arcimága', cls: ['mage'],
+    name: 'Odkaz Arcimága', cls: ['mage'], color: '#6fa8ff', glyph: 'set_archmage',
     pieces: { weapon: ['Hůl Arcimága', 'staff'], head: ['Kápě Arcimága', 'hood'], chest: ['Róba Arcimága', 'robe'],
               legs: ['Kalhoty Arcimága', 'pants'], cloak: ['Plášť Arcimága', 'cloak'], ring: ['Prsten Arcimága', 'ring'] },
     bonus: { 1: { skillPct: 0.20 }, 3: { skillCd: 1, critDmg: 0.30 }, 6: { atkPct: 0.30, doubleChance: 0.2, resPen: 0.15 } }
   },
   shadow: {
-    name: 'Stínový lovec', cls: ['hunter'],
+    name: 'Stínový lovec', cls: ['hunter'], color: '#4fd1a5', glyph: 'set_shadow',
     pieces: { weapon: ['Stínová čepel', 'dagger'], head: ['Stínová maska', 'hood'], chest: ['Stínová vesta', 'vest'],
               boots: ['Stínové boty', 'boots'], cloak: ['Stínový plášť', 'cloak'], neck: ['Stínový amulet', 'amulet'] },
     bonus: { 1: { crit: 0.05 }, 3: { dodge: 0.08, spdPct: 0.15 }, 6: { critDmg: 0.50, execPct: 1 } }
   },
   pact: {
-    name: 'Pakt Prázdnoty', cls: ['warlock'],
+    name: 'Pakt Prázdnoty', cls: ['warlock'], color: '#c050ff', glyph: 'set_pact',
     pieces: { weapon: ['Dýka Paktu', 'dagger'], head: ['Kápě Paktu', 'hood'], chest: ['Róba Paktu', 'robe'],
               gloves: ['Rukavice Paktu', 'gloves'], legs: ['Kalhoty Paktu', 'pants'], ring: ['Pečeť Paktu', 'signet'] },
     bonus: { 1: { shadowPct: 0.15 }, 3: { dotPct: 0.30, resAll: 0.05 }, 6: { atkPct: 0.30, ls: 0.05, petPct: 0.40 } }
   },
   grove: {
-    name: 'Strážce Hvozdu', cls: ['druid'],
+    name: 'Strážce Hvozdu', cls: ['druid'], color: '#7cd04a', glyph: 'set_grove',
     pieces: { weapon: ['Hůl Strážce', 'staff'], head: ['Parohy Strážce', 'circlet'], chest: ['Vesta Strážce', 'vest'],
               gloves: ['Rukavice Strážce', 'gloves'], boots: ['Sandály Strážce', 'sandals'], neck: ['Talisman Strážce', 'talisman'] },
     bonus: { 1: { naturePct: 0.15 }, 3: { healPct: 0.30, regen: 0.003, resNature: 0.10 }, 6: { atkPct: 0.30, petPct: 0.40, hpPct: 0.20 } }
+  },
+  // ---- Mýtické sety (jeden pro každou třídu) ----
+  m_warrior: {
+    name: 'Pekelný dobyvatel', cls: ['warrior'], color: '#ff4a1a', glyph: 'set_m_warrior', mythic: true,
+    pieces: { weapon: ['Čepel Pekelného dobyvatele', 'greatsword'], head: ['Helma Pekelného dobyvatele', 'helm'], chest: ['Kyrys Pekelného dobyvatele', 'plate'],
+              gloves: ['Pěsti Pekelného dobyvatele', 'gauntlets'], legs: ['Nohavice Pekelného dobyvatele', 'greaves'], boots: ['Boty Pekelného dobyvatele', 'boots'] },
+    bonus: { 1: { atkPct: 0.15, hpPct: 0.10 }, 3: { dmgRed: 0.12, thorns: 0.25, ls: 0.03 }, 6: { atkPct: 0.50, doubleChance: 0.25, hpPct: 0.25 } }
+  },
+  m_mage: {
+    name: 'Oko věčného plamene', cls: ['mage'], color: '#ff4a1a', glyph: 'set_m_mage', mythic: true,
+    pieces: { weapon: ['Hůl věčného plamene', 'staff'], head: ['Koruna věčného plamene', 'circlet'], chest: ['Róba věčného plamene', 'robe'],
+              gloves: ['Rukavice věčného plamene', 'gloves'], legs: ['Kalhoty věčného plamene', 'pants'], ring: ['Prsten věčného plamene', 'signet'] },
+    bonus: { 1: { skillPct: 0.20, firePct: 0.15 }, 3: { skillCd: 2, castPct: 0.15, critDmg: 0.30 }, 6: { atkPct: 0.50, resPen: 0.20, doubleChance: 0.20 } }
+  },
+  m_warlock: {
+    name: 'Koruna spáleného krále', cls: ['warlock'], color: '#ff4a1a', glyph: 'set_m_warlock', mythic: true,
+    pieces: { weapon: ['Hůlka spáleného krále', 'wand'], offhand: ['Kniha spáleného krále', 'orb'], head: ['Koruna spáleného krále', 'circlet'],
+              chest: ['Róba spáleného krále', 'robe'], legs: ['Kalhoty spáleného krále', 'pants'], neck: ['Amulet spáleného krále', 'amulet'] },
+    bonus: { 1: { shadowPct: 0.20, ls: 0.02 }, 3: { dotPct: 0.40, dotDur: 2, resAll: 0.05 }, 6: { atkPct: 0.50, petPct: 0.60, ls: 0.04 } }
+  },
+  m_hunter: {
+    name: 'Lov rudého měsíce', cls: ['hunter'], color: '#ff4a1a', glyph: 'set_m_hunter', mythic: true,
+    pieces: { weapon: ['Luk rudého měsíce', 'bow'], head: ['Kápě rudého měsíce', 'hood'], chest: ['Kroužková zbroj rudého měsíce', 'mail'],
+              gloves: ['Rukavice rudého měsíce', 'gloves'], boots: ['Boty rudého měsíce', 'boots'], cloak: ['Plášť rudého měsíce', 'cloak'] },
+    bonus: { 1: { crit: 0.05, petPct: 0.15 }, 3: { critDmg: 0.40, wpnSpd: 0.12, armorPen: 0.15 }, 6: { atkPct: 0.50, execPct: 1, petPct: 0.40 } }
+  },
+  m_druid: {
+    name: 'Srdce hořícího hvozdu', cls: ['druid'], color: '#ff4a1a', glyph: 'set_m_druid', mythic: true,
+    pieces: { weapon: ['Hůl hořícího hvozdu', 'staff'], head: ['Parohy hořícího hvozdu', 'circlet'], chest: ['Vesta hořícího hvozdu', 'vest'],
+              legs: ['Kalhoty hořícího hvozdu', 'pants'], boots: ['Sandály hořícího hvozdu', 'sandals'], neck: ['Talisman hořícího hvozdu', 'talisman'] },
+    bonus: { 1: { naturePct: 0.20, healPct: 0.15 }, 3: { regen: 0.004, castPct: 0.12, resAll: 0.05 }, 6: { atkPct: 0.50, petPct: 0.60, hpPct: 0.25 } }
   }
 };
+// Nejvyšší počet nasazených dílů jednoho mýtického setu (pro efekty ohně: 3 = oči, 6 = hořící postava)
+function mythicPieces(ch) {
+  let best = 0; const c = {};
+  EQUIP_ORDER.forEach(s => { const it = ch.equip && ch.equip[s]; if (it && it.set && SETS[it.set] && SETS[it.set].mythic) c[it.set] = (c[it.set] || 0) + 1; });
+  for (const k in c) best = Math.max(best, c[k]);
+  return best;
+}
+// Očarování předmětu (klíč z ENCHANTS) nebo null – podle nejsilnějšího statu vzhledem k běžné hodnotě afixu
+function itemEnchant(it) {
+  if (!it || it.rarity === 'gray') return null;
+  const st = Object.assign({}, it.base); for (const k in it.affixes) st[k] = (st[k] || 0) + it.affixes[k];
+  if (it.leg) { const l = LEGENDARIES.find(x => x.id === it.leg); if (l) for (const k in l.stats) st[k] = (st[k] || 0) + l.stats[k]; }
+  let best = null, bv = 0;
+  for (const e in ENCHANTS) for (const k of ENCHANTS[e].stats) { const v = (st[k] || 0) / (AFFIXES[k] ? AFFIXES[k].v0 : 0.05); if (v > bv) { bv = v; best = e; } }
+  return best;
+}
 
 const STAT_LABELS = {
   str:          v => `+${Math.round(v)} síla`,
@@ -308,7 +379,7 @@ const STAT_LABELS = {
   healPct:      v => `+${pct(v)} % léčení`,
   petPct:       v => `+${pct(v)} % síla mazlíčka`,
   petCount:     v => `+${v} mazlíček`,
-  titanGrip:    () => 'Obouruční zbraň můžeš držet v každé ruce',
+  titanGrip:    () => 'Obouruční meč nebo kladivo můžeš držet v každé ruce',
   rebirth:      () => 'Jednou za běh vstaneš z mrtvých (40 % života)',
   soulPct:      v => `+${pct(v)} % duší`,
   goldPct:      v => `+${pct(v)} % zlata`,
@@ -502,8 +573,8 @@ function makeItem(ilvl, rarity, uid, forceKind, cls) {
     const leg = pool[Math.floor(Math.random() * pool.length)];
     kind = leg.slot; type = leg.type; name = leg.name; item.leg = leg.id;
     if (!forCls || !leg.cls.includes(forCls)) forCls = leg.cls[Math.floor(Math.random() * leg.cls.length)];
-  } else if (rarity === 'diamond') {
-    const all = Object.keys(SETS), mine = cls ? all.filter(id => SETS[id].cls.includes(cls)) : [];
+  } else if (rarity === 'diamond' || rarity === 'mythic') {
+    const all = Object.keys(SETS).filter(id => !!SETS[id].mythic === (rarity === 'mythic')), mine = cls ? all.filter(id => SETS[id].cls.includes(cls)) : [];
     const ids = mine.length && Math.random() < SMART_UNIQUE ? mine : all;
     const setId = ids[Math.floor(Math.random() * ids.length)];
     const kinds = Object.keys(SETS[setId].pieces);
@@ -512,7 +583,7 @@ function makeItem(ilvl, rarity, uid, forceKind, cls) {
     item.set = setId;
     if (!forCls || !SETS[setId].cls.includes(forCls)) forCls = SETS[setId].cls[0];
   }
-  if (rarity !== 'orange' && rarity !== 'diamond' && type && ITEM_KINDS[kind].types.indexOf(type) < 0) type = null;
+  if (rarity !== 'orange' && rarity !== 'diamond' && rarity !== 'mythic' && type && ITEM_KINDS[kind].types.indexOf(type) < 0) type = null;
   const K = ITEM_KINDS[kind];
   type = type || K.types[Math.floor(Math.random() * K.types.length)];
   item.slot = kind; item.type = type;
@@ -520,7 +591,7 @@ function makeItem(ilvl, rarity, uid, forceKind, cls) {
   const mains = forCls ? classMainStats(forCls) : [];
   const mainKey = mains.length ? mains[Math.floor(Math.random() * mains.length)] : null;
   // legendárky a sety mají vždy hlavní atribut své třídy (silnější než afix)
-  if ((item.leg || item.set) && mainKey) item.base[mainKey] = Math.max(2, Math.round(rollAffixValue(mainKey, ilvl, rarity) * 1.6));
+  if ((item.leg || item.set) && mainKey) item.base[mainKey] = Math.max(2, Math.round(rollAffixValue(mainKey, ilvl, rarity) * (rarity === 'mythic' ? 2.2 : 1.6)));
   const legDef = item.leg ? LEGENDARIES.find(l => l.id === item.leg) : null;
   item.affixes = rollAffixes(r.aff, ilvl, Object.keys(item.base).concat(legDef ? Object.keys(legDef.stats) : []), { kind, type, cls: forCls, rarity });
   // chytrá kořist: běžné předměty občas dostanou hlavní atribut třídy místo náhodného afixu

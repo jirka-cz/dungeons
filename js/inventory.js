@@ -15,7 +15,7 @@ function hasTitanGrip() { return heroStats().titanGrip; }
 
 function slotsFor(it) {
   if (!canClassUse(it, G.char.cls)) return [];
-  if (it.slot === 'weapon') return itemHand(it) === 2 ? (hasTitanGrip() ? ['main', 'off'] : ['main']) : ['main', 'off'];
+  if (it.slot === 'weapon') return itemHand(it) === 2 ? (hasTitanGrip() && TITAN_GRIP_TYPES.includes(it.type) ? ['main', 'off'] : ['main']) : ['main', 'off'];
   if (it.slot === 'offhand') return ['off'];
   if (it.slot === 'ring') return ['ring1', 'ring2'];
   return [it.slot];
@@ -25,8 +25,8 @@ function displaced(it, slot) {
   const eq = G.char.equip, out = [];
   if (eq[slot]) out.push(slot);
   const tg = hasTitanGrip();
-  if (!tg && slot === 'main' && itemHand(it) === 2 && eq.off) out.push('off');
-  if (!tg && slot === 'off' && eq.main && itemHand(eq.main) === 2) out.push('main');
+  if (slot === 'main' && eq.off && !handsOk(it, eq.off, tg)) out.push('off');
+  if (slot === 'off' && eq.main && !handsOk(eq.main, it, tg)) out.push('main');
   return out;
 }
 
@@ -77,7 +77,7 @@ function unequip(slot, to = 'inv') {
 
 function validateHands() {
   const eq = G.char.equip;
-  if (!hasTitanGrip() && eq.main && eq.off && (itemHand(eq.main) === 2 || itemHand(eq.off) === 2)) {
+  if (!handsOk(eq.main, eq.off, hasTitanGrip())) {
     G.char.inv.push(eq.off); delete eq.off; invalidate();
   }
 }

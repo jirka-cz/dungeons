@@ -518,6 +518,7 @@ function drawGroundLayer(g) {
       const it = l.item, col = RARITIES[it.rarity].color, ri = RARITY_ORDER.indexOf(it.rarity);
       if (ri >= 2) { g.globalAlpha = 0.25 + Math.sin(G.time * 3) * 0.1; g.fillStyle = col; g.fillRect(l.x - 1, l.y - 60, 2, 60); g.globalAlpha = 1; light(l.x, l.y, 24, col); }
       drawIcon(g, itemIcon(it), l.x - 6, l.y - 10 - drop + bob, 1, col);
+      if (it.rarity === 'mythic' && Math.random() < 0.4) particle(l.x + rand(-5, 5), l.y - 4, { vy: -rand(12, 22), life: 0.6, color: ['#ffd27a', '#ff5a14', '#c41a10'][Math.random() * 3 | 0], size: 1, glow: true });
     }
   });
   // svatyně
@@ -603,6 +604,7 @@ function drawMonster(g, m) {
   if (m.slowT > 0) { g.fillStyle = '#bfe8ff'; g.fillRect(m.x - 4 + Math.sin(t * 3) * 3, m.y - 2, 1, 1); }
 }
 
+const spriteEyeCache = {};
 function drawHero(g, h) {
   h = h || G.hero;
   const t = G.time, ch = h.char || G.char;
@@ -615,11 +617,29 @@ function drawHero(g, h) {
   if (h.atkAnim > 0) { ox = Math.cos(h.atkAng || 0) * 2; oy = Math.sin(h.atkAng || 0) * 1; }
   drawShadow(g, h.x, h.y, 6 * s);
   if (h.invuln > 0 && !h.leap && !h.dash && Math.floor(t * 15) % 2) g.globalAlpha = 0.5;
-  drawSprite(g, ch.race, Math.round(h.x - 8 * s + ox), Math.round(h.y - 16 * s + 1 - bob + oy - (h.z || 0)), s, {
-    flip: h.face < 0, flash: h.hitT > 0, t, blink: (t % 3.8) < 0.12, palOverride: classPal(ch.race, ch.cls),
+  // mýtický set: 3 díly = planoucí oči, 6 dílů = hořící postava
+  const myth = h.dead ? 0 : mythicPieces(ch), sx = Math.round(h.x - 8 * s + ox), sy = Math.round(h.y - 16 * s + 1 - bob + oy - (h.z || 0));
+  const pal = classPal(ch.race, ch.cls);
+  drawSprite(g, ch.race, sx, sy, s, {
+    flip: h.face < 0, flash: h.hitT > 0, t, blink: myth < 3 && (t % 3.8) < 0.12, palOverride: myth >= 3 ? Object.assign({}, pal, { e: Math.sin(t * 9) > -0.3 ? '#ffe08a' : '#ff8a2a' }) : pal,
     tint: FORM[0], frozen: h.frozen > 0
   });
   g.globalAlpha = 1;
+  if (myth >= 3) {
+    const FIRE = ['#ffd27a', '#ff8a2a', '#ff5a14', '#c41a10'];
+    (spriteEyeCache[ch.race] || (spriteEyeCache[ch.race] = spriteEyes(ch.race))).eyes.forEach(([ex, ey]) => {
+      const px = sx + ((h.face < 0 ? 15 - ex : ex) + 0.5) * s, py = sy + (ey + 0.5) * s;
+      if (Math.random() < 0.2) particle(px, py, { vy: -14, vx: rand(-3, 3), life: 0.4, color: FIRE[Math.random() * 3 | 0], size: 1 });
+    });
+    if (myth >= 6) {
+      light(h.x, h.y - 8, 24, '#9a3010');
+      for (let i = 0; i < (Math.random() < 0.5 ? 2 : 1); i++) {
+        const side = Math.random() < 0.5 ? -1 : 1;   // plameny hlavně po obrysu postavy, ať zůstane čitelná
+        particle(h.x + side * rand(4, 7) * s, h.y - rand(1, 13) * s, { vy: -rand(14, 26), vx: side * rand(0, 4), life: rand(0.35, 0.65), color: FIRE[Math.random() * 4 | 0], size: 1 });
+      }
+      if (Math.random() < 0.3) particle(h.x + rand(-4, 4) * s, h.y - 15 * s, { vy: -rand(16, 26), life: 0.5, color: FIRE[Math.random() * 3 | 0], size: 1 });
+    }
+  }
   if (h.whirl > 0) { g.strokeStyle = '#ffffff'; g.globalAlpha = 0.5; g.beginPath(); g.arc(h.x, h.y - 6, 14, t * 20, t * 20 + 3); g.stroke(); g.globalAlpha = 1; }
   h.buffs.forEach((b, i) => { if (b.color && Math.random() < 0.15) particle(h.x + rand(-6, 6), h.y - rand(0, 14), { vy: -12, life: 0.5, color: b.color, size: 1, glow: true }); });
   if (h.channel > 0) { h.channel -= 1 / 60; g.strokeStyle = '#7dffb0'; g.globalAlpha = 0.6; g.beginPath(); g.arc(h.x, h.y - 6, 10 + Math.sin(t * 20) * 2, 0, Math.PI * 2); g.stroke(); g.globalAlpha = 1; }

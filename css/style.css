@@ -406,3 +406,27 @@ body.touch-ui #party { top: auto; bottom: 46%; width: 120px; }
 .net-list li { padding: 6px 8px; border: 1px solid #2e2a3a; border-radius: 6px; } .net-list .muted { display: block; margin-left: 16px; }
 .vote-list .ok { color: #4fd05a; } .vote-time { color: var(--gold); margin: 6px 0; font-weight: 600; }
 .net-note { font-size: 12px; color: #8fe0ff; margin: 6px 0; }
+
+/* ---- ikony předmětů v1.12: bílá vektorová ikona, dlaždice podle rarity (C1), znaky setu a očarování, mýtický oheň ---- */
+.cell .ii { width: 76%; height: 76%; fill: #f4f1ec; position: relative; z-index: 1; }
+.cell .ii.mono { fill: rgba(160,150,190,0.22); }
+.cell.empty, .cell.ghost-2h { border-color: var(--border); }
+.cell.rar { background: radial-gradient(circle at 50% 40%, color-mix(in srgb, var(--c) 45%, #141118), #141118 75%); border-color: color-mix(in srgb, var(--c) 70%, #141118); }
+.cell.r-orange, .cell.r-diamond { box-shadow: 0 0 10px -2px var(--c); }
+.cell.r-mythic { background: transparent; border-color: transparent; }
+.cell.r-mythic .ii, .mini.r-mythic .ii { fill: #fff4ec; filter: drop-shadow(0 0 2px #ff3a20) drop-shadow(0 0 5px #ff2a10); }
+.cell.is-broken .ii { filter: grayscale(1) brightness(0.6); }
+.mfire { position: absolute; left: -12%; top: -12%; width: 124%; height: 124%; pointer-events: none; z-index: 0; }
+.setb, .ench { position: absolute; z-index: 2; width: 16px; height: 16px; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 0 2px #141118; }
+.setb { left: 2px; top: 2px; border-radius: 4px; background: var(--s); }
+.ench { right: 2px; bottom: 2px; border-radius: 50%; background: var(--e); box-shadow: 0 0 0 2px #141118, 0 0 5px var(--e); }
+.setb .bi, .ench .bi { width: 72%; height: 72%; fill: #fff; }
+.cell:has(.cell-label) .ench { bottom: 14px; }
+.bag.stash .setb, .bag.stash .ench { width: 13px; height: 13px; }
+.setb.inl, .ench.inl { position: relative; display: inline-flex; left: auto; top: auto; right: auto; bottom: auto; width: 15px; height: 15px; vertical-align: -3px; margin-right: 6px; }
+.ench-line { flex-basis: 100%; font-size: 12px; font-weight: 600; }
+.mini { display: inline-flex; position: relative; width: 24px; height: 24px; border-radius: 6px; border: 1.5px solid; align-items: center; justify-content: center; }
+.mini.rar { background: radial-gradient(circle at 50% 40%, color-mix(in srgb, var(--c) 45%, #141118), #141118 75%); border-color: color-mix(in srgb, var(--c) 70%, #141118); }
+.mini.r-mythic { border-color: transparent; background: transparent; }
+.mini .ii { width: 80%; height: 80%; fill: #f4f1ec; position: relative; z-index: 1; }
+.drag-ghost .cell { width: 52px; height: 52px; }

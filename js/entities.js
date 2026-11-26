@@ -19,7 +19,7 @@ function setCounts(ch) {
 function gearConds(ch) {
   const eq = ch.equip, main = eq.main, off = eq.off;
   const dw = !!(main && off && off.slot === 'weapon');
-  const c = { dw, dw1: dw && itemHand(main) === 1 && itemHand(off) === 1, th: !!(main && itemHand(main) === 2 && !dw), sh: !!(off && off.type === 'shield') };
+  const c = { dw, dw1: dw && itemHand(main) === 1 && itemHand(off) === 1, dw2: dw && itemHand(main) === 2 && itemHand(off) === 2, th: !!(main && itemHand(main) === 2 && !dw), sh: !!(off && off.type === 'shield') };
   // držené typy zbraní pro bonusy "poškození se sekerou" apod. (klíče axe_atkPct …)
   [main, off].forEach(w => { if (w && w.slot === 'weapon' && w.dur !== 0) c[w.type] = true; });
   return c;
@@ -44,7 +44,7 @@ function gatherMods(ch) {
     const it = ch.equip[s];
     if (!it) return;
     const st = itemStats(it);
-    if (s === 'off' && it.slot === 'weapon' && st.atk) st.atk *= Math.min(1, OFFHAND_WEAPON_MULT + m.offhand);
+    if (s === 'off' && it.slot === 'weapon' && st.atk) st.atk *= Math.min(1, (itemHand(it) === 2 ? OFFHAND_2H_MULT : OFFHAND_WEAPON_MULT) + m.offhand);
     addStats(m, st);
   });
   const sc = setCounts(ch);
@@ -74,6 +74,7 @@ function heroStats(ch) {
   m.crit += m.agi * ATTR_FX.agiCrit;
   m.resAll += m.int * ATTR_FX.intRes;
   m.hpPct += m.sta * ATTR_FX.staHp;
+  if (m.titanGrip >= 2 && gearConds(ch).dw2) m.atkPct += 0.08;   // trpaslík s talentem Titánský stisk
   if (c.res.regen > 0) m.resRegenPct += m.spi * ATTR_FX.spiRegen; else m.genPct += m.spi * ATTR_FX.spiGen;
   const atk = (r.atk * c.atk * (1 + LVL_ATK * L) + m.atk) * (1 + m.atkPct);
   const elemMul = { chaos: 1 };
@@ -393,7 +394,11 @@ function killMonster(m) {
     const st = G.st;
     if (gold) dropGold(m.x, m.y, m.gold * st.goldMul * rand(0.7, 1.3) * (m.boss ? 15 : 1));
     const dropC = (m.elite ? RIFT.eliteDrop : RIFT.dropChance * (m.rw || 1)) * st.dropMul * (1 + RIFT.dropPerLevel * L);
-    if (m.boss) { const n = 3 + rnd(3); for (let i = 0; i < n; i++) dropItem(m.x + rand(-20, 20), m.y + rand(-20, 20), true); }
+    if (m.boss) {
+      const n = 3 + rnd(3); for (let i = 0; i < n; i++) dropItem(m.x + rand(-20, 20), m.y + rand(-20, 20), true);
+      // mýtický předmět: jen z bossů od podzemí 150, šance 1 %
+      if (G.rift.level >= RARITIES.mythic.minRift && Math.random() < MYTHIC_CHANCE) dropItem(m.x, m.y, true, 'mythic');
+    }
     else if (Math.random() < dropC) dropItem(m.x, m.y, false);
   });
   if (Math.random() < (m.elite ? 0.6 : RIFT.globeChance * ((m.rw || 1) < 1 ? RIFT.crowdGlobe : 1))) G.loot.push({ kind: 'globe', x: m.x + rand(-6, 6), y: m.y + rand(-6, 6), t: 0 });
@@ -832,9 +837,9 @@ function dropGold(x, y, amount) {
   amount = Math.max(1, Math.round(amount));
   G.loot.push({ kind: 'gold', x: x + rand(-8, 8), y: y + rand(-6, 6), amount, t: 0, owner: G.hero });
 }
-function dropItem(x, y, boss) {
+function dropItem(x, y, boss, forceRar) {
   const st = G.st, L = G.rift.level;
-  const rar = rollRarity(st.mf + riftMf(L), boss, L);
+  const rar = forceRar || rollRarity(st.mf + riftMf(L), boss, L);
   const it = makeItem(riftIlvl(L), rar, heroSave().nextUid++, null, Math.random() < 0.8 ? G.char.cls : null);
   G.loot.push({ kind: 'item', item: it, x: x + rand(-10, 10), y: y + rand(-8, 8), t: 0, owner: G.hero });
   if (RARITY_ORDER.indexOf(rar) >= 2 && !G.remoteCtx) { sfx('rare'); burst(x, y, RARITIES[rar].color, 20, 60, { glow: true }); }

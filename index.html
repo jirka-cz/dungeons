@@ -15,6 +15,10 @@
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
+  <!-- barevný přechod ohnivého prstence mýtických předmětů (sdílený všemi ikonami) -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><radialGradient id="mfire-grad" cx="50%" cy="50%" r="50%">
+    <stop offset="0" stop-color="#0a0202"/><stop offset=".45" stop-color="#2a0505"/><stop offset=".65" stop-color="#ff5a14"/><stop offset=".78" stop-color="#ffc060"/>
+    <stop offset=".9" stop-color="#a01208" stop-opacity=".7"/><stop offset="1" stop-color="#000" stop-opacity="0"/></radialGradient></defs></svg>
   <canvas id="game"></canvas>
 
   <!-- Hlavní menu: postavy -->
@@ -78,6 +82,7 @@
   <script src="js/classes.js"></script>
   <script src="js/talents.js"></script>
   <script src="js/icons.js"></script>
+  <script src="js/item-icons.js"></script>
   <script src="js/items.js"></script>
   <script src="js/sprites.js"></script>
   <script src="js/world.js"></script>

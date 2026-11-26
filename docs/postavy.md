@@ -1,6 +1,6 @@
 # Postavy
 
-## Jak to funguje teď (v1.4.0)
+## Jak to funguje teď (v1.12.0)
 - Hráč má víc postav. Zlato a truhla jsou sdílené, výbava a talenty patří postavě.
 - Postava = jméno + rasa + třída. Vzhled je pixelový sprite, obarvený podle třídy.
 
@@ -79,3 +79,10 @@ Povolené kombinace: `RACE_CLASSES` a `raceAllows()` v `js/data.js`. Obrazovka t
 
 ## Testy
 `python3 tests/racecls.py`, `tests/items.py`, `tests/skills_smoke.py`, `tests/bot.py` (průchod rifty pro všechny třídy a specializace).
+
+### Dvě obouruční zbraně (v1.12)
+- Obouruční zbraň zabírá obě ruce. Výjimka: **Titánský stisk** – obouruční meč nebo válečné kladivo v každé ruce (ne luk, ne hůl; `TITAN_GRIP_TYPES`, `handsOk` v `js/items.js`).
+- Titánský stisk má **trpaslík od narození** (rasový bonus „Horský stisk“) a válečník si ho může vzít v talentu stromu Zuřivost.
+- Obouruční zbraň v levé ruce dává 50 % útoku (`OFFHAND_2H_MULT`), jednoruční 70 %.
+- Trpaslík, který si talent stejně vezme, dostane +8 % útok se dvěma obouručními zbraněmi.
+

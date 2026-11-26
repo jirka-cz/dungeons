@@ -1,6 +1,6 @@
 // Herní data a balanc. Změna čísla = jiná obtížnost.
 
-const GAME_VERSION = '1.11.0';
+const GAME_VERSION = '1.12.0';
 const TILE = 16;                 // velikost dlaždice v px
 const VIEW_W = 460, VIEW_H = 260; // logické rozlišení světa (zvětšuje se pixelově)
 
@@ -21,8 +21,8 @@ const HERO_RES_CAP = 0.6;
 const RACES = {
   human:  { name: 'Člověk',   hp: 105, atk: 11, def: 3, spd: 1.00, crit: 0.05, bonus: { mfPct: 0.10, dropPct: 0.05 },
             desc: 'Vyvážený. Šťastlivec: +10 % lepší kořist, +5 % šance na předmět.' },
-  dwarf:  { name: 'Trpaslík', hp: 135, atk: 9,  def: 6, spd: 0.85, crit: 0.05, bonus: { goldPct: 0.15 },
-            desc: 'Odolný a pomalejší. Horník: +15 % zlata.' },
+  dwarf:  { name: 'Trpaslík', hp: 135, atk: 9,  def: 6, spd: 0.85, crit: 0.05, bonus: { goldPct: 0.15, titanGrip: 1 },
+            desc: 'Odolný a pomalejší. Horník: +15 % zlata. Horský stisk: obouruční meč nebo kladivo udrží v každé ruce.' },
   elf:    { name: 'Elf',      hp: 85,  atk: 10, def: 2, spd: 1.30, crit: 0.12, bonus: { healPct: 0.15 },
             desc: 'Rychlý, častěji kriticky zasáhne. Lesní dar: +15 % léčení.' },
   orc:    { name: 'Ork',      hp: 110, atk: 13, def: 2, spd: 0.90, crit: 0.05, bonus: { atkPct: 0.10 },

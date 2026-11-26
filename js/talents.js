@@ -150,7 +150,7 @@ const TALENTS = {
         Pg: tP('Nespoutaná zuřivost', 'Během rozzuření +8 % útok.', 2, { enrage_atkPct: 0.08 }),
         S5e: tE('Zesílený Hromový řev', 'Hromový řev +30 % plocha.', { skr_roar: 0.3 }),
         S4c: tC(['Zuřivec', 'Během rozzuření +15 % krit. poškození.', { enrage_critDmg: 0.15 }], ['Nezastavitelný', 'Během rozzuření -10 % přijatého poškození.', { enrage_dmgRed: 0.10 }]),
-        Ph: tC(['Titánský stisk', 'Obouruční zbraň můžeš držet v každé ruce.', { titanGrip: 1 }], ['Jednoruční zuřivost', 'Se dvěma jednoručními zbraněmi +12 % útok.', { dw1_atkPct: 0.12 }]),
+        Ph: tC(['Titánský stisk', 'Obouruční meč nebo kladivo můžeš držet v každé ruce (levá dává 50 % útoku). Trpaslík to umí od narození – dostane místo toho +8 % útok se dvěma obouručními zbraněmi.', { titanGrip: 1 }], ['Jednoruční zuřivost', 'Se dvěma jednoručními zbraněmi +12 % útok.', { dw1_atkPct: 0.12 }]),
         S5c: tC(['Krvavý řev', 'Krvácení z Hromového řevu +50 %.', { skdot_roar: 0.5 }], ['Děsivý řev', 'Hromový řev omráčí na 1 s.', { skstun_roar: 1 }]),
         Pi: tP('Rychlé ruce', '+5 % rychlost útoku.', 2, { spdPct: 0.05 }),
         Pj: tP('Rudá mlha', 'Rozzuření trvá o 2 s déle a dává navíc +5 % rychlost útoku.', 2, { enrageDur: 2, enrage_spdPct: 0.05 }),
