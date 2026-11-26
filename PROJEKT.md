@@ -26,6 +26,7 @@ Každé větší téma má vlastní dokument a vlastní chat (viz `docs/CHATY.md
 |---|---|---|
 | Jak pokračovat v chatech | `docs/CHATY.md` | instrukce projektu a úvodní zprávy |
 | Talenty | `docs/talenty.md` | stromy tříd i ras, uzly, body, okno talentů, kalkulačka |
+| **Herní design a balanc** | `docs/herni-design.md` | **znalostní báze: research (D3, D4, WoW, Grim Dawn, PoE), co Jirka chce, pravidla identity ras a tříd, cílová čísla balancu, postup a chyby, kterých se vyvarovat** |
 | Rebalanc 1.13 | `docs/rebalanc.md` | research (D3, D4, WoW, Grim Dawn, PoE), rysy ras a tříd, rasové stromy, škálování a rozdíl úrovní |
 | Postavy | `docs/postavy.md` | rasy, třídy, dovednosti, mazlíčci, úrovně, staty |
 | Město | `docs/mesto.md` | obchodník (ekonomika zlata, obnovení, vylepšení), kovář, truhla, obelisk, odolnost |
@@ -91,3 +92,4 @@ Každé větší téma má vlastní dokument a vlastní chat (viz `docs/CHATY.md
 6. Commit a push do `main`. GitHub Pages se aktualizuje sama za 1–2 minuty.
 7. Jirkovi stručně česky napsat, co se změnilo a co má vyzkoušet.
 8. Při přidání nové rasy, třídy nebo typu zbraně/zbroje projít kontrolní seznam v `docs/rozsireni.md` (data, ikona, pixelová postava, legendárky a sety, testy).
+9. **Než navrhneš cokoli k rasám, třídám, dovednostem, talentům, předmětům nebo obtížnosti, přečti `docs/herni-design.md`** (research, pravidla identity, cílová čísla). Nový research dělej jen na to, co tam chybí, a nové poznatky do něj doplň. Po změně balancu spusť `tests/balance.py` a `tests/rebalance.py`.

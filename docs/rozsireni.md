@@ -3,10 +3,11 @@
 Návod pro AI. Jirka bude postupně přidávat nové rasy, třídy a typy zbraní (případně zbroje). Každá novinka musí dostat **i vzhled**, ne jen data. Tady je kompletní seznam míst v kódu a pravidla, jak má vzhled vypadat.
 
 ## Jak postupovat
-1. Přečti tento dokument a dokument tématu (`docs/postavy.md`, `docs/predmety.md`).
+1. Přečti tento dokument, **`docs/herni-design.md`** (co Jirka chce, research, pravidla identity – nová rasa/třída musí mít vlastní profil v dosahu, odolnosti, pohybu, léčení a mechanice; cílová čísla balancu) a dokument tématu (`docs/postavy.md`, `docs/predmety.md`).
+   - Profil novinky navrhni Jirkovi krátce v tabulce (jako v `docs/herni-design.md`, kap. 3) dřív, než začneš psát kód.
 2. **Vzhled navrhni dřív, než ho zapracuješ.** Udělej náhled (HTML → snímek přes Playwright) se 2–4 variantami a nech Jirku vybrat. Takhle vznikly současné ikony (kola návrhů v chatu „vybavení a atributy“, listopad 2026): Jirka vybírá vylučovací metodou, nejdřív hrubý styl, pak detaily.
 3. Zapracuj, spusť testy (hlavně `tests/visuals.py`, `tests/items.py`, `tests/racecls.py`, `node tests/validate_talents.js`), udělej snímky PC i mobilu a podívej se na ně.
-4. Aktualizuj dokumentaci a tento seznam, pokud přibylo nové místo v kódu.
+4. Aktualizuj dokumentaci a tento seznam, pokud přibylo nové místo v kódu. Novou rasu/třídu doplň do tabulky profilů v `docs/herni-design.md` a ověř balanc (`python3 tests/balance.py table` a `bot`).
 
 ## Pravidla vzhledu (rozhodnuto, neměnit bez dotazu)
 | Co | Jak to vypadá | Kde v kódu |

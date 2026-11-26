@@ -24,6 +24,7 @@ Stačí zkopírovat první řádek a dopsat, co chceš udělat.
 | Rozhraní | `Téma: ovládání, HUD, okna, mobil (docs/rozhrani.md). Chci…` |
 | Technika | `Téma: ukládání, testy, nasazení, výkon (docs/technika.md). Chci…` |
 | Kooperace | `Téma: hra více hráčů (docs/kooperace.md). Chci…` |
+| Balanc a nové rasy/třídy | `Téma: herní design a balanc (docs/herni-design.md, docs/rozsireni.md). Chci…` |
 
 ## Tipy
 - Když chat začne být dlouhý (Claude ho začne automaticky shrnovat), je čas založit nový ke stejnému tématu. Nic se neztratí – stav je v repozitáři.
