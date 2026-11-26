@@ -278,8 +278,10 @@ function updateHero(h, dt) {
     h.deadT -= dt;
     if (h.deadT <= 0) reviveHero();
   } else {
-    h.hp = Math.min(st.maxHp, h.hp + st.maxHp * (st.regen + (G.scene === 'town' ? 0.1 : 0)) * dt);
-    h.res = clamp(h.res + st.resRegen * dt, 0, st.resMax);
+    // obnova: v boji jen 25 %, mimo boj 150 % (zuřivost válečníka – záporná obnova – se nemění)
+    const rk = G.scene !== 'rift' ? 1 : inCombat(h) ? REGEN_COMBAT : REGEN_REST;
+    h.hp = Math.min(st.maxHp, h.hp + st.maxHp * (st.regen * rk + (G.scene === 'town' ? 0.1 : 0)) * dt);
+    h.res = clamp(h.res + st.resRegen * (st.resRegen > 0 ? rk : 1) * dt, 0, st.resMax);
     if (st.barrier) {   // mág: Arkánní bariéra se obnoví po 5 s bez zásahu
       const full = st.maxHp * st.barrier;
       if (G.scene !== 'rift' || G.time - (h.lastHitT || -99) > 5) { if ((h.barrier || 0) < full) h.barrier = Math.min(full, (h.barrier || 0) + full * dt * 2); }
@@ -521,6 +523,11 @@ function drawGroundLayer(g) {
     const drop = Math.max(0, 1 - l.t * 4) * 10;
     if (l.kind === 'gold') { g.fillStyle = '#e0b030'; g.fillRect(l.x - 2, l.y - 2 - drop, 4, 3); g.fillStyle = '#fff0a0'; g.fillRect(l.x - 1, l.y - 2 - drop, 1, 1); }
     else if (l.kind === 'globe') { g.fillStyle = '#c02020'; g.beginPath(); g.arc(l.x, l.y - 4 + bob, 3.5, 0, Math.PI * 2); g.fill(); g.fillStyle = '#ff8080'; g.fillRect(l.x - 2, l.y - 6 + bob, 1, 1); light(l.x, l.y, 16, '#ff4040'); }
+    else if (l.kind === 'mglobe') {   // lahvička many: modrá baňka s hrdlem
+      const y = l.y - 4 + bob; g.fillStyle = '#2a4aa8'; g.beginPath(); g.arc(l.x, y, 3.2, 0, Math.PI * 2); g.fill();
+      g.fillStyle = '#4a7aff'; g.fillRect(l.x - 2, y - 2, 3, 3); g.fillStyle = '#c8b090'; g.fillRect(l.x - 1, y - 6, 2, 3);
+      g.fillStyle = '#bfe0ff'; g.fillRect(l.x - 2, y - 2, 1, 1); light(l.x, l.y, 16, '#4a7aff');
+    }
     else if (l.kind === 'item') {
       const it = l.item, col = RARITIES[it.rarity].color, ri = RARITY_ORDER.indexOf(it.rarity);
       if (ri >= 2) { g.globalAlpha = 0.25 + Math.sin(G.time * 3) * 0.1; g.fillStyle = col; g.fillRect(l.x - 1, l.y - 60, 2, 60); g.globalAlpha = 1; light(l.x, l.y, 24, col); }

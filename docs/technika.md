@@ -40,6 +40,7 @@ Předpoklady: Node.js a Python s Playwrightem (`pip install playwright` a `pytho
 | `tests/controls.py`, `czkeys.py` | ovládání, česká klávesnice, recall |
 | `tests/mobauto.py`, `mob2.py` | dotykové ovládání a automatický útok |
 | `tests/flows.py`, `panels.py` | průchod menu a okny |
+| `tests/regen.py` | obnova v boji/mimo boj, lahvička many (padání z elit, sebrání) |
 | `tests/spellbook.py` | Kniha dovedností (klik, tažení, přesun, odebrání), řádky lišty, klávesy 1–9 a Shift, migrace lišty, mobil (dvě klepnutí, dva kruhy) |
 | `tests/portal.py` | portál po bossovi se ptá (Do města / Zůstat, Enter), PC i mobil |
 | `tests/visuals.py` | ikony předmětů, očarování a sety, mýtický tier (padání, efekty 3/6 dílů, snímky inventáře a podzemí), trpasličí úchop |

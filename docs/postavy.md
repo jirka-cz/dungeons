@@ -97,3 +97,8 @@ Povolené kombinace: `RACE_CLASSES` a `raceAllows()` v `js/data.js`. Obrazovka t
 - Mana, soustředění a duch se obnovují pomaleji, aby kouzla omezovala mana, ne jen přebíjení: mág 1,4/s, černokněžník 1,2/s, lovec 1,6/s, druid 1,2/s (dřív 3,5 / 3 / 4 / 3). Základní útok (Magická střela, Stínový šíp, Výstřel, Hněv) doplní +2 (dřív +3), konstanta `PRIMARY_GEN` v `js/classes.js`.
 - Zuřivost válečníka beze změny (generují ji útoky, sama klesá).
 
+### Obnova v boji a mimo boj (v1.16)
+- Když na hrdinu útočí nepřítel (i když uhne), je **v boji** ještě 4 s po posledním útoku (`inCombat`, `COMBAT_T` v `js/data.js`, `attackedT` v `hurtHero`).
+- V boji se život i mana/soustředění/duch obnovují jen na **25 %**, mimo boj na **150 %** (`REGEN_COMBAT`, `REGEN_REST`). Ve městě beze změny (+10 % života za sekundu). Zuřivost válečníka se nemění.
+- Lišta efektů ukazuje „V boji“ (červeně) nebo „Odpočinek“ (zeleně).
+

@@ -903,6 +903,8 @@ function showLegend() {
     ${row('<span style="color:#ff3030">Červený kruh</span>', 'Varování: sem za chvíli dopadne útok. Uteč!')}
     ${row('<span style="color:#7aa0ff">Modré jméno</span>', 'Elitní nepřítel se schopnostmi, víc života, lepší kořist.')}
     ${row('<span style="color:#ff5050">●</span>', 'Koule zdraví: seber ji a vyléčíš se.')}
+    ${row('<span style="color:#4a7aff">●</span>', 'Lahvička many: doplní 25 % many nebo jiného zdroje (válečníkovi zuřivost).')}
+    ${row('⚔', 'V boji (útočí na tebe a ještě 4 s potom) se život i mana obnovují jen na 25 %, mimo boj na 150 %.')}
     ${Object.values(SHRINES).map(S => row(`<span style="color:${S.color}">${S.glyph}</span>`, `<b>${S.name}</b>: ${S.desc}`)).join('')}
     <h3>Bossové</h3>
     ${row('Fáze', 'Na 66 % a 33 % života boss zařve a spustí svou mechaniku.')}

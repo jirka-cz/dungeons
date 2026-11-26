@@ -318,6 +318,7 @@ function onHeroHurt(dmg, src) {
 function hurtHero(raw, elem, src, pctHp) {
   const h = G.hero, st = G.st;
   if (h.dead || h.invuln > 0 || G.scene !== 'rift') return 0;
+  h.attackedT = G.time;   // útok na hrdinu (i když uhne) = v boji, obnova se zpomalí
   if (Math.random() < st.dodge) {
     floatText(h.x, h.y - 20, 'Úhyb', '#9fd3ff', 0.9);
     if (st.mods.dodgeAtk) heroBuff('reflex', 'Rychlé reflexy', { atkPct: st.mods.dodgeAtk }, 3, '#9fd3ff');
@@ -439,7 +440,7 @@ function killMonster(m) {
   const L = G.rift.level;
   eachHero(() => gainXP(m.xp * 2.5 * riftXpMul(L) * xpRate(L) * G.st.xpMul));
   if (m.onDeath) m.onDeath(m);
-  if (m.obj) { if (Math.random() < 0.25) G.loot.push({ kind: 'globe', x: m.x, y: m.y, t: 0 }); return; }
+  if (m.obj) { if (Math.random() < 0.25) G.loot.push({ kind: 'globe', x: m.x, y: m.y, t: 0 }); if (Math.random() < 0.15) G.loot.push({ kind: 'mglobe', x: m.x + 6, y: m.y, t: 0 }); return; }
   if (!m.boss) addProgress(m.pts);
   const gold = !m.minion || Math.random() < 0.3;
   eachHero(() => {
@@ -454,6 +455,7 @@ function killMonster(m) {
     else if (Math.random() < dropC) dropItem(m.x, m.y, false);
   });
   if (Math.random() < (m.elite ? 0.6 : RIFT.globeChance * ((m.rw || 1) < 1 ? RIFT.crowdGlobe : 1))) G.loot.push({ kind: 'globe', x: m.x + rand(-6, 6), y: m.y + rand(-6, 6), t: 0 });
+  if (Math.random() < (m.elite ? 0.45 : RIFT.manaGlobeChance * ((m.rw || 1) < 1 ? RIFT.crowdGlobe : 1))) G.loot.push({ kind: 'mglobe', x: m.x + rand(-6, 6), y: m.y + rand(-6, 6), t: 0 });
   if (m.def && m.def.split && m.scale >= 1) for (let i = 0; i < 2; i++) {
     const s = spawnMonster(m.type, m.x + rand(-6, 6), m.y + rand(-6, 6), { scale: 0.65, hpMul: 0.35, minion: true, crowd: (m.rw || 1) < 1 });
     s.aggro = true; s.pts = 0.2 * s.rw; s.xp = 0.3 * s.rw;
@@ -934,6 +936,11 @@ function lootStep(l, h, dt) {
   if (d < 12 && l.t > 0.3) {
     if (l.kind === 'gold') { sfx('gold'); heroSave().gold += l.amount; netReward({ gold: l.amount }); floatText(h.x, h.y - 26, '+' + fmt(l.amount) + ' zlata', '#e0c040', 0.8); return true; }
     if (l.kind === 'globe') { sfx('potion'); healHero(G.st.maxHp * GLOBE_HEAL * G.st.healMul); burst(l.x, l.y, '#ff5050', 12, 50); return true; }
+    if (l.kind === 'mglobe') {   // lahvička many/zdroje (válečníkovi doplní zuřivost)
+      const add = G.st.resMax * GLOBE_RES, col = CLASSES[G.char.cls].res.color;
+      G.hero.res = Math.min(G.st.resMax, G.hero.res + add); sfx('potion'); burst(l.x, l.y, col, 12, 50);
+      floatText(G.hero.x, G.hero.y - 26, `+${Math.round(add)} ${CLASSES[G.char.cls].res.name.toLowerCase()}`, col, 0.9); return true;
+    }
     if (l.kind === 'item') {
       if (pickupItem(l.item)) return true;
       if (!l.warned) { l.warned = true; toast('Batoh je plný'); }

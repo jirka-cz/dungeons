@@ -1,6 +1,6 @@
 // Herní data a balanc. Změna čísla = jiná obtížnost.
 
-const GAME_VERSION = '1.15.0';
+const GAME_VERSION = '1.16.0';
 const TILE = 16;                 // velikost dlaždice v px
 const VIEW_W = 460, VIEW_H = 260; // logické rozlišení světa (zvětšuje se pixelově)
 
@@ -155,7 +155,7 @@ const RIFT = {
   mfMax: 2.0, mfHalf: 40,                       // lepší kořist z riftu: roste se zpomalením, v riftu 41 polovina z max. +200 %
   dropPerLevel: 0.01,                           // +1 % šance na předmět za úroveň
   progressGoal: 100,
-  dropChance: 0.08, eliteDrop: 0.45, globeChance: 0.06,
+  dropChance: 0.08, eliteDrop: 0.45, globeChance: 0.06, manaGlobeChance: 0.05,
   deathDurability: 0.10,                        // smrt: -10 % maximální odolnosti nasazených předmětů
   eliteChance: lvl => Math.min(0.5, 0.18 + lvl * 0.015)
 };
@@ -251,4 +251,8 @@ const SHRINES = {
 
 const INV_MAX = 40, STASH_MAX = 60;
 const POTION_CD = 15, POTION_HEAL = 0.5, GLOBE_HEAL = 0.2;
+const GLOBE_RES = 0.25;          // lahvička many/zdroje doplní 25 % maxima
+// Obnova života a zdroje: v boji (útočí na tebe, a ještě COMBAT_T s potom) jen 25 %, mimo boj 150 %
+const COMBAT_T = 4, REGEN_COMBAT = 0.25, REGEN_REST = 1.5;
+function inCombat(h) { return G.scene === 'rift' && !!h && G.time - (h.attackedT == null ? -99 : h.attackedT) < COMBAT_T; }
 

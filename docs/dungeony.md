@@ -6,6 +6,7 @@ Ve hře se rifty jmenují **Podzemí** (od 1.7.2). V kódu a v dokumentaci zůst
 - Na obelisku ve městě si hráč zvolí úroveň riftu: nejvyšší odemčenou, poslední dokončenou, nebo libovolnou dokončenou (tlačítka −10 / − / + / +10 nebo napsat číslo; od 1.7.0). Poražením strážce se odemkne další úroveň.
 - Ve hře více hráčů (příprava od 1.7.0, viz `docs/kooperace.md`) přidá každý další hráč +10 % nepřátel, jejich života a poškození.
 - Rift je náhodná mapa s náhodným tématem.
+- **Kořist z nepřátel:** koule zdraví (vyléčí 20 % života) a od v1.16 **lahvička many** (modrá, doplní 25 % many nebo jiného zdroje, válečníkovi zuřivost; `GLOBE_RES`). Běžný nepřítel 5 % (v davu polovina), elita 45 %, objekty 15 %.
 - Zabíjením nepřátel roste postup. Na 100 % se **u hráče** objeví strážce (boss). Po jeho zabití se **u bosse** otevře portál do města. Při vstupu do portálu se hra zeptá „Vrátit se do města?“ (Do města / Zůstat, na PC i Enter), aby hráč omylem neodešel bez kořisti; po „Zůstat“ se zeptá znovu až po odchodu a návratu (`portalCheck` v `js/engine.js`, platí i pro hosty ve hře více hráčů).
 - Smrt: oživení v riftu, ztráta odolnosti výbavy.
 

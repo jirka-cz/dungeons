@@ -58,6 +58,12 @@ function heroEffects(h, st) {
     out.push({ key: b.id, name: b.name || (S && S.name) || b.id, icon: buffIcon(b), color: b.color, time: b.t === Infinity ? '∞' : Math.ceil(b.t) + ' s',
       desc: desc || 'Dočasný bonus.', bad: false });
   });
+  if (G.scene === 'rift' && !h.dead) {
+    const fight = inCombat(h);
+    out.push({ key: 'combat', name: fight ? 'V boji' : 'Odpočinek', icon: gi(fight ? 'crossed-swords' : 'heart-plus', fight ? '#e07050' : '#7ad07a'), color: fight ? '#e07050' : '#7ad07a', time: '',
+      desc: fight ? `Útočí na tebe nepřátelé: obnova života a zdroje jen ${Math.round(REGEN_COMBAT * 100)} %. Po ${COMBAT_T} s bez útoku se zrychlí.`
+                  : `Mimo boj: obnova života a zdroje ${Math.round(REGEN_REST * 100)} %.`, bad: fight });
+  }
   if (st.barrier) {
     const full = st.maxHp * st.barrier, cur = Math.round(h.barrier || 0);
     out.push({ key: 'barrier', name: C.trait.name, icon: gi('magic-shield', '#9fc8ff'), color: '#9fc8ff', time: fmtBig(cur),
