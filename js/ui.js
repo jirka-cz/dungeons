@@ -163,11 +163,12 @@ function showCreate() {
   const n = UI.newChar;
   if (!raceAllows(n.race, n.cls)) n.cls = RACE_CLASSES[n.race][0];
   const races = Object.keys(RACES).map(id => `<button class="pick-card ${n.race === id ? 'sel' : ''}" onclick="UI.newChar.race='${id}';showCreate()">
-      <canvas width="48" height="48" data-race="${id}" data-cls="${n.cls}"></canvas><div class="pc-name">${RACES[id].name}</div><div class="pc-desc">${RACES[id].desc}</div></button>`).join('');
+      <canvas width="48" height="48" data-race="${id}" data-cls="${n.cls}"></canvas><div class="pc-name">${RACES[id].name}</div><div class="pc-desc"><b>${RACES[id].trait}:</b> ${RACES[id].desc}</div>
+      <div class="pc-specs">${RACE_TALENTS[id].icon} ${SKILLS[RACE_TALENTS[id].nodes.R1.skill].name}</div></button>`).join('');
   const classes = Object.keys(CLASSES).map(id => { const c = CLASSES[id], ok = raceAllows(n.race, id);
     return `<button class="pick-card ${n.cls === id ? 'sel' : ''} ${ok ? '' : 'locked'}" ${ok ? `onclick="UI.newChar.cls='${id}';showCreate()"` : 'disabled'}
       ${ok ? '' : `data-tip="${RACES[n.race].name} nemůže být ${c.name.toLowerCase()}"`}>
-      <span class="swatch" style="background:${c.colors[0]}"></span><div class="pc-name">${c.name}</div><div class="pc-desc">${c.desc}</div>
+      <span class="swatch" style="background:${c.colors[0]}"></span><div class="pc-name">${c.name}</div><div class="pc-desc">${c.desc}<br><b>${c.trait.name}:</b> ${c.trait.desc}</div>
       <div class="pc-specs">${ok ? TALENTS[id].specs.map(t => t.icon + ' ' + t.name).join(' · ') : `Nedostupné pro rasu: ${RACES[n.race].name}`}</div></button>`; }).join('');
   showModal(`<h2>Nová postava</h2>
     <label class="field">Jméno <input id="nc-name" maxlength="16" value="${n.name}" placeholder="Jméno hrdiny" oninput="UI.newChar.name=this.value"></label>
@@ -299,7 +300,8 @@ function charStatsHtml(st) {
       const tip = `${ATTRS[k].name}: ${ATTRS[k].desc}` + (isMain ? ` Tvůj hlavní atribut: +${Math.round(st.mainVal)} % útoku.` : '');
       return `<div class="${isMain ? 'main' : ''}" data-tip="${tip}"><span>${ATTRS[k].name}${isMain ? ' ★' : ''}</span><b>${v}</b></div>`;
     }).join('')}</div>
-    <div class="xpline">Úroveň <b>${ch.level}</b> · ${fmt(ch.xp)} / ${fmt(need)} XP · nejvyšší podzemí <b>${ch.maxRift}</b></div>`;
+    <div class="xpline">Úroveň <b>${ch.level}</b> · ${fmt(ch.xp)} / ${fmt(need)} XP · nejvyšší podzemí <b>${ch.maxRift}</b></div>
+    <div class="traits small"><span data-tip="${RACES[ch.race].desc}">${RACES[ch.race].name}: <b>${RACES[ch.race].trait}</b></span> · <span data-tip="${CLASSES[ch.cls].trait.desc}">${CLASSES[ch.cls].name}: <b>${CLASSES[ch.cls].trait.name}</b></span></div>`;
   const C = CLASSES[ch.cls], caster = isCasterClass(ch.cls);
   const regenTxt = st.resRegen > 0 ? `+${st.resRegen.toFixed(1).replace('.', ',')} / s` : `útoky +${P(st.genMul - 1)}`;
   const basic = statRows([
@@ -307,6 +309,8 @@ function charStatsHtml(st) {
            : ['Rychlost útoku', `${(st.spd * st.wpnSpdMul).toFixed(2)} / s`],
     [C.res.name, `max ${fmt(st.resMax)} · ${st.resRegen > 0 ? regenTxt : 'generují útoky'}`, st.resRegen > 0 ? 'Maximum a obnova za sekundu. Obnovu zrychluje Moudrost.' : 'Zuřivost generují útoky a sama klesá. Moudrost zrychluje generování.'],
     ['Kritická šance', P(st.crit)], ['Kritické poškození', `×${st.critMult.toFixed(2)}`],
+    ['Rychlost pohybu', P(st.moveSpeed / 64), 'Závisí na rase (trpaslík pomalý, elf rychlý), botách a talentech.'],
+    st.barrier && ['Arkánní bariéra', fmt(st.maxHp * st.barrier), 'Pohltí poškození, obnoví se po 5 s bez zásahu.'],
     st.dodge && ['Úhyb', P(st.dodge)], st.block && ['Blok', P(st.block), 'Šance zablokovat polovinu poškození.'],
     st.dmgTaken < 1 && ['Snížení poškození', P(1 - st.dmgTaken)], st.ls && ['Vysávání života', P(st.ls)],
     st.regen && ['Regenerace', `${(st.regen * 100).toFixed(2)} % / s`], st.thorns && ['Trny', P(st.thorns)]
@@ -493,7 +497,7 @@ function showRiftSelect() {
   }
   UI.riftSel = clamp(UI.riftSel || done || 1, 1, max);
   const row = (L, note, top) => `<button class="rift-row ${top ? 'top' : ''}" onclick="hideModal();riftGo(${L})">
-      <b>Podzemí ${L}</b><span>${note}</span><span class="loot">${riftLootText(L)}</span></button>`;
+      <b>Podzemí ${L}</b><span>${note} · <span class="${ch.level < recLevel(L) ? 'gap-bad' : ''}">doporučená úroveň ${recLevel(L)}</span></span><span class="loot">${riftLootText(L)}</span></button>`;
   const rows = [row(max, max > 1 ? 'Nejvyšší odemčené – posuň se dál' : 'První podzemí', true)];
   if (done >= 1) rows.push(row(done, 'Poslední dokončené'));
   const pick = max > 1 ? `<div class="rift-pick">
@@ -516,7 +520,12 @@ function showRiftSelect() {
 // Vstup do podzemí: sólo hned, v družině návrh, který potvrdí ostatní
 function riftGo(L) { if (netLive()) netPropose(L); else startRift(L); }
 function riftLootText(L) { return `Kořist +${Math.round(riftMf(L) * 100)} %, předměty úr. ${riftIlvl(L)}`; }
-function riftInfoText(L) { return `Nepřátelé: život ×${riftMult(RIFT.hp, L).toFixed(1)}, poškození ×${riftMult(RIFT.atk, L).toFixed(1)} · <span class="loot">${riftLootText(L)}</span>`; }
+function riftInfoText(L) {
+  const rec = recLevel(L), lvl = G.char ? G.char.level : rec, d = rec - lvl, g = levelGapMul(L, lvl);
+  const gap = d > 0 ? `<span class="gap-bad">Jsi o ${d} ${d === 1 ? 'úroveň' : d < 5 ? 'úrovně' : 'úrovní'} níž: nepřátelé ti dávají ×${g.toFixed(g < 10 ? 2 : 0).replace('.', ',')} poškození a ty jim ×${(1 / g).toFixed(2).replace('.', ',')}.</span>`
+    : d < 0 ? `<span class="gap-ok">Máš o ${-d} víc – nepřátelé jsou o ${Math.round((1 - g) * 100)} % slabší.</span>` : '';
+  return `Doporučená úroveň <b>${rec}</b> ${gap}<br>Nepřátelé: život ×${fmtBig(riftHpMul(L))}, poškození ×${fmtBig(riftAtkMul(L))} · <span class="loot">${riftLootText(L)}</span>`;
+}
 function riftSelSet(v, fromStep) {
   const n = parseInt(v, 10);
   if (!isFinite(n)) return;
@@ -534,7 +543,7 @@ const TALENT_TYPE = { skill: 'Dovednost', enh: 'Zesílení dovednosti', choice: 
 
 // ---- Návrh talentů: body se rozdělují nanečisto a uloží se až tlačítkem Potvrdit ----
 function TD() { if (!UI.tDraft) UI.tDraft = Object.assign({}, G.char.talents); return UI.tDraft; }
-function draftFree() { return talentPointsTotal(G.char.level) - talentsSpent({ cls: G.char.cls, talents: TD() }); }
+function draftFree() { return talentPointsTotal(G.char.level) - talentsSpent({ cls: G.char.cls, race: G.char.race, talents: TD() }); }
 function talentsDirty() { if (!UI.tDraft) return false; const a = UI.tDraft, b = G.char.talents; return Object.keys(Object.assign({}, a, b)).some(k => (a[k] || 0) !== (b[k] || 0)); }
 
 // Lze přidat bod (u volby: zvolit danou možnost)?
@@ -543,7 +552,7 @@ function canLearn(n, opt) {
   if (n.type === 'base') return false;
   if (n.type === 'choice' && v) return v !== opt && canSwitchChoice(n);
   if (draftFree() <= 0 || v >= n.max) return false;
-  return talentStateValid(G.char.cls, Object.assign({}, t, { [n.id]: n.type === 'choice' ? (opt || 1) : v + 1 }));
+  return talentStateValid(talentKey(G.char), Object.assign({}, t, { [n.id]: n.type === 'choice' ? (opt || 1) : v + 1 }));
 }
 // Volbu lze přepnout, pokud ještě není potvrzená, nebo ve městě
 function canSwitchChoice(n) { return !(G.char.talents[n.id] || 0) || G.scene === 'town'; }
@@ -555,14 +564,14 @@ function canUnlearn(n) {
   if (!pending && G.scene !== 'town') return false;
   const t2 = Object.assign({}, t);
   if (n.type === 'choice' || v === 1) delete t2[n.id]; else t2[n.id] = v - 1;
-  return talentStateValid(G.char.cls, t2);
+  return talentStateValid(talentKey(G.char), t2);
 }
 // Proč uzel nejde naučit (text pro hráče)
 function learnBlockReason(n) {
-  const ch = G.char, t = TD(), tree = classTrees(ch.cls).find(x => x.key === n.tree);
+  const ch = G.char, t = TD(), tree = classTrees(talentKey(ch)).find(x => x.key === n.tree);
   if (draftFree() <= 0) return 'Nemáš volný bod – získáš ho za každou úroveň.';
-  if (n.req.length && !n.req.some(r => { const p = nodeById(ch.cls, r); return p.type === 'base' || (t[r] || 0) > 0; }))
-    return 'Nejdřív potřebuješ bod v: ' + n.req.map(r => nodeTitle(nodeById(ch.cls, r))).join(' nebo ') + '.';
+  if (n.req.length && !n.req.some(r => { const p = nodeById(talentKey(ch), r); return p.type === 'base' || (t[r] || 0) > 0; }))
+    return 'Nejdřív potřebuješ bod v: ' + n.req.map(r => nodeTitle(nodeById(talentKey(ch), r))).join(' nebo ') + '.';
   const need = gateFor(tree, n.row), below = tree.nodes.filter(x => x.row < n.row).reduce((s, x) => s + nodeSpent(x, t[x.id]), 0);
   if (below < need) return `Potřebuješ ${need} bodů ve vyšších řádcích tohoto stromu (máš ${below}).`;
   if (n.type === 'key') return 'V tomto stromu už máš jinou klíčovou pasivku (v každém stromu smí být jen jedna).';
@@ -572,7 +581,7 @@ function nodeTitle(n) { return n.type === 'choice' ? n.opts.map(o => o.name).joi
 
 // + : přidá bod do návrhu
 function learnTalent(id, opt) {
-  const n = nodeById(G.char.cls, id), t = TD();
+  const n = nodeById(talentKey(G.char), id), t = TD();
   if (!n) return;
   const v = t[id] || 0;
   if (n.type === 'choice' && v) {
@@ -589,7 +598,7 @@ function learnTalent(id, opt) {
 }
 // − : ubere bod z návrhu
 function unlearnTalent(id) {
-  const n = nodeById(G.char.cls, id), t = TD();
+  const n = nodeById(talentKey(G.char), id), t = TD();
   if (!canUnlearn(n)) { toast(G.scene !== 'town' && (G.char.talents[id] || 0) >= (t[id] || 0) ? 'Potvrzené body můžeš vracet jen ve městě' : 'Tento bod nejde vrátit – závisí na něm jiné talenty'); return; }
   if (n.type === 'choice' || t[id] === 1) delete t[id]; else t[id]--;
   showTalents();
@@ -660,7 +669,7 @@ function passiveGlyph(n) {
 }
 
 function showTalents() {
-  const ch = G.char, c = CLASSES[ch.cls], trees = classTrees(ch.cls), T = TD(), free = draftFree(), dch = { cls: ch.cls, talents: T };
+  const ch = G.char, c = CLASSES[ch.cls], trees = classTrees(talentKey(ch)), T = TD(), free = draftFree(), dch = { cls: ch.cls, race: ch.race, talents: T };
   if (!UI.tTree || !trees.find(t => t.key === UI.tTree)) {
     const pts = trees.map(t => treePoints(dch, t.key));
     UI.tTree = trees[pts.slice(1).some(p => p > 0) ? 1 + pts.slice(1).indexOf(Math.max(...pts.slice(1))) : (pts[0] > 0 ? 0 : 1)].key;
@@ -668,7 +677,7 @@ function showTalents() {
   const tree = trees.find(t => t.key === UI.tTree), tp = treePoints(dch, tree.key);
   const known = knownSkills(ch);
   const tabs = trees.map(t => `<button class="ttab ${t.key === UI.tTree ? 'sel' : ''}" onclick="UI.tTree='${t.key}';UI.tSel=null;showTalents()">
-      <span class="ttab-ic">${t.icon}</span><span><b>${t.name}</b><small>${t.core ? 'Strom třídy' : 'Specializace'} · ${treePoints(dch, t.key)} b.</small></span></button>`).join('');
+      <span class="ttab-ic">${t.icon}</span><span><b>${t.name}</b><small>${t.core ? 'Strom třídy' : t.isRace ? 'Rasa' : 'Specializace'} · ${treePoints(dch, t.key)} b.</small></span></button>`).join('');
   // návaznosti vybraného uzlu: předchůdci (co potřebuje) a následníci (co odemyká)
   const selId = (UI.tSel || '').split('#')[0];
   const { anc, alt, main, altE, desc } = talentRelations(tree, selId);
@@ -749,19 +758,19 @@ function talentPmHtml(tree) {
 function talentRelations(tree, id) {
   const out = { anc: new Set(), alt: new Set(), main: new Set(), altE: new Set(), desc: new Set() };
   if (!id || !tree.nodes.some(n => n.id === id)) return out;
-  const routes = talentRoutes(G.char.cls, TD(), id);
+  const routes = talentRoutes(talentKey(G.char), TD(), id);
   routes.forEach((r, i) => {
     r.nodes.forEach(x => (i === 0 ? out.anc : out.alt).add(x));
     routeEdges(r, id).forEach(e => (i === 0 ? out.main : out.altE).add(e));
   });
-  out.desc = new Set(talentChildren(G.char.cls, id));
+  out.desc = new Set(talentChildren(talentKey(G.char), id));
   return out;
 }
 function talentDetailHtml() {
   const ch = G.char;
   if (!UI.tSel) return `<div class="muted small">Vyber uzel ve stromu.</div>`;
   const [sid, so] = UI.tSel.split('#');
-  const n = nodeById(ch.cls, sid);
+  const n = nodeById(talentKey(ch), sid);
   if (!n) return '';
   const v = TD()[n.id] || 0, ok = canLearn(n), why = ok ? '' : learnBlockReason(n);
   const head = `<div class="td-head"><span class="td-g">${nodeIconHtml(n)}</span>

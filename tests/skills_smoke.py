@@ -14,7 +14,7 @@ JS = r"""
   for (const cls of ['warrior','mage','warlock','hunter','druid']) {
     G.save.chars = [newChar('T', cls === 'druid' ? 'elf' : 'orc', cls, G.save)]; G.save.current = 0; playChar(0);
     G.char.level = 60;
-    talentNodes(cls).forEach(n => { if (n.type === 'skill') G.char.talents[n.id] = 1; });
+    talentNodes(talentKey(G.char)).forEach(n => { if (n.type === 'skill') G.char.talents[n.id] = 1; });
     invalidate(); startRift(3); G.monsters.forEach(m => m.dead = true); G.monsters = [];
     G.st = heroStats();
     for (const id of knownSkills(G.char)) {

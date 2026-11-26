@@ -24,7 +24,8 @@
   .bar input[type=search] { font: inherit; background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 7px; padding: 6px 10px; width: 200px; }
   .pts b { font-size: 18px; }
   main { max-width: 1500px; margin: 0 auto; padding: 10px 20px 40px; display: grid; grid-template-columns: 1fr 360px; gap: 16px; align-items: start; }
-  .trees { display: grid; grid-template-columns: repeat(3, minmax(300px, 1fr)); gap: 12px; }
+  .trees { display: grid; grid-template-columns: repeat(2, minmax(300px, 1fr)); gap: 12px; }
+  .races { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0 4px; } .races button.sel { border: 2px solid var(--gold); }
   .tree { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 10px 8px 12px; }
   .tree h2 { margin: 0; font-size: 16px; display: flex; align-items: center; gap: 8px; } .tree h2 .ic { font-size: 22px; }
   .tree .sub { margin: 2px 0 8px; min-height: 34px; }
@@ -101,7 +102,7 @@
   @media (max-width: 1250px) { main { grid-template-columns: 1fr; } aside { position: static; max-height: none; } }
   @media (max-width: 980px) {
     header, main { padding-left: 10px; padding-right: 10px; }
-    .tabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 8px; }
+    .tabs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 8px; }
     .tabs button { padding: 6px 4px; font-size: 12px; } .tabs button.sel { border: 2px solid var(--gold); background: #2e2542; }
     .trees { grid-template-columns: 1fr; } .tree:not(.show) { display: none; }
     .bar input[type=search] { width: 100%; }
@@ -116,6 +117,7 @@
   <h1>World <span>&</span> Dungeons – talentové stromy</h1>
   <div class="muted small">Zkušební kalkulačka: klikej, plánuj build a čti vlastnosti. Nic se tu neukládá do hry. Úroveň nemá strop – od 60. úrovně přibude bod za každé 3 úrovně.</div>
   <div class="classes" id="classes"></div>
+  <div class="races" id="races"></div>
   <div class="bar">
     <label>Úroveň postavy <input type="range" id="lvl" min="1" max="120" value="60"> <b id="lvlv">60</b></label>
     <span class="pts">Volné body: <b id="free" class="gold">59</b> <span class="muted small">z <span id="tot">59</span></span></span>
@@ -141,6 +143,7 @@
 </main>
 <footer class="muted small">Ikony: <a href="https://game-icons.net" target="_blank" style="color:#b48cff">game-icons.net</a> (Lorc, Delapouite a další), licence CC BY 3.0.</footer>
 
+<script src="../js/data.js"></script>
 <script src="../js/classes.js"></script>
 <script src="../js/talents.js"></script>
 <script src="../js/icons.js"></script>
@@ -149,8 +152,10 @@ const ROW = 56;
 const ELEM = { phys: 'fyzické', fire: 'oheň', frost: 'mráz', shadow: 'stín', nature: 'příroda', arcane: 'arkána', chaos: 'chaos' };
 const TYPE_TXT = { skill: 'Dovednost', enh: 'Zesílení dovednosti', choice: 'Volba – vyber jednu ze dvou', passive: 'Pasivka', key: 'Klíčová pasivka – v každém stromu smíš mít jen jednu', base: 'Výchozí dovednost (máš ji vždy)' };
 const SK_TYPE = { melee: 'útok zblízka', projectile: 'střela', ground: 'plošné kouzlo na místo', nova: 'vlna kolem tebe', leap: 'skok', dash: 'výpad', teleport: 'teleport', buff: 'posílení', summon: 'vyvolání', heal: 'léčení', whirl: 'vichřice', petstrike: 'rozkaz mazlíčkům', trap: 'past', drain: 'vysátí', tap: 'pakt' };
-const S = { cls: 'warrior', level: 60, sel: null, tab: 1, q: '', builds: {} };
-const build = () => S.builds[S.cls] || (S.builds[S.cls] = {});
+const S = { cls: 'warrior', race: 'human', level: 60, sel: null, tab: 1, q: '', builds: {} };
+// klíč stromů: třída + rasa (rasový strom je čtvrtý)
+const K = () => S.cls + ':' + S.race;
+const build = () => S.builds[K()] || (S.builds[K()] = {});
 
 // ---------- popisky bonusů pro souhrn ----------
 const PCT = v => Math.round(v * 1000) / 10;
@@ -164,9 +169,13 @@ const LBL = { hpPct: 'Život', atkPct: 'Útok', def: 'Obrana', spdPct: 'Rychlost
   enrageChance: 'Šance na rozzuření při kritu', enrageDur: 'Delší rozzuření', enrageAlways: 'Trvalé rozzuření', bleedHit: 'Krvácení základního útoku (z útoku/s)', offhand: 'Síla zbraně v levé ruce',
   ignite: 'Šance zapálit', burnBonus: 'Poškození hořícím', slowedBonus: 'Poškození zpomaleným', shatter: 'Tříštění (násobek útoku)', dotSpread: 'Kletby přeskočí na nepřátel', dottedBonus: 'Poškození prokletým',
   vulnPct: 'Silnější zranitelnost', manaShield: 'Manový štít', loneWolf: 'Osamělý vlk (útok)', petSpd: 'Rychlost mazlíčků', petLs: 'Léčení z poškození mazlíčků', primCount: 'Střely základního útoku navíc',
-  primPierce: 'Průraz základního útoku', arrowPierce: 'Průraz všech šípů', eclipse: 'Síla Zatmění', trapMax: 'Pastí navíc', auraPct: 'Síla aury', formDur: 'Delší podoby', lowHpDmg: 'Poškození pod 50 % života' };
-const FLAT = { def: '', petCount: '', resMax: '', killRes: '', critRes: '', dotDur: ' s', enrageDur: ' s', formDur: ' s', trapMax: '', dotSpread: '', primCount: '', primPierce: '', arrowPierce: '', shatter: '×', titanGrip: '!', rebirth: '!', enrageAlways: '!' };
-const COND = { dw: 'se dvěma zbraněmi', dw1: 'se dvěma jednoručními zbraněmi', th: 's obouruční zbraní', sh: 'se štítem', enrage: 'během rozzuření' };
+  primPierce: 'Průraz základního útoku', arrowPierce: 'Průraz všech šípů', eclipse: 'Síla Zatmění', trapMax: 'Pastí navíc', auraPct: 'Síla aury', formDur: 'Delší podoby', lowHpDmg: 'Poškození pod 50 % života',
+  xpPct: 'Zkušenosti', mfPct: 'Lepší kořist', ccRed: 'Kratší zmrazení a zpomalení', secondWind: 'Druhý dech (léčení)', stoneQuake: 'Otřes (násobek útoku)', stoneSkin: 'Kamenná krev (méně poškození)',
+  stealthDmg: 'Útok ze stínu navíc', moveCdr: 'Kratší přebíjení pohybu', dodgeAtk: 'Útok po úhybu', revenge: 'Pomsta (útok)', orcRage2: 'Dvojnásobný vztek', furyExtend: 'Zabití prodlouží zuřivost',
+  skelPct: 'Síla kostlivců', skelMage: 'Kostěný mág', raiseOnKill: 'Šance vzkřísit padlého', boneShield: 'Kostěný štít (za kostlivce)', skelMax: 'Kostlivců navíc', skelBoom: 'Výbuch kostlivce (násobek útoku)',
+  executeKill: 'Poprava zabíjí pod 20 %', whirlPull: 'Vichřice vtahuje', frostArmor: 'Ledová zbroj (zmrazení s)', vaultTrap: 'Past z Úskoku', blinkNova: 'Mrazivý teleport (zmrazení s)', strafePierce: 'Průraz Palby za běhu' };
+const FLAT = { skelMage: '!', whirlPull: '!', executeKill: '!', vaultTrap: '!', orcRage2: '!', furyExtend: '!', skelMax: '', strafePierce: '', frostArmor: ' s', blinkNova: ' s', stoneQuake: '×', skelBoom: '×', def: '', petCount: '', resMax: '', killRes: '', critRes: '', dotDur: ' s', enrageDur: ' s', formDur: ' s', trapMax: '', dotSpread: '', primCount: '', primPierce: '', arrowPierce: '', shatter: '×', titanGrip: '!', rebirth: '!', enrageAlways: '!' };
+const COND = { dw2: 'se dvěma obouručními zbraněmi', dw: 'se dvěma zbraněmi', dw1: 'se dvěma jednoručními zbraněmi', th: 's obouruční zbraní', sh: 'se štítem', enrage: 'během rozzuření' };
 const SKL = { skd: v => `+${PCT(v)} % poškození`, skr: v => `+${PCT(v)} % plocha/dosah`, skc: v => `+${v} ks`, skdur: v => `+${v} s trvání`, skcd: v => `-${v} s přebíjení`, skcost: v => `-${PCT(v)} % cena`,
   skgen: v => `+${v} zdroje`, skpierce: v => v >= 99 ? 'proletí všemi' : `průraz +${v}`, skstun: v => `+${v} s omráčení`, skslow: v => `+${PCT(v)} % zpomalení`, skdot: v => `+${PCT(v)} % DoT`,
   skheal: v => `léčí ${PCT(v)} % poškození`, skvuln: v => `zranitelnost ${v} s`, skburn: v => `zapálí (${PCT(v)} % útoku/s)`, skbleed: v => `krvácení (${PCT(v)} % útoku/s)`,
@@ -175,26 +184,26 @@ function fmtStat(k, v) { if (k in FLAT) return FLAT[k] === '!' ? 'ano' : (FLAT[k
 function condName(pre) { if (COND[pre]) return COND[pre]; const sk = SKILLS[pre]; return sk ? `během: ${sk.name}` : pre; }
 
 // ---------- pomocníci ----------
-const trees = () => classTrees(S.cls);
-const free = () => talentPointsTotal(S.level) - talentsSpent({ cls: S.cls, talents: build() });
+const trees = () => classTrees(K());
+const free = () => talentPointsTotal(S.level) - talentsSpent({ cls: S.cls, race: S.race, talents: build() });
 function canLearn(n, opt) {
   const t = build(), v = t[n.id] || 0;
   if (n.type === 'base' || free() <= 0) return false;
   if (n.type === 'choice' ? v > 0 : v >= n.max) return false;
-  return talentStateValid(S.cls, Object.assign({}, t, { [n.id]: n.type === 'choice' ? (opt || 1) : v + 1 }));
+  return talentStateValid(K(), Object.assign({}, t, { [n.id]: n.type === 'choice' ? (opt || 1) : v + 1 }));
 }
 function canUnlearn(n) {
   const t = Object.assign({}, build()), v = t[n.id] || 0;
   if (!v) return false;
   if (n.type === 'choice' || v === 1) delete t[n.id]; else t[n.id] = v - 1;
-  return talentStateValid(S.cls, t);
+  return talentStateValid(K(), t);
 }
 function title(n) { return n.type === 'choice' ? n.opts.map(o => o.name).join(' / ') : n.name; }
 function whyNot(n) {
   const t = build(), tree = trees().find(x => x.key === n.tree);
   if (n.type === 'base') return '';
   if (free() <= 0) return 'Nemáš volný bod – zvyš úroveň nahoře.';
-  if (n.req.length && !n.req.some(r => { const p = nodeById(S.cls, r); return p.type === 'base' || t[r]; })) return 'Nejdřív potřebuješ bod v: ' + n.req.map(r => title(nodeById(S.cls, r))).join(' nebo ') + '.';
+  if (n.req.length && !n.req.some(r => { const p = nodeById(K(), r); return p.type === 'base' || t[r]; })) return 'Nejdřív potřebuješ bod v: ' + n.req.map(r => title(nodeById(K(), r))).join(' nebo ') + '.';
   const need = gateFor(tree, n.row), below = tree.nodes.filter(x => x.row < n.row).reduce((s, x) => s + nodeSpent(x, t[x.id]), 0);
   if (below < need) return `Potřebuješ ${need} bodů ve vyšších řádcích stromu (máš ${below}).`;
   if (n.type === 'key') return 'V tomto stromu už máš jinou klíčovou pasivku.';
@@ -219,19 +228,24 @@ function matches(n) {
 
 // ---------- akce ----------
 function learn(id, opt) {
-  const n = nodeById(S.cls, id), t = build(), v = t[id] || 0;
+  const n = nodeById(K(), id), t = build(), v = t[id] || 0;
   if (n.type === 'choice' && v) { t[id] = opt; }
   else if (canLearn(n, opt)) t[id] = n.type === 'choice' ? (opt || 1) : v + 1;
   S.sel = n.type === 'choice' ? `${id}#${t[id] || opt || 1}` : id; render();
 }
 function unlearn(id) {
-  const n = nodeById(S.cls, id), t = build();
+  const n = nodeById(K(), id), t = build();
   if (!canUnlearn(n)) return;
   if (n.type === 'choice' || t[id] === 1) delete t[id]; else t[id]--;
   S.sel = id; render();
 }
 
 // ---------- vykreslení ----------
+function renderRaces() {
+  if (!raceAllows(S.race, S.cls)) S.race = Object.keys(RACES).find(r => raceAllows(r, S.cls));
+  document.getElementById('races').innerHTML = '<span class="muted small">Rasa:</span>' + Object.keys(RACES).filter(r => raceAllows(r, S.cls)).map(r =>
+    `<button class="${r === S.race ? 'sel' : ''}" data-race="${r}" title="${RACES[r].trait}: ${RACES[r].desc}">${RACE_TALENTS[r].icon} ${RACES[r].name}</button>`).join('');
+}
 function renderClasses() {
   document.getElementById('classes').innerHTML = Object.keys(TALENTS).map(c => `<button class="cls ${c === S.cls ? 'sel' : ''}" data-cls="${c}">
     <span class="sw" style="background:${CLASSES[c].colors[0]}"></span><b>${CLASSES[c].name}</b>
@@ -241,11 +255,11 @@ function relations(tree) {
   const out = { anc: new Set(), alt: new Set(), main: new Set(), altE: new Set(), desc: new Set() };
   const sid = (S.sel || '').split('#')[0];
   if (!sid || !tree.nodes.some(n => n.id === sid)) return out;
-  talentRoutes(S.cls, build(), sid).forEach((r, i) => {
+  talentRoutes(K(), build(), sid).forEach((r, i) => {
     r.nodes.forEach(x => (i === 0 ? out.anc : out.alt).add(x));
     routeEdges(r, sid).forEach(e => (i === 0 ? out.main : out.altE).add(e));
   });
-  out.desc = new Set(talentChildren(S.cls, sid));
+  out.desc = new Set(talentChildren(K(), sid));
   return out;
 }
 function renderTree(tree, i) {
@@ -287,7 +301,7 @@ function renderTree(tree, i) {
   })();
   return `<div class="tree ${i === S.tab ? 'show' : ''}">
     <h2><span class="ic">${tree.icon}</span>${tree.name}<span class="tp"><b>${pts}</b> b.</span></h2>
-    <div class="sub muted small">${tree.core ? 'Strom třídy' : 'Specializace'} – ${tree.desc}</div>
+    <div class="sub muted small">${tree.core ? 'Strom třídy' : tree.isRace ? 'Rasový strom' : 'Specializace'} – ${tree.desc}</div>
     <div class="canvas" style="height:${tree.rows * ROW}px"><svg class="lines" viewBox="0 0 7 ${tree.rows}" preserveAspectRatio="none">${lines}</svg>${gates}${nodes}${pm}</div></div>`;
 }
 function skillProps(id) {
@@ -313,10 +327,10 @@ function skillProps(id) {
 function renderDetail() {
   const el = document.getElementById('detail');
   if (!S.sel) { el.innerHTML = `<h3>Detail</h3><div class="muted small">Klikni na libovolný uzel ve stromu. Uvidíš, co dělá, co potřebuje a jak ho vylepšit.<br><br>
-    Každá třída má <b>strom třídy</b> a <b>dvě specializace</b>. Body můžeš dávat do všech tří a v každé specializaci si vybereš jednu <b>klíčovou pasivku</b> (★ dole).
+    Každá třída má <b>strom třídy</b> a <b>dvě specializace</b>, každá rasa navíc <b>rasový strom</b> s vlastní dovedností. Body můžeš dávat do všech čtyř a v každé specializaci si vybereš jednu <b>klíčovou pasivku</b> (★ dole).
     Řádky se odemykají body utracenými výš ve stejném stromu (čárkované čáry).</div>`; return; }
   const [sid, so] = S.sel.split('#');
-  const n = nodeById(S.cls, sid), t = build(), v = t[n.id] || 0, tree = trees().find(x => x.key === n.tree);
+  const n = nodeById(K(), sid), t = build(), v = t[n.id] || 0, tree = trees().find(x => x.key === n.tree);
   if (n.type === 'choice') {
     const i = Math.max(0, (+so || 1) - 1), o = n.opts[i], other = n.opts[1 - i], chosen = v === i + 1, ok = canLearn(n, i + 1);
     el.innerHTML = `<div class="d-head"><span class="d-g">${optIconHtml(o, n)}</span><div><b>${o.name}</b><br>
@@ -343,7 +357,7 @@ function renderDetail() {
 function renderSummary() {
   const t = build(), sum = {}, skillMods = {}, conds = {};
   const skills = CLASSES[S.cls].base.slice();
-  talentNodes(S.cls).forEach(n => {
+  talentNodes(K()).forEach(n => {
     const v = t[n.id]; if (!v || n.type === 'base') return;
     if (n.type === 'skill') skills.push(n.skill);
     const st = nodeStats(n, v), mul = n.type === 'passive' ? v : 1;
@@ -354,8 +368,8 @@ function renderSummary() {
       else sum[k] = (sum[k] || 0) + val;
     }
   });
-  const keyNode = talentNodes(S.cls).find(n => n.type === 'key' && t[n.id]);
-  let h = `<h3>Souhrn buildu – ${CLASSES[S.cls].name}</h3><div class="muted small">Rozděleno ${talentsSpent({ cls: S.cls, talents: t })} z ${talentPointsTotal(S.level)} bodů · ${trees().map(tr => `${tr.icon} ${tr.name} ${tr.nodes.reduce((s, n) => s + nodeSpent(n, t[n.id]), 0)}`).join(' · ')}</div>`;
+  const keyNode = talentNodes(K()).find(n => n.type === 'key' && t[n.id]);
+  let h = `<h3>Souhrn buildu – ${CLASSES[S.cls].name}</h3><div class="muted small">Rozděleno ${talentsSpent({ cls: S.cls, race: S.race, talents: t })} z ${talentPointsTotal(S.level)} bodů · ${trees().map(tr => `${tr.icon} ${tr.name} ${tr.nodes.reduce((s, n) => s + nodeSpent(n, t[n.id]), 0)}`).join(' · ')}</div>`;
   if (keyNode) h += `<h4>Klíčová pasivka</h4><div><span><i class="si">${nodeIconHtml(keyNode)}</i>${keyNode.name}</span><span></span></div><div class="small muted" style="border:0">${keyNode.desc}</div>`;
   h += `<h4>Dovednosti (${skills.length})</h4>` + skills.map(id => `<div><span><i class="si">${skillIcon(id)}</i>${SKILLS[id].name}</span><span class="small">${skillMods[id] ? Object.entries(skillMods[id]).map(([p, v]) => SKL[p](v)).join(', ') : ''}</span></div>`).join('');
   const keys = Object.keys(sum).filter(k => sum[k]);
@@ -364,10 +378,10 @@ function renderSummary() {
   document.getElementById('summary').innerHTML = h;
 }
 function render() {
+  renderClasses(); renderRaces();
   document.getElementById('lvlv').textContent = S.level;
   document.getElementById('free').textContent = free();
   document.getElementById('tot').textContent = talentPointsTotal(S.level);
-  renderClasses();
   const tr = trees();
   document.getElementById('tabs').innerHTML = tr.map((t, i) => `<button class="${i === S.tab ? 'sel' : ''}" data-tab="${i}">${t.icon} ${t.name}</button>`).join('');
   renderTrees();
@@ -378,6 +392,7 @@ function renderTrees() { document.getElementById('trees').innerHTML = trees().ma
 // ---------- ovládání ----------
 document.addEventListener('click', e => {
   const c = e.target.closest('[data-cls]'); if (c) { S.cls = c.dataset.cls; S.sel = null; render(); return; }
+  const rc = e.target.closest('[data-race]'); if (rc) { S.race = rc.dataset.race; S.sel = null; render(); return; }
   const tb = e.target.closest('[data-tab]'); if (tb) { S.tab = +tb.dataset.tab; render(); return; }
   const n = e.target.closest('.n');
   if (n) {   // jen výběr – strom se nepřekresluje (aby fungoval dvojklik)
@@ -392,14 +407,14 @@ document.addEventListener('contextmenu', e => { const n = e.target.closest('.n')
 document.getElementById('lvl').addEventListener('input', e => {
   S.level = +e.target.value;
   while (free() < 0) {   // nižší úroveň: odeber body od nejhlubších uzlů
-    const t = build(), list = talentNodes(S.cls).filter(n => t[n.id] && canUnlearn(n)).sort((a, b) => b.row - a.row);
-    if (!list.length) { S.builds[S.cls] = {}; break; }
+    const t = build(), list = talentNodes(K()).filter(n => t[n.id] && canUnlearn(n)).sort((a, b) => b.row - a.row);
+    if (!list.length) { S.builds[K()] = {}; break; }
     const n = list[0]; if (n.type === 'choice' || t[n.id] === 1) delete t[n.id]; else t[n.id]--;
   }
   render();
 });
 document.getElementById('q').addEventListener('input', e => { S.q = e.target.value.trim(); render(); });
-document.getElementById('reset').addEventListener('click', () => { S.builds[S.cls] = {}; S.sel = null; render(); });
+document.getElementById('reset').addEventListener('click', () => { S.builds[K()] = {}; S.sel = null; render(); });
 render();
 </script>
 </body>

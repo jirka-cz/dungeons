@@ -18,6 +18,7 @@
   - `talentVer 2` vrátí body po přestavbě stromů;
   - `sellFix103` jednou vypne automatický prodej;
   - `resCap14` (u postavy i u uložení) jednou ořízne odolnosti předmětů na 10 % na živel;
+  - `talentVer 3` (1.13.0) vrátí body po rebalancu a přidání rasových stromů;
   - `classItems12` (u postavy) přesune nasazené legendárky a sety, které třída už nesmí nosit, do batohu (nebo truhly).
 - Když se mění struktura uložení, vždy přidat migraci, aby kamarádům nezmizely postavy.
 
@@ -46,6 +47,8 @@ Předpoklady: Node.js a Python s Playwrightem (`pip install playwright` a `pytho
 | `tests/riftsel.py` | výběr riftu u obelisku (nejvyšší, poslední, libovolný), snímky počítač/mobil |
 | `tests/npcwin.py` | město: okno objektu se otevře přiblížením a zavře odchodem (klávesy, joystick), ruční zavření, klik na postavu |
 | `tests/vendor.py` | obchodník: ceny obnovení a vylepšení, uložení zboží, nové zboží po podzemí, statistika rarit, snímky počítač/mobil |
+| `tests/rebalance.py` | rebalanc 1.13: rysy ras a tříd, rasové dovednosti a stromy (kostlivci, stín, kamenná podoba…), nové mechaniky talentů, rozdíl úrovní |
+| `tests/balance.py` | balanc: `table` = síla hrdiny vs. nepřátelé po podzemích, `fit` = podklady pro křivky v `js/data.js`, `bot` = bot se syntetickou postavou (úroveň a výbava podle podzemí) |
 | `tests/items.py` | atributy, váha zbroje, legendárky a sety podle tříd, chytrá kořist, migrace, snímky okna postavy |
 
 ## Hra více hráčů – testy a provoz

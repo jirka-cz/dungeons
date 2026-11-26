@@ -11,7 +11,9 @@ const CLASSES = {
     weapons: ['sword', 'axe', 'mace', 'greatsword', 'hammer', 'shield'], starter: 'sword',
     colors: ['#a9b2bd', '#646c77'],
     base: ['slash', 'leap'],
-    desc: 'Bojovník zblízka. Útoky generují zuřivost. Zuřivost (dvě zbraně) nebo Zbraně (obouručka).',
+    dr: 0.25,
+    trait: { name: 'Železná kůže', desc: 'Bojuje v první linii: dostává o 25 % menší poškození než ostatní třídy.' },
+    desc: 'Tank na blízko. Vydrží nejvíc, útočí jen zblízka a do boje skáče. Útoky generují zuřivost. Zuřivost (dvě zbraně) nebo Zbraně (obouručka).',
   },
   mage: {
     name: 'Mág', hp: 0.92, atk: 1.25, def: -1, spd: 1.0, elem: 'arcane', main: ['int'], armor: 'light',
@@ -19,7 +21,9 @@ const CLASSES = {
     weapons: ['wand', 'staff', 'orb', 'dagger', 'sword'], starter: 'wand',
     colors: ['#6a4ae0', '#43309a'],
     base: ['missile', 'blink'],
-    desc: 'Kouzelník na dálku s arkánní magií. Oheň, nebo Mráz.',
+    barrier: 0.15,
+    trait: { name: 'Arkánní bariéra', desc: 'Štít ve výši 15 % života pohltí poškození. Obnoví se, když tě 5 s nic nezasáhne.' },
+    desc: 'Skleněné dělo: obrovská plošná kouzla z dálky, ale málo života. Bariéra a teleport ho drží naživu. Oheň, nebo Mráz.',
   },
   warlock: {
     name: 'Černokněžník', hp: 1.0, atk: 1.1, def: 0, spd: 1.0, ls: 0.04, elem: 'shadow', main: ['int'], armor: 'light',
@@ -27,7 +31,9 @@ const CLASSES = {
     weapons: ['wand', 'dagger', 'staff', 'orb'], starter: 'wand',
     colors: ['#2c3a86', '#11132a'],
     base: ['sbolt', 'drain'],
-    desc: 'Temná magie, vysává 4 % života. Kletby, nebo Démonologie.',
+    dotLeech: 0.10,
+    trait: { name: 'Temný pakt', desc: 'Vysává 4 % poškození jako život a jeho kletby (poškození v čase) ho léčí o 10 % svého poškození.' },
+    desc: 'Pomalá smrt: prokleje celé skupiny a žije z jejich utrpení, nebo velí démonům. Kletby, nebo Démonologie.',
   },
   hunter: {
     name: 'Lovec', hp: 0.95, atk: 1.0, def: 0, spd: 1.15, elem: 'phys', pet: 'wolf', main: ['agi'], armor: null,
@@ -35,7 +41,9 @@ const CLASSES = {
     weapons: ['bow', 'dagger', 'sword', 'axe'], starter: 'bow',
     colors: ['#4a7a3a', '#5a3a1e'],
     base: ['shot', 'vault'],
-    desc: 'Střelec s věrným vlkem a pastmi. Lučištník, nebo Pán šelem.',
+    ms: 1.05, rangeBonus: 0.2,
+    trait: { name: 'Lovec na dálku', desc: 'Čím dál je cíl, tím víc zraní: +1 % poškození za každých 10 bodů vzdálenosti nad 40 (až +20 %). +5 % rychlost pohybu.' },
+    desc: 'Mrštný střelec: drží si odstup, střílí v pohybu, klade pasti a má věrného vlka. Lučištník, nebo Pán šelem.',
   },
   druid: {
     name: 'Druid', hp: 1.05, atk: 0.95, def: 2, spd: 1.0, regen: 0.004, elem: 'nature', main: ['int', 'agi'], armor: null,
@@ -43,7 +51,9 @@ const CLASSES = {
     weapons: ['staff', 'mace', 'orb', 'dagger'], starter: 'staff',
     colors: ['#7a5a2a', '#3e6a2a'],
     base: ['wrath', 'rejuv'],
-    desc: 'Lesní šaman, léčí se a vyvolává enty. Rovnováha, nebo Divočina.',
+    shapeshift: true,
+    trait: { name: 'Proměnlivost', desc: 'V medvědí a vlčí podobě útočí drápy zblízka místo Hněvu, v měsíční podobě Hněv vystřelí dvakrát. Každá proměna vyléčí 10 % života.' },
+    desc: 'Měňavec: z dálky kouzlí, v podobě šelmy bojuje zblízka a léčí se. Rovnováha, nebo Divočina.',
   }
 };
 

@@ -161,7 +161,7 @@ function autoTarget(range = 190) {
 
 // Je nějaký nepřítel v dosahu základního útoku? (pro automatický útok)
 function primaryInRange() {
-  const h = G.hero, S = SKILLS[G.char.bar[0]];
+  const h = G.hero, S = G.char.bar[0] && SKILLS[effSkill(G.char.bar[0])];
   if (!S) return null;
   if (S.type === 'melee') return nearestMonster(h.x, h.y, S.range + 12, m => dist(m, h) < S.range + m.r + 4);
   return nearestMonster(h.x, h.y, 190, m => lineClear(G.world, h.x, h.y, m.x, m.y, 2));
@@ -195,7 +195,7 @@ function updateRecall(dt) {
 function aimPoint(skillId) {
   const h = G.hero;
   if (!G.touch) { const p = toWorld(G.input.mx, G.input.my); return { x: p.x, y: p.y, t: monsterAt(p.x, p.y) }; }
-  const S = SKILLS[skillId];
+  const S = SKILLS[effSkill(skillId)];
   const t = autoTarget(S && (S.type === 'melee') ? 60 : 200);
   const mobility = S && ['teleport', 'leap', 'dash'].includes(S.type);
   if (t && !mobility) return { x: t.x, y: t.y - 6, t };
@@ -278,6 +278,11 @@ function updateHero(h, dt) {
   } else {
     h.hp = Math.min(st.maxHp, h.hp + st.maxHp * (st.regen + (G.scene === 'town' ? 0.1 : 0)) * dt);
     h.res = clamp(h.res + st.resRegen * dt, 0, st.resMax);
+    if (st.barrier) {   // mág: Arkánní bariéra se obnoví po 5 s bez zásahu
+      const full = st.maxHp * st.barrier;
+      if (G.scene !== 'rift' || G.time - (h.lastHitT || -99) > 5) { if ((h.barrier || 0) < full) h.barrier = Math.min(full, (h.barrier || 0) + full * dt * 2); }
+      h.barrier = Math.min(h.barrier || 0, full);
+    }
     if (h === G.me) heroControl(dt);
     else if (h.control) h.control(dt);
     updateHeroSkills(dt);
@@ -327,7 +332,7 @@ function heroControl(dt) {
     const t = autoTarget(200);
     if (t) {
       h.target = t;
-      const id = G.char.bar[0], S = SKILLS[id], melee = S.type === 'melee';
+      const id = G.char.bar[0], S = SKILLS[effSkill(id)], melee = S.type === 'melee';
       const range = melee ? S.range + t.r - 2 : 190, d = dist(h, t);
       if (d > range || (!melee && !lineClear(G.world, h.x, h.y, t.x, t.y, 2))) moveToward(t.x, t.y, dt, true);
       else castSkill(id, t.x, t.y - 6 * t.scale, t);
@@ -560,8 +565,9 @@ function drawEntities(g) {
     if (e.kind === 'pet') {
       const bob = e.walk > 0 ? Math.floor(t * 10) % 2 : 0;
       drawShadow(g, e.x, e.y, 5 * e.scale);
+      if (e.def.ring) { g.strokeStyle = e.def.ring; g.globalAlpha = 0.55; g.beginPath(); g.ellipse(e.x, e.y + 1, 6, 2.5, 0, 0, Math.PI * 2); g.stroke(); g.globalAlpha = 1; }   // spojenec (kostlivec nemrtvého)
       const s = e.def.scale, lift = e.type === 'imp' ? 6 + Math.sin(t * 4) * 2 : 0;
-      drawSprite(g, e.def.sprite, e.x - 8 * s, e.y - 15 * s - bob - lift, s, { flip: e.face < 0, t, tint: e.def.tint });
+      drawSprite(g, e.def.sprite, e.x - 8 * s, e.y - 15 * s - bob - lift, s, { flip: e.face < 0, t, tint: e.def.tint, palOverride: e.def.pal });
       return;
     }
     if (e.sprite && !e.kind) {   // NPC
@@ -617,6 +623,7 @@ function drawHero(g, h) {
   if (h.atkAnim > 0) { ox = Math.cos(h.atkAng || 0) * 2; oy = Math.sin(h.atkAng || 0) * 1; }
   drawShadow(g, h.x, h.y, 6 * s);
   if (h.invuln > 0 && !h.leap && !h.dash && Math.floor(t * 15) % 2) g.globalAlpha = 0.5;
+  if (h.stealth > 0) g.globalAlpha = 0.35;   // elf ve stínu
   // mýtický set: 3 díly = planoucí oči, 6 dílů = hořící postava
   const myth = h.dead ? 0 : mythicPieces(ch), sx = Math.round(h.x - 8 * s + ox), sy = Math.round(h.y - 16 * s + 1 - bob + oy - (h.z || 0));
   const pal = classPal(ch.race, ch.cls);
@@ -640,6 +647,7 @@ function drawHero(g, h) {
       if (Math.random() < 0.3) particle(h.x + rand(-4, 4) * s, h.y - 15 * s, { vy: -rand(16, 26), life: 0.5, color: FIRE[Math.random() * 3 | 0], size: 1 });
     }
   }
+  if (h.barrier > 1 && !h.dead) { const st = heroSt(h), full = st ? st.maxHp * st.barrier : 1; g.strokeStyle = '#9fc8ff'; g.globalAlpha = 0.25 + 0.35 * Math.min(1, h.barrier / full); g.beginPath(); g.ellipse(h.x, h.y - 7, 9, 11, 0, 0, Math.PI * 2); g.stroke(); g.globalAlpha = 1; }
   if (h.whirl > 0) { g.strokeStyle = '#ffffff'; g.globalAlpha = 0.5; g.beginPath(); g.arc(h.x, h.y - 6, 14, t * 20, t * 20 + 3); g.stroke(); g.globalAlpha = 1; }
   h.buffs.forEach((b, i) => { if (b.color && Math.random() < 0.15) particle(h.x + rand(-6, 6), h.y - rand(0, 14), { vy: -12, life: 0.5, color: b.color, size: 1, glow: true }); });
   if (h.channel > 0) { h.channel -= 1 / 60; g.strokeStyle = '#7dffb0'; g.globalAlpha = 0.6; g.beginPath(); g.arc(h.x, h.y - 6, 10 + Math.sin(t * 20) * 2, 0, Math.PI * 2); g.stroke(); g.globalAlpha = 1; }

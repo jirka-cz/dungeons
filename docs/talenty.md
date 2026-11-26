@@ -1,10 +1,11 @@
 # Talenty
 
-## Jak to funguje teď (v1.1.6)
-- Každá třída má **strom třídy** (19 uzlů) a **dvě specializace** (každá 30 uzlů). Hráč může body dávat do všech tří stromů.
-- Celkem 395 uzlů, 115 úrovní talentů na třídu.
+## Jak to funguje teď (v1.13.0)
+- Každá třída má **strom třídy** (19 uzlů) a **dvě specializace** (každá 30 uzlů). Od 1.13.0 má navíc každá rasa **rasový strom** (12 uzlů, 18 úrovní) – čtvrtá záložka. Hráč může body dávat do všech čtyř stromů.
+- Celkem 395 uzlů tříd + 60 uzlů ras, 115 úrovní talentů na třídu + 18 rasových.
+- 1.13.0: body se všem vrátily (`talentVer 3` v `js/save.js`), protože se změnily uzly a přibyly rasové stromy.
 - **Body:** 1 za úroveň do úrovně 60 (na 60 je 59 bodů), dál 1 bod za každé 3 úrovně (`talentPointsTotal` v `js/talents.js`).
-- **Řádky se odemykají utracenými body ve stromu:** specializace 5 / 12 / 20 / 26 bodů (od řádků 3 / 5 / 8 / 9), strom třídy 8 / 14 bodů (od řádků 4 / 6) – `SPEC_GATES`, `CORE_GATES`.
+- **Řádky se odemykají utracenými body ve stromu:** specializace 5 / 12 / 20 / 26 bodů (od řádků 3 / 5 / 8 / 9), strom třídy 8 / 14 bodů (od řádků 4 / 6), rasový strom 3 / 6 / 10 bodů (od řádků 2 / 3 / 5) – `SPEC_GATES`, `CORE_GATES`, `RACE_GATES`.
 - **Návaznost:** uzel vyžaduje aspoň 1 bod v jednom z rodičů (stačí kterýkoli).
 - **Klíčová pasivka:** nejvýš jedna v každém stromu (ve specializaci jsou na výběr tři).
 
@@ -44,6 +45,23 @@ Klíčové pasivky specializací:
   - Rovnováha: Měsíční bohyně / Dokonalá bouře / Věčné zatmění
   - Divočina: Medvědí síla / Vlčí zuřivost / Krvavá divočina
 
+### Rasové stromy (od 1.13.0, `RACE_TALENTS`, rozložení `RACE_LAYOUT`)
+| Rasa | Rasová dovednost (R1) | Hlavní mechaniky | Klíčové pasivky |
+|---|---|---|---|
+| Lidé | Lidská vůle (zruší zmrazení, imunita, +20 % útok) | Druhý dech (pod 30 % života +25 %), Taktik, Rychlé učení | Hrdina lidstva / Zlatá horečka |
+| Trpaslíci | Kamenná podoba (-40 % poškození, pomalejší) | Otřes na konci podoby, Kamenná krev (automatický štít pod 35 %), Žulová podoba (trny) | Horský král / Kladivo hor |
+| Elfové | Splynutí se stínem (neviditelnost, útok ze stínu ×2 a krit) | Vítr v zádech (-25 % přebíjení pohybu), Rychlé reflexy (po úhybu +20 % útok) | Tanečník s čepelemi / Elfí přesnost |
+| Orkové | Krvavá zuřivost (+30 % útok, -50 % léčení) | Pomsta, Velitel (+15 % mazlíčci) | Krvavý válečník / Nezastavitelný |
+| Nemrtví | Povstání mrtvých (2 kostlivci, 15 s, max. 4) | Kostěná armáda, Kostěný mág, **Vzkříšení padlých** (zabitý nepřítel povstane jako kostlivec), Kostěný štít | Armáda mrtvých / Pán smrti |
+
+- Klíč stromů postavy je `talentKey(ch)` = `'trida:rasa'` (např. `warlock:undead`). `classTrees(klíč)` vrací stromy třídy a za nimi rasový strom (`isRace`). Volání jen s třídou (`classTrees('mage')`) vrací jen stromy třídy – tak to používají starší testy.
+- Rasové dovednosti nestojí zdroj, jen přebíjení.
+
+### Mechaniky talentů přidané v 1.13.0
+- Válečník: *Popravčí* (`executeKill` – Poprava zabije pod 20 % a obnoví se), *Bouře ocele* (`whirlPull` – Vichřice vtahuje).
+- Mág: *Zesílený Teleport* (`blinkNova` – zmrazí okolí), *Ledová zbroj* (`frostArmor` – kdo tě zasáhne zblízka, zamrzne), *Spalování* (hoření přeskakuje).
+- Lovec: *Palba za běhu* (nová dovednost `strafe` místo Rychlé palby), *Zesílený Úskok* (`vaultTrap` – past), *Průstřelná palba* (`strafePierce`).
+
 ### Okno talentů (klávesa K)
 - Klik na uzel ukáže stručný detail a vedle uzlu tlačítka **+** a **−**.
 - Body se nejdřív jen „rozpracují“. Tlačítko **Potvrdit vybrané talenty** je uloží, **Zrušit** je zahodí.
@@ -54,13 +72,14 @@ Klíčové pasivky specializací:
 
 ### Kalkulačka
 - Složka `kalkulacka/`, používá stejné soubory jako hra (`../js/classes.js`, `talents.js`, `icons.js`), takže je vždy aktuální.
-- Volba třídy, posuvník úrovně 1–120, hledání, tři stromy vedle sebe (na mobilu záložky), souhrn buildu.
+- Volba třídy a rasy (rasa mění čtvrtý strom), posuvník úrovně 1–120, hledání, stromy po dvou vedle sebe (na mobilu záložky), souhrn buildu.
 
 ## Kde v kódu
 - `js/talents.js`
   - `TALENTS` – data stromů;
   - pomocníci `tP` (pasivka), `tK` (dovednost), `tE` (zesílení), `tC` (volba), `tKEY` (klíčová), `tBASE`;
-  - logika: `talentNodes`, `talentPointsTotal`, `gateFor`, `knownSkills`, `talentStateValid`, `talentRoutes`.
+  - logika: `talentKey`, `talentNodes`, `talentPointsTotal`, `gateFor`, `knownSkills`, `talentStateValid`, `talentRoutes`;
+  - rasové stromy: `RACE_TALENTS`, `RACE_LAYOUT`, `RACE_GATES`, `RACE_KEY_ICONS`, rasové dovednosti v `SKILLS` (`race: 'id'`).
 - `js/entities.js` – jak talenty mění staty (`gatherMods`, `nodeStats`, podmíněné bonusy `applyConds`, `heroHit`).
 - `js/skills.js` – efekty nových dovedností a mechanik (rozzuření, tříštění, šíření DoT, podoby…).
 - `js/ui.js` – okno talentů (`showTalents`, `learnTalent`, `confirmTalents`…).
@@ -79,4 +98,4 @@ Klíčové pasivky specializací:
 - Jirka zatím nezkoumal sílu klíčových pasivek – může přijít úprava balancu.
 
 ## Testy
-`node tests/validate_talents.js`, `python3 tests/talents_ui.py`, `tests/talents_mob.py`, `tests/draft.py`, `tests/land_tal.py`, `tests/calc.py`, `tests/skills_smoke.py`.
+`node tests/validate_talents.js` (kontroluje i rasové stromy), `python3 tests/rebalance.py`, `python3 tests/talents_ui.py`, `tests/talents_mob.py`, `tests/draft.py`, `tests/land_tal.py`, `tests/calc.py`, `tests/skills_smoke.py`.

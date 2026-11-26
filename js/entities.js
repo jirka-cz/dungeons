@@ -39,7 +39,7 @@ function gatherMods(ch) {
   Object.keys(STAT_LABELS).forEach(k => m[k] = 0);
   TALENT_KEYS.forEach(k => m[k] = 0);
   addStats(m, RACES[ch.race].bonus || {});
-  talentNodes(ch.cls).forEach(n => { const v = ch.talents[n.id], st = nodeStats(n, v); if (st) addStats(m, st, n.type === 'passive' ? v : 1); });
+  talentNodes(talentKey(ch)).forEach(n => { const v = ch.talents[n.id], st = nodeStats(n, v); if (st) addStats(m, st, n.type === 'passive' ? v : 1); });
   EQUIP_ORDER.forEach(s => {
     const it = ch.equip[s];
     if (!it) return;
@@ -76,13 +76,14 @@ function heroStats(ch) {
   m.hpPct += m.sta * ATTR_FX.staHp;
   if (m.titanGrip >= 2 && gearConds(ch).dw2) m.atkPct += 0.08;   // trpaslík s talentem Titánský stisk
   if (c.res.regen > 0) m.resRegenPct += m.spi * ATTR_FX.spiRegen; else m.genPct += m.spi * ATTR_FX.spiGen;
-  const atk = (r.atk * c.atk * (1 + LVL_ATK * L) + m.atk) * (1 + m.atkPct);
+  const lvm = levelMul(ch.level);
+  const atk = (r.atk * c.atk * (1 + LVL_ATK * L) + m.atk) * (1 + m.atkPct) * lvm;
   const elemMul = { chaos: 1 };
   ['phys', 'fire', 'frost', 'shadow', 'nature', 'arcane'].forEach(e => elemMul[e] = 1 + m[e + 'Pct']);
   const res = { phys: 0 };
   ['Fire', 'Frost', 'Shadow', 'Nature', 'Arcane'].forEach(e => res[e.toLowerCase()] = Math.min(HERO_RES_CAP, m['res' + e] + m.resAll));
   return {
-    maxHp: Math.round((r.hp * c.hp * (1 + LVL_HP * L) + m.hp) * (1 + m.hpPct)),
+    maxHp: Math.round((r.hp * c.hp * (1 + LVL_HP * L) + m.hp) * (1 + m.hpPct) * lvm),
     atk,
     def: r.def + c.def + LVL_DEF * L + m.def,
     spd: 1.35 * r.spd * c.spd * (1 + m.spdPct),
@@ -91,7 +92,7 @@ function heroStats(ch) {
     ls: Math.min(0.3, (r.ls || 0) + (c.ls || 0) + m.ls) * (1 + m.healPct),
     dodge: Math.min(0.35, m.dodge),
     block: Math.min(0.5, m.block),
-    dmgTaken: 1 - Math.min(0.6, m.dmgRed),
+    dmgTaken: (1 - Math.min(0.6, m.dmgRed)) * (1 - (c.dr || 0)),   // válečník: Železná kůže (mimo strop 60 %)
     regen: Math.min(0.03, (c.regen || 0) + m.regen) * (1 + m.healPct),
     thorns: m.thorns,
     goldMul: 1 + m.goldPct, dropMul: 1 + m.dropPct, mf: m.mfPct, xpMul: 1 + (m.xpPct || 0),
@@ -113,7 +114,10 @@ function heroStats(ch) {
     eliteDmg: m.eliteDmg, vs: { undead: m.vsUndead, beast: m.vsBeast, demon: m.vsDemon },
     eliteTaken: 1 - Math.min(0.5, m.eliteRed), rangedTaken: 1 - Math.min(0.5, m.rangedRed), areaTaken: 1 - Math.min(0.5, m.areaRed),
     ccRed: Math.min(0.6, m.ccRed), costRed: Math.min(0.5, m.costRed),
-    moveSpeed: 64 * (1 + (m.msPct || 0)) * (G.hero && G.hero.whirl > 0 ? 1.3 : 1),
+    moveSpeed: 64 * (r.ms || 1) * (c.ms || 1) * Math.max(0.3, 1 + (m.msPct || 0)) * (G.hero && G.hero.whirl > 0 ? 1.3 : 1),
+    dotLeech: (c.dotLeech || 0) + (m.dotLeech || 0), barrier: c.barrier || 0, rangeBonus: c.rangeBonus || 0,
+    // rozdíl úrovní vůči podzemí (víc poškození od nepřátel / méně poškození nepřátelům)
+    gap: G.rift && G.rift.level ? levelGapMul(G.rift.level, ch.level) : 1,
     mods: m
   };
 }
@@ -132,7 +136,9 @@ function skillParams(id, st) {
   if (S.range && S.type === 'melee') S.range *= rm;
   if (k('skc')) { S.count = (S.count || 1) + k('skc'); if (S.type === 'projectile' && !S.spread) S.spread = 22; }
   if (S.primary && S.type === 'projectile') {
-    if (m.primCount) { S.count = (S.count || 1) + m.primCount; S.spread = S.spread || 16; }
+    const moon = id === 'wrath' && G.hero && G.char && CLASSES[G.char.cls].shapeshift && G.hero.buffs.some(b => b.form === 'moonkin');   // druid v měsíční podobě
+    const extra = (m.primCount || 0) + (moon ? 1 : 0);
+    if (extra) { S.count = (S.count || 1) + extra; S.spread = S.spread || 16; }
     S.pierce = (S.pierce || 0) + (m.primPierce || 0);
   }
   if (S.arrow) S.pierce = (S.pierce || 0) + (m.arrowPierce || 0);
@@ -181,7 +187,7 @@ function dealDamage(m, raw, elem, o = {}) {
     if (!(m.immTxtT > G.time)) { m.immTxtT = G.time + 0.6; floatText(m.x, m.y - m.r * 2 - 6, 'Nezranitelný', '#a0a0b0', 0.9); }
     m.hitT = 0.06; return 0;
   }
-  raw *= st.elemMul[elem] || 1;
+  raw *= (st.elemMul[elem] || 1) / (st.gap || 1);
   if (m.hp < m.maxHp * 0.3) raw *= 1 + st.execPct;
   if (m.stunT > 0) raw *= 1 + st.stunDmg;
   const fam = m.def && m.def.fam;
@@ -206,7 +212,7 @@ function dealDamage(m, raw, elem, o = {}) {
   if (!o.dot) m.knock = 0.08;
   if (!o.dot) sfx(o.crit ? 'crit' : 'hit');
   const col = o.crit ? '#ffd23f' : (elem === 'phys' ? '#ffffff' : ELEMENTS[elem].color);
-  floatText(m.x, m.y - m.r * 2 - 6, (o.crit ? fmt(dmg) + '!' : fmt(dmg)), col, o.crit ? 1.35 : (o.dot ? 0.8 : 1));
+  floatText(m.x, m.y - m.r * 2 - 6, (o.crit ? fmtBig(dmg) + '!' : fmtBig(dmg)), col, o.crit ? 1.35 : (o.dot ? 0.8 : 1));
   if (!o.noProc && !o.dot) {
     if (st.ls > 0) healHero(dmg * st.ls, true);
     if (st.freezeChance && Math.random() < st.freezeChance) stunMonster(m, 1.5 + st.stunDur, 'freeze');
@@ -221,7 +227,7 @@ function heroHit(m, mult, elem, o = {}) {
   if (!m || m.dead) return 0;
   const st = G.st, M = st.mods, id = o.skill, S = id ? SKILLS[id] : null, h = G.hero;
   const k = p => (id && M[p + '_' + id]) || 0;
-  const crit = o.crit || Math.random() < st.crit + k('skcrit');
+  const crit = o.crit || (h.ambushT > G.time && !o.dot) || Math.random() < st.crit + k('skcrit');
   if (S && !S.primary) mult *= st.skillMul;
   if (m.hp < m.maxHp * 0.3) mult *= 1 + (o.exec || 0) + k('skexec');
   const dotted = Object.keys(m.dots).length > 0;
@@ -229,6 +235,14 @@ function heroHit(m, mult, elem, o = {}) {
   if (M.burnBonus && hasFireDot(m)) mult *= 1 + M.burnBonus;
   if (M.slowedBonus && (m.slowT > 0 || (m.stunT > 0 && m.stunKind === 'freeze'))) mult *= 1 + M.slowedBonus;
   if (M.lowHpDmg && h.hp < st.maxHp * 0.5) mult *= 1 + M.lowHpDmg;
+  if (M.orcRage && h.hp < st.maxHp * 0.5) mult *= 1 + 0.2 * (M.orcRage2 ? 2 : 1);   // ork: Krvavý vztek
+  if (st.rangeBonus && !o.dot) mult *= 1 + clamp((dist(h, m) - 40) / 1000, 0, st.rangeBonus);   // lovec: čím dál, tím víc
+  let ambush = false;
+  if (h.ambushT > G.time && !o.dot) { ambush = true; h.ambushT = 0; mult *= 2 + (M.stealthDmg || 0); }   // útok ze stínu (elf)
+  if (id === 'execute' && M.executeKill && !m.boss && !m.obj && m.hp < m.maxHp * 0.2) {   // Popravčí: okamžité zabití
+    dealDamage(m, m.hp * 10, 'chaos', { crit: true, noProc: true });
+    if (m.dead) { delete h.cds.execute; floatText(m.x, m.y - m.r * 2 - 16, 'Poprava!', '#ff5050', 1); return m.maxHp; }
+  }
   const dmg = dealDamage(m, st.atk * mult * (crit ? st.critMult : 1), elem, Object.assign({}, o, { crit }));
   // efekty po zásahu
   if (crit && !o.noProc) {
@@ -274,20 +288,57 @@ function healHero(n, quiet) {
   if (!quiet && h.hp - before >= 1) floatText(h.x, h.y - 22, '+' + fmt(h.hp - before), '#7fe07f');
 }
 
+// Dočasný bonus hrdiny (obnoví se, pokud už běží)
+function heroBuff(id, name, stats, dur, color) {
+  const h = G.hero, b = h.buffs.find(x => x.id === id);
+  if (b) { b.t = Math.max(b.t, dur); return b; }
+  const nb = { id, name, stats, t: dur, dur, color };
+  h.buffs.push(nb); invalidate(); G.st = heroStats();
+  return nb;
+}
+// Kostlivci hrdiny (rasa nemrtvých)
+function skeletonsOf(h) { return G.pets.filter(p => p.owner === h && p.def.skel); }
+// Reakce na zásah (rasové a třídní talenty): pomsta, druhý dech, kamenná krev, ledová zbroj
+function onHeroHurt(dmg, src) {
+  const h = G.hero, st = G.st, M = st.mods;
+  if (h.hp <= 0) return;
+  if (M.revenge && dmg > st.maxHp * 0.1) heroBuff('revenge', 'Pomsta', { atkPct: M.revenge }, 4, '#ff6040');
+  if (M.secondWind && h.hp < st.maxHp * 0.3 && !(h.swT > G.time)) {
+    h.swT = G.time + 60; healHero(st.maxHp * M.secondWind * st.healMul); floatText(h.x, h.y - 34, 'Druhý dech!', '#ffe08a', 1);
+  }
+  if (M.stoneSkin && h.hp < st.maxHp * 0.35 && !(h.ssT > G.time)) {
+    h.ssT = G.time + 60; heroBuff('stoneskin', 'Kamenná krev', { dmgRed: M.stoneSkin }, 6, '#b0a090'); floatText(h.x, h.y - 34, 'Kamenná krev!', '#d0c0a0', 1);
+  }
+  if (M.frostArmor && src && !src.boss && !src.obj && !src.dead && dist(src, h) < 34 && !(src.frostArmorT > G.time)) {
+    src.frostArmorT = G.time + 4; stunMonster(src, M.frostArmor, 'freeze');
+  }
+}
+
 // Zasažení hrdiny
 function hurtHero(raw, elem, src, pctHp) {
   const h = G.hero, st = G.st;
   if (h.dead || h.invuln > 0 || G.scene !== 'rift') return 0;
-  if (Math.random() < st.dodge) { floatText(h.x, h.y - 20, 'Úhyb', '#9fd3ff', 0.9); return 0; }
+  if (Math.random() < st.dodge) {
+    floatText(h.x, h.y - 20, 'Úhyb', '#9fd3ff', 0.9);
+    if (st.mods.dodgeAtk) heroBuff('reflex', 'Rychlé reflexy', { atkPct: st.mods.dodgeAtk }, 3, '#9fd3ff');
+    return 0;
+  }
+  h.lastHitT = G.time;
   const k = 15 + 4 * G.rift.level;
   const def = Math.max(0, st.def) * (elem === 'phys' ? 1 : 0.5);
   const res = elem === 'phys' ? 0 : (st.res[elem] || 0);
   let dmg = raw * rand(0.9, 1.1) * (k / (k + def)) * (1 - res) * st.dmgTaken;
   if (pctHp) dmg += st.maxHp * pctHp * (1 - res) * st.dmgTaken;
-  dmg *= G.partyMul || 1;   // víc hráčů = silnější nepřátelé
+  dmg *= (G.partyMul || 1) * (st.gap || 1);   // víc hráčů = silnější nepřátelé; nižší úroveň = víc poškození
   if (src && (src.elite || src.boss)) dmg *= st.eliteTaken;
   let blocked = false;
   if (Math.random() < st.block) { dmg *= 0.5; blocked = true; }
+  if (st.mods.boneShield) dmg *= 1 - Math.min(0.3, st.mods.boneShield * skeletonsOf(h).length);   // nemrtvý: Kostěný štít
+  if (h.barrier > 0) {   // mág: Arkánní bariéra
+    const a = Math.min(h.barrier, dmg); h.barrier -= a; dmg -= a;
+    if (h.barrier <= 0) floatText(h.x, h.y - 30, 'Bariéra praskla', '#9fc8ff', 0.8);
+    if (dmg <= 0) { floatText(h.x, h.y - 22, fmtBig(a), '#9fc8ff', 0.8); return 0; }
+  }
   if (st.mods.manaShield > 0 && h.res > 0) {   // mana pohltí část poškození (1 mana = 2 poškození)
     const absorb = Math.min(dmg * Math.min(0.9, st.mods.manaShield), h.res * 2);
     h.res -= absorb / 2; dmg -= absorb;
@@ -296,8 +347,9 @@ function hurtHero(raw, elem, src, pctHp) {
   dmg = Math.max(1, Math.round(dmg));
   h.hp -= dmg;
   h.hitT = 0.15;
+  onHeroHurt(dmg, src);
   sfx('hurt');
-  floatText(h.x, h.y - 22, (blocked ? 'Blok ' : '') + fmt(dmg), elem === 'phys' ? '#ff6b6b' : ELEMENTS[elem].color, 1);
+  floatText(h.x, h.y - 22, (blocked ? 'Blok ' : '') + fmtBig(dmg), elem === 'phys' ? '#ff6b6b' : ELEMENTS[elem].color, 1);
   if (dmg > st.maxHp * 0.15 && !G.remoteCtx) shake(3);
   if (src && src.elite && src.elite.includes('vampire')) { src.hp = Math.min(src.maxHp, src.hp + dmg * 0.5); }
   if (src && st.thorns > 0 && !src.dead) dealDamage(src, dmg * st.thorns / (st.elemMul.phys || 1), 'phys', { noProc: true });
@@ -338,9 +390,9 @@ function spawnMonster(typeId, x, y, o = {}) {
   const m = {
     kind: 'monster', type: typeId, def, name: def.name, sprite: def.sprite, pal: def.pal || null, scale: o.scale || 1,
     x, y, r: def.r * (o.scale || 1), fly: def.fly,
-    maxHp: Math.round(def.hp * riftMult(RIFT.hp, L) * (o.hpMul || 1) * (G.partyMul || 1)), atk: def.atk * riftMult(RIFT.atk, L) * (o.atkMul || 1),
+    maxHp: Math.round(def.hp * riftHpMul(L) * (o.hpMul || 1) * (G.partyMul || 1)), atk: def.atk * riftAtkMul(L) * (o.atkMul || 1),
     spd: def.spd, res: Object.assign({}, def.res), atkElem: def.atkElem, ai: def.ai,
-    xp: def.xp, pts: def.pts, gold: GOLD_BASE * Math.pow(GOLD_GROWTH, riftIlvl(L)),
+    xp: def.xp, pts: def.pts, gold: GOLD_BASE * goldPow(riftIlvl(L)),
     dots: {}, slowT: 0, slowPct: 0, stunT: 0, stunImm: 0, cd: rand(0.5, 1.5), spec: rand(1, 3), wind: 0,
     aggro: false, face: 1, hitT: 0, bob: Math.random() * 6, pack: o.pack || null, affT: rand(1, 3)
   };
@@ -385,7 +437,7 @@ function killMonster(m) {
   onKillTalents(m, st);
   // odměny: zkušenosti dostane každý hrdina, zlato a předměty padají každému zvlášť (vidí je jen on)
   const L = G.rift.level;
-  eachHero(() => gainXP(m.xp * 2.5 * riftMult(RIFT.xp, L) * G.st.xpMul));
+  eachHero(() => gainXP(m.xp * 2.5 * riftXpMul(L) * G.st.xpMul));
   if (m.onDeath) m.onDeath(m);
   if (m.obj) { if (Math.random() < 0.25) G.loot.push({ kind: 'globe', x: m.x, y: m.y, t: 0 }); return; }
   if (!m.boss) addProgress(m.pts);
@@ -415,6 +467,8 @@ function onKillTalents(m, st) {
   const M = st.mods, h = G.hero;
   if (!h || h.dead) return;
   if (M.killRes) h.res = Math.min(st.resMax, h.res + M.killRes);
+  if (M.raiseOnKill && !m.boss && !m.obj && Math.random() < M.raiseOnKill) raiseSkeleton(m.x, m.y, 10);   // Vzkříšení padlých
+  if (M.furyExtend) { const b = h.buffs.find(x => x.id === 'bloodfury'); if (b) b.t = Math.min(b.dur + 10, b.t + 1); }
   if (M.killHeal) healHero(st.maxHp * M.killHeal * st.healMul, true);
   if (M.shatter && m.stunT > 0 && m.stunKind === 'freeze') {   // Tříštění
     burst(m.x, m.y, '#bfe8ff', 30, 110, { glow: true }); ringFx(m.x, m.y, 36, '#8fd8ff', 0.3, 2);
@@ -486,7 +540,7 @@ function updateMonster(m, dt) {
   for (const k in m.dots) {
     const d = m.dots[k];
     d.t -= dt; d.tick -= dt;
-    if (d.tick <= 0) { d.tick += 1; withHero(isHero(d.owner) ? d.owner : G.hero, () => dealDamage(m, d.dps, d.elem, { dot: true })); if (m.dead) return; }
+    if (d.tick <= 0) { d.tick += 1; withHero(isHero(d.owner) ? d.owner : G.hero, () => { const dd = dealDamage(m, d.dps, d.elem, { dot: true }); if (G.st.dotLeech && dd) healHero(dd * G.st.dotLeech * G.st.healMul, true); }); if (m.dead) return; }
     if (d.t <= 0) delete m.dots[k];
   }
   withHero(monsterTarget(m), () => monsterThink(m, dt));
@@ -497,6 +551,7 @@ function monsterThink(m, dt) {
   const h = G.hero;
   if (m.obj) return updateBossObject(m, dt);
   if (m.stunT > 0) return;
+  if (h.stealth > 0 && !m.boss) { m.walk = 0; m.wind = 0; return; }   // elf ve stínu: nepřátelé ho nevidí
   const d = dist(m, h);
   if (!m.aggro && d < 150 && (m.fly || lineOfSight(G.world, m.x, m.y, h.x, h.y))) alertPack(m);
   if (!m.aggro || h.dead) { m.walk = 0; return; }
@@ -785,6 +840,15 @@ function monstersIn(x, y, r) { return G.monsters.filter(m => !m.dead && Math.hyp
 
 // ---------- Mazlíčci ----------
 
+// Kostlivec nemrtvého (rasový strom). Najednou nejvýš SKEL_MAX (+ talenty), nejstarší zmizí.
+function raiseSkeleton(x, y, life, mage) {
+  const h = G.hero, M = G.st.mods, mine = skeletonsOf(h), cap = SKEL_MAX + (M.skelMax || 0);
+  while (mine.length >= cap) { const old = mine.shift(); G.pets.splice(G.pets.indexOf(old), 1); smoke(old.x, old.y, 4); }
+  const p = spawnPet(mage ? 'skelmage' : 'skeleton', life);
+  if (x !== undefined) { const fp = nearestFree(G.world, x, y, 4); p.x = fp.x; p.y = fp.y; }
+  for (let i = 0; i < 10; i++) particle(p.x + rand(-5, 5), p.y, { vy: rand(-40, -10), life: 0.5, color: '#d8d0b8', size: 1 });
+  return p;
+}
 function spawnPet(type, life) {
   const P = PETS[type], h = G.hero;
   const p = { kind: 'pet', type, def: P, x: h.x + rand(-12, 12), y: h.y + rand(-12, 12), r: 5, cd: 0.5, life: life || Infinity, face: 1, walk: 0, scale: P.scale, owner: h, nid: newNid() };
@@ -805,7 +869,14 @@ function stepPet(p, dt) {
   const h = G.hero, st = G.st;
   {
     p.life -= dt;
-    if (p.life <= 0) { smoke(p.x, p.y, 6); return false; }
+    if (p.life <= 0) {
+      smoke(p.x, p.y, 6);
+      if (p.def.skel && st.mods.skelBoom && G.scene === 'rift') {   // Pán smrti: kostlivec při zániku vybuchne
+        burst(p.x, p.y, '#d8d0b8', 20, 90); ringFx(p.x, p.y, 34, '#d8d0b8', 0.3, 2);
+        monstersIn(p.x, p.y, 34).forEach(m => dealDamage(m, st.atk * st.mods.skelBoom * st.petMul, 'shadow', { noProc: true }));
+      }
+      return false;
+    }
     p.cd -= dt; p.atkAnim = Math.max(0, (p.atkAnim || 0) - dt);
     const t = (p.forceTarget && !p.forceTarget.dead) ? p.forceTarget : nearestMonster(h.x, h.y, 150, m => m.aggro || dist(m, h) < 90);
     const P = p.def;
@@ -815,7 +886,7 @@ function stepPet(p, dt) {
       else { p.walk = 0; p.face = t.x > p.x ? 1 : -1; }
       if (d <= P.range + t.r + 2 && p.cd <= 0) {
         p.cd = P.cd / (1 + (st.petSpd || 0));
-        const dmg = st.atk * P.dmg * st.petMul * (p.strike || 1);
+        const dmg = st.atk * P.dmg * st.petMul * (P.skel ? 1 + (st.mods.skelPct || 0) : 1) * (p.strike || 1);
         if (P.ranged) G.projs.push({ x: p.x, y: p.y, vx: (t.x - p.x) / d, vy: (t.y - p.y) / d, speed: 170, dmg, elem: P.elem, size: 2, color: P.proj, friendly: true, pet: true, range: 200, traveled: 0, hits: new Set(), pierce: 0, trail: true, owner: h });
         else { const dd = dealDamage(t, dmg, P.elem, {}); if (st.petLs) healHero(dd * st.petLs, true); p.atkAnim = 0.15; arcFx(t.x, t.y - 4, Math.atan2(t.y - p.y, t.x - p.x), 1.6, 10, '#ffffff', 0.15); }
         if (p.strike) { p.strike = 0; p.forceTarget = null; burst(t.x, t.y, '#e0c080', 12, 70); }

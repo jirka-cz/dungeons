@@ -256,7 +256,7 @@ textarea { width: 100%; margin-top: 10px; background: var(--bg); color: var(--te
 .pick-card.locked { opacity: 0.35; filter: grayscale(0.8); cursor: not-allowed; }
 
 /* ---------- Talentový strom (v1.1) ---------- */
-.ttabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin: 10px 0 4px; }
+.ttabs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin: 10px 0 4px; }
 .ttab { display: flex; align-items: center; gap: 8px; text-align: left; padding: 6px 8px; background: var(--panel-2); }
 .ttab.sel { border: 2px solid var(--gold); background: #2e2542; }
 .ttab-ic { font-size: 22px; } .ttab b { display: block; font-size: 13px; } .ttab small { color: var(--muted); font-size: 11px; }
@@ -430,3 +430,9 @@ body.touch-ui #party { top: auto; bottom: 46%; width: 120px; }
 .mini.r-mythic { border-color: transparent; background: transparent; }
 .mini .ii { width: 80%; height: 80%; fill: #f4f1ec; position: relative; z-index: 1; }
 .drag-ghost .cell { width: 52px; height: 52px; }
+
+/* 1.13.0: rozdíl úrovní v nabídce podzemí, rysy rasy a třídy */
+.gap-bad { color: #ff7a6a; font-weight: bold; }
+.gap-ok { color: #7ad07a; }
+.traits { color: #c8c0d8; margin-top: 2px; }
+.rift-row .gap-bad { color: #ff7a6a; }

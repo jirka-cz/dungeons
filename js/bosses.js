@@ -57,8 +57,8 @@ function spawnBoss(forceId) {
   // v prvních riftech je boss slabší (rift 1 = 68 % života, od riftu 5 plný)
   const m = {
     kind: 'monster', boss: id, def: B, name: B.name, sprite: B.sprite, pal: B.pal || null, scale: B.scale,
-    x: pos.x, y: pos.y, z: 0, r: B.r, maxHp: Math.round(B.hp * riftMult(RIFT.hp, L) * Math.min(1, 0.6 + 0.08 * L) * (G.partyMul || 1)), atk: B.atk * riftMult(RIFT.atk, L),
-    spd: B.spd, res: Object.assign({}, B.res), atkElem: B.atkElem, xp: 40, pts: 0, gold: GOLD_BASE * Math.pow(GOLD_GROWTH, riftIlvl(L)),
+    x: pos.x, y: pos.y, z: 0, r: B.r, maxHp: Math.round(B.hp * riftHpMul(L) * Math.min(1, 0.6 + 0.08 * L) * (G.partyMul || 1)), atk: B.atk * riftAtkMul(L),
+    spd: B.spd, res: Object.assign({}, B.res), atkElem: B.atkElem, xp: 40, pts: 0, gold: GOLD_BASE * goldPow(riftIlvl(L)),
     dots: {}, slowT: 0, slowPct: 0, stunT: 0, stunImm: 0, cd: 2, spec: 3.2, sigT: 9, wind: 0, aggro: true, face: 1, hitT: 0, bob: 0,
     attackIdx: 0, phase: 1, fightT: 0, animT: 0, shield: 0, exposedT: 0, introT: 1.4, immune: true, sq: 0
   };

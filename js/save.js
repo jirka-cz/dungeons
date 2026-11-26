@@ -16,7 +16,7 @@ function newSave() {
 
 function newChar(name, race, cls, save) {
   const ch = { id: Date.now() + Math.floor(Math.random() * 1000), name, race, cls, level: 1, xp: 0, talents: {}, equip: {}, inv: [], maxRift: 1,
-               bar: [CLASSES[cls].base[0], CLASSES[cls].base[1], null, null, null, null], talentVer: 2, classItems12: true, resCap14: true, created: Date.now(),
+               bar: [CLASSES[cls].base[0], CLASSES[cls].base[1], null, null, null, null], talentVer: 3, classItems12: true, resCap14: true, created: Date.now(),
                vendor: { lvl: 0, rolls: 0, stock: null } };
   const w = starterWeapon(cls, save.nextUid++);
   ch.equip[w.slot === 'weapon' ? 'main' : 'off'] = w;
@@ -61,11 +61,12 @@ function migrateSave(s) {
       if (moved.length) out._notice = (out._notice ? out._notice + ' ' : '') + `Legendárky a sety jsou nově jen pro určité třídy. Postava ${ch.name} je už nemůže nosit, najdeš je v batohu nebo v truhle: ${moved.join(', ')}.`;
     }
     // v1.1: úplně nové talentové stromy – body se vrátí
-    if (ch.talentVer !== 2) {
+    // v1.13: rebalanc tříd a ras, nový rasový strom – body se znovu vrátí (talentVer 3)
+    if (ch.talentVer !== 3) {
       const had = Object.keys(ch.talents).length > 0;
-      ch.talents = {}; ch.talentVer = 2;
+      ch.talents = {}; ch.talentVer = 3;
       ch.bar = ch.bar.map(id => id && CLASSES[ch.cls].base.includes(id) ? id : null);
-      if (had) out._notice = 'Talentové stromy jsou úplně nové (strom třídy + 2 specializace). Všechny body ti byly vráceny – rozděl je znovu v Talentech (K).';
+      if (had) out._notice = 'Velký rebalanc tříd, ras a talentů: každá rasa má nový strom s vlastní dovedností a třídy mají své rysy. Všechny talentové body ti byly vráceny – rozděl je znovu v Talentech (K).';
     }
   });
   if (!s.resCap14) { out.stash.forEach(it => { if (capItemRes(it)) out._resNotice = true; }); out.resCap14 = true; }

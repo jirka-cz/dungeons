@@ -4,16 +4,25 @@
 function skillBlocked(id) {
   const h = G.hero, S = SKILLS[id];
   if (!S) return 'none';
-  if (h.dead || h.frozen > 0 || h.leap) return 'busy';
+  if (h.dead || h.leap || (h.frozen > 0 && !S.breakCc)) return 'busy';
   if (G.scene !== 'rift' && G.scene !== 'town') return 'busy';
   if ((h.cds[id] || 0) > 0) return 'cd';
   if (skillCost(id) > h.res) return 'res';
   return null;
 }
 
+// Druid v podobě šelmy útočí drápy místo Hněvu (třídní rys Proměnlivost)
+function effSkill(id) {
+  const h = G.hero;
+  if (id === 'wrath' && h && CLASSES[G.char.cls].shapeshift && h.buffs.some(b => b.form === 'bear' || b.form === 'wolf')) return 'claw';
+  return id;
+}
+const MOVE_TYPES = ['leap', 'dash', 'teleport'];
+
 // Sešle dovednost na cíl (tx, ty). target = konkrétní nepřítel (volitelně)
 function castSkill(id, tx, ty, target) {
   const h = G.hero, st = G.st;
+  id = effSkill(id);
   if (G.scene === 'town') return false;
   if (Net.clientRift && h === G.me) return netCast(id, tx, ty, target);   // host: kouzlo spočítá hostitel
   if (skillBlocked(id)) {
@@ -27,9 +36,19 @@ function castSkill(id, tx, ty, target) {
   const ang = Math.atan2(gy - h.y, tx - h.x);
   if (Math.abs(Math.cos(ang)) > 0.15) h.face = Math.cos(ang) > 0 ? 1 : -1;
   h.res = Math.min(st.resMax, h.res - (S.cost || 0) + (S.gen || 0) * st.genMul);
-  if (S.cd) h.cds[id] = S.cd * (1 - st.cdr);
+  if (S.cd) h.cds[id] = S.cd * (1 - st.cdr) * (MOVE_TYPES.includes(S.type) ? 1 - Math.min(0.5, st.mods.moveCdr || 0) : 1);
+  if (h.stealth > 0 && S.type !== 'buff' && S.type !== 'heal') { h.stealth = 0; h.ambushT = G.time + 1.5; }   // útok ze stínu
+  if (S.breakCc) { h.frozen = 0; h.slowT = 0; }
+  if (MOVE_TYPES.includes(S.type)) {
+    if (st.mods.elfDash) heroBuff('elfdash', 'Lesní mrštnost', { msPct: 0.3, dodge: 0.15 }, 2, '#9be89b');
+    if (id === 'vault' && st.mods.vaultTrap) { const T = SKILLS.trap; G.traps.push({ x: h.x, y: h.y, r: T.r, dmg: T.dmg, elem: T.elem, arm: 0.3, life: 10, color: T.color, skill: 'trap', owner: h }); }
+    if (id === 'blink' && st.mods.blinkNova) {
+      ringFx(h.x, h.y, 44, '#8fd8ff', 0.4, 2); burst(h.x, h.y, '#bfe8ff', 24, 90, { glow: true });
+      monstersIn(h.x, h.y, 44).forEach(m => { heroHit(m, 1.0, 'frost', { skill: id }); if (!m.dead) stunMonster(m, st.mods.blinkNova + st.stunDur, 'freeze'); });
+    }
+  }
   h.castLock = 0.18;
-  if (S.primary) h.atkCd = 1 / (st.spd * (S.elem !== 'phys' ? st.castMul : st.wpnSpdMul));   // kouzlo = rychlost sesílání, zbraň = rychlost útoku zbraní
+  if (S.primary) h.atkCd = 1 / (st.spd * (S.elem !== 'phys' ? st.castMul : st.wpnSpdMul) * (st.mods.orcRage && h.hp < st.maxHp * 0.5 ? 1 + 0.1 * (st.mods.orcRage2 ? 2 : 1) : 1));   // kouzlo = rychlost sesílání, zbraň = rychlost útoku zbraní
   h.atkAnim = 0.15; h.atkAng = ang; h.moveLock = S.primary ? 0.16 : 0.12;
   if (S.primary) wearWeapon();
   doSkill(S, tx, ty, ang, target);
@@ -144,8 +163,11 @@ function doSkill(S, tx, ty, ang, target) {
     case 'buff': {
       const before = G.st.maxHp;
       h.buffs = h.buffs.filter(b => b.id !== S.id && !(S.form && b.form));   // podoby se vylučují
-      h.buffs.push({ id: S.id, name: S.name, stats: S.stats || {}, t: S.dur, dur: S.dur, form: S.form, aura: S.aura, auraT: 0, color: S.color });
+      h.buffs.push({ id: S.id, name: S.name, stats: S.stats || {}, t: S.dur, dur: S.dur, form: S.form, aura: S.aura, auraT: 0, color: S.color, strafe: S.strafe, strT: 0 });
       invalidate(); G.st = heroStats();
+      if (S.form && CLASSES[G.char.cls].shapeshift) healHero(G.st.maxHp * 0.1 * G.st.healMul);   // druid: každá proměna léčí
+      if (S.stealth) { h.stealth = S.dur; G.monsters.forEach(m => { if (!m.boss) m.wind = 0; }); smoke(h.x, h.y, 8); }
+      if (st.mods['skheal_' + S.id]) healHero(G.st.maxHp * st.mods['skheal_' + S.id] * G.st.healMul);
       ringFx(h.x, h.y, 26, S.color, 0.5, 2); burst(h.x, h.y - 6, S.color, 24, 60, { glow: true });
       if (G.st.maxHp > before) h.hp = Math.min(G.st.maxHp, h.hp * G.st.maxHp / before);
       break;
@@ -159,6 +181,10 @@ function doSkill(S, tx, ty, ang, target) {
       break;
     }
     case 'summon': {
+      if (S.skel) {   // nemrtvý: kostlivci (první je kostěný mág, pokud má talent)
+        for (let i = 0; i < (S.count || 1); i++) raiseSkeleton(h.x + rand(-14, 14), h.y + rand(-10, 10), S.dur, i === 0 && st.mods.skelMage);
+        break;
+      }
       if (S.max) {
         const cap = S.max + (S.pet === 'imp' ? (st.petCount || 0) : 0), mine = G.pets.filter(p => p.owner === h && p.type === S.pet && p.life === Infinity && !p.classPet);
         if (mine.length >= cap) { const old = mine[0]; G.pets.splice(G.pets.indexOf(old), 1); smoke(old.x, old.y, 4); }
@@ -320,13 +346,33 @@ function updateHeroSkills(dt) {
       const S = h.whirlS;
       arcFx(h.x, h.y - 6, Math.random() * 6, Math.PI * 2, S.r, S.color, 0.2);
       monstersIn(h.x, h.y, S.r).forEach(m => heroHit(m, S.dmg, S.elem, { skill: S.id }));
+      if (st.mods.whirlPull) monstersIn(h.x, h.y, S.r * 2.2).forEach(m => {   // Bouře ocele: vtahuje nepřátele
+        if (m.boss || m.obj || m.dead) return;
+        const d = Math.max(1, dist(m, h)); moveEntity(G.world, m, (h.x - m.x) / d * 6, (h.y - m.y) / d * 6);
+      });
       dust(h.x, h.y + 4);
     }
   }
   if (st.mods.enrageAlways && !h.buffs.some(b => b.id === 'enrage')) triggerEnrage();
+  if (h.stealth > 0) h.stealth -= dt;
   h.buffs = h.buffs.filter(b => {
     b.t -= dt;
     if (b.hot) healHero(b.hot * dt, true);
+    if (b.strafe && G.scene === 'rift') {   // Palba za běhu: šípy do všech stran
+      b.strT -= dt;
+      if (b.strT <= 0) {
+        b.strT = b.strafe.every;
+        const near = G.monsters.filter(m => !m.dead && !m.obj && dist(m, h) < b.strafe.range);
+        const t = near.length ? near[Math.floor(Math.random() * near.length)] : null;
+        if (t) {
+          const a = Math.atan2(t.y - h.y, t.x - h.x);
+          G.projs.push({ x: h.x, y: h.y, vx: Math.cos(a), vy: Math.sin(a), speed: 300, dmg: b.strafe.dmg * (1 + (st.mods.skd_strafe || 0)), elem: 'phys', size: 1, color: '#e8e4d4',
+            friendly: true, range: 220, traveled: 0, hits: new Set(), pierce: (st.mods.strafePierce || 0) + (st.mods.arrowPierce || 0), arrow: true, skill: 'strafe', owner: h });
+          h.face = Math.cos(a) > 0 ? 1 : -1; h.atkAnim = 0.08; h.atkAng = a;
+          if (Math.random() < 0.5) sfx('arrow');
+        }
+      }
+    }
     if (b.aura && G.scene === 'rift') {   // aura kolem hrdiny (Hurikán, Démonická proměna)
       b.auraT -= dt;
       const A = skillParams(b.id, st).aura || b.aura;
@@ -337,7 +383,14 @@ function updateHeroSkills(dt) {
       }
       if (Math.random() < dt * 20) { const a = Math.random() * 6.28; particle(h.x + Math.cos(a) * A.r * 0.8, h.y + Math.sin(a) * A.r * 0.5, { vx: -Math.sin(a) * 40, vy: Math.cos(a) * 20, life: 0.4, color: b.color, size: 1, glow: true }); }
     }
-    if (b.t <= 0) { if (b.stats) { invalidate(); G.st = heroStats(); } return false; }
+    if (b.t <= 0) {
+      if (b.id === 'stoneform' && st.mods.stoneQuake && G.scene === 'rift') {   // Otřes na konci Kamenné podoby
+        ringFx(h.x, h.y, 60, '#c8a060', 0.4, 3); burst(h.x, h.y, '#a09080', 30, 90); shake(4);
+        monstersIn(h.x, h.y, 60).forEach(m => { heroHit(m, st.mods.stoneQuake, 'phys', { noProc: true }); if (!m.dead) stunMonster(m, 1.5 + st.stunDur, 'stun'); });
+      }
+      if (b.stats) { invalidate(); G.st = heroStats(); }
+      return false;
+    }
     return true;
   });
 }

@@ -3,7 +3,7 @@ const ctx = { console, document: { getElementById: () => null }, window: {} };
 vm.createContext(ctx);
 const D = require('path').join(__dirname, '..', 'js') + '/';
 for (const f of ['data.js', 'classes.js', 'talents.js', 'items.js']) vm.runInContext(fs.readFileSync(D + f, 'utf8').replace(/^const /gm, 'var ').replace(/^let /gm, 'var '), ctx);
-const { CLASSES, SKILLS, TALENTS, TALENT_KEYS, COND_PREFIXES, SKILL_KEY_PREFIXES, STAT_LABELS, classTrees, talentNodes, PETS } = ctx;
+const { CLASSES, SKILLS, TALENTS, TALENT_KEYS, COND_PREFIXES, SKILL_KEY_PREFIXES, STAT_LABELS, classTrees, talentNodes, PETS, RACE_TALENTS, RACES, RACE_CLASSES } = ctx;
 const BUFF_IDS = Object.keys(SKILLS).filter(k => SKILLS[k].type === 'buff').concat(['enrage']);
 const known = new Set([...Object.keys(STAT_LABELS), ...TALENT_KEYS]);
 let errs = 0, total = 0, ranks = {};
@@ -30,6 +30,26 @@ for (const cls in TALENTS) {
   }
   for (const b of CLASSES[cls].base) if (!SKILLS[b]) err('base ' + b);
   ranks[cls] = r;
+}
+// Rasové stromy (od 1.13): klíče a dovednosti
+for (const race in RACE_TALENTS) {
+  if (!RACES[race]) err('rasový strom bez rasy ' + race);
+  const cls = RACE_CLASSES[race][0], tree = classTrees(cls + ':' + race).find(t => t.isRace);
+  if (!tree) { err('chybí rasový strom ' + race); continue; }
+  const skills = new Set(tree.nodes.filter(n => n.skill).map(n => n.skill));
+  for (const n of tree.nodes) {
+    total++;
+    if (n.skill && SKILLS[n.skill].race !== race) err(`${race} ${n.id} dovednost ${n.skill} není rasová`);
+    const statsList = n.type === 'choice' ? n.opts.map(o => o.stats) : [n.stats];
+    for (const st of statsList) for (const k of Object.keys(st)) {
+      if (known.has(k)) continue;
+      const i = k.indexOf('_'), pre = k.slice(0, i), rest = k.slice(i + 1);
+      if (SKILL_KEY_PREFIXES.includes(pre)) { if (!skills.has(rest)) err(`${race} ${n.id} klíč ${k}: dovednost není ve stromu`); continue; }
+      if (COND_PREFIXES.includes(pre) || BUFF_IDS.includes(pre)) { if (!known.has(rest)) err(`${race} ${n.id} podmíněný klíč ${k}: neznámý stat ${rest}`); continue; }
+      err(`${race} ${n.id} neznámý klíč ${k}`);
+    }
+    for (const q of n.req) if (!tree.nodes.find(x => x.id === q)) err(`${race} ${n.id} rodič ${q} neexistuje`);
+  }
 }
 for (const id in SKILLS) { const S = SKILLS[id]; if (S.type === 'summon' && !PETS[S.pet]) err('pet ' + S.pet); }
 console.log('uzlů', total, 'úrovní na třídu', JSON.stringify(ranks), 'chyb', errs);

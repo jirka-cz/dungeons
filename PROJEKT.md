@@ -7,7 +7,7 @@ Tohle je hlavní vstupní bod pro každý nový chat s Claudem. Popisuje, co hra
 - Hraje se na počítači i na mobilu (na výšku i na šířku).
 - Zdarma pro kamarády. Každý má vlastní uložené postavy v prohlížeči (localStorage) a může je přenést exportním kódem.
 - Autor (Jirka) neprogramuje. Všechno vzniká přes zadání v češtině, Claude píše kód, testuje ho a vysvětluje změny srozumitelně.
-- Aktuální verze: **1.12.0** (konstanta `GAME_VERSION` v `js/data.js`).
+- Aktuální verze: **1.13.0** (konstanta `GAME_VERSION` v `js/data.js`).
 
 ## Kde hra běží
 | Co | Kde |
@@ -25,7 +25,8 @@ Každé větší téma má vlastní dokument a vlastní chat (viz `docs/CHATY.md
 | Téma | Dokument | Obsah |
 |---|---|---|
 | Jak pokračovat v chatech | `docs/CHATY.md` | instrukce projektu a úvodní zprávy |
-| Talenty | `docs/talenty.md` | stromy, uzly, body, okno talentů, kalkulačka |
+| Talenty | `docs/talenty.md` | stromy tříd i ras, uzly, body, okno talentů, kalkulačka |
+| Rebalanc 1.13 | `docs/rebalanc.md` | research (D3, D4, WoW, Grim Dawn, PoE), rysy ras a tříd, rasové stromy, škálování a rozdíl úrovní |
 | Postavy | `docs/postavy.md` | rasy, třídy, dovednosti, mazlíčci, úrovně, staty |
 | Město | `docs/mesto.md` | obchodník (ekonomika zlata, obnovení, vylepšení), kovář, truhla, obelisk, odolnost |
 | Dungeony | `docs/dungeony.md` | rifty, mapy, nepřátelé, elity, bossové a jejich mechaniky, svatyně, obtížnost |
@@ -42,9 +43,9 @@ Každé větší téma má vlastní dokument a vlastní chat (viz `docs/CHATY.md
 
 | Soubor | Role |
 |---|---|
-| `js/data.js` | verze, rasy, povolené kombinace rasa/třída, nepřátelé, témata, elitní afixy, bossové, škálování riftů, svatyně |
+| `js/data.js` | verze, rasy, povolené kombinace rasa/třída, nepřátelé, témata, elitní afixy, bossové, škálování (křivky, doporučená úroveň, rozdíl úrovní, XP), svatyně |
 | `js/classes.js` | třídy, zdroje (zuřivost, mana…), základní dovednosti, mazlíčci, přebíjení |
-| `js/talents.js` | 35 dalších dovedností, talentové stromy, výpočet bodů a platnosti |
+| `js/talents.js` | další dovednosti, rasové dovednosti, talentové stromy tříd a ras, výpočet bodů a platnosti |
 | `js/icons.js` | SVG ikony z game-icons.net (vygenerováno, ručně needitovat velké bloky) |
 | `js/item-icons.js` | ikony předmětů, očarování a setů z game-icons.net (generuje `tools/gen-item-icons.js`, ručně needitovat) |
 | `js/items.js` | typy předmětů, rarity, afixy, legendárky, sety, popisky statů, ceny |

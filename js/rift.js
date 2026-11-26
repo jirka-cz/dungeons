@@ -65,6 +65,7 @@ function startRift(level) {
   setLocalHero(newHero(G.world.spawn.x, G.world.spawn.y));
   G.hero.hp = G.st.maxHp * Math.max(0.5, Math.min(1, keep || 1));
   G.rift = { level, theme: themeId, progress: 0, boss: null, bossSpawned: false, done: false, time: 0, deaths: 0, kills: 0 };
+  G.st = heroStats();   // rozdíl úrovní vůči tomuto podzemí
   addClassPets();
   // spoluhráči se objeví vedle místního hrdiny
   (G.party || []).forEach((mb, i) => { const a = i * 2.1; addPartyHero(mb, G.world.spawn.x + Math.cos(a) * 14, G.world.spawn.y + Math.sin(a) * 10); });
@@ -191,7 +192,7 @@ function bossDefeated(m) {
     ch.maxRift = Math.max(ch.maxRift, R.level + 1);
     vendorRiftDone(ch);
     netReward({ maxRift: ch.maxRift, vendor: 1 });
-    gainXP(60 * riftMult(RIFT.xp, R.level) * G.st.xpMul);
+    gainXP(60 * riftXpMul(R.level) * G.st.xpMul);
     if (h === G.me) { was = w; now = ch.maxRift; }
   });
   G.bannerBig = { text: 'Podzemí dokončeno!', sub: now > was ? `Odemčeno podzemí ${now}` : 'Portál do města je otevřen', t: 0, color: '#ffd060' };

@@ -71,6 +71,32 @@ SKILLS.bear.form = 'bear'; delete SKILLS.bear.transform;
 
 PETS.felhound = { name: 'Pekelný ohař', sprite: 'wolf', scale: 1.15, speed: 85, dmg: 0.8, cd: 1.0, range: 14, elem: 'shadow', tint: '#a02040' };
 
+// ---------- Rasové dovednosti (od 1.13.0) ----------
+// Každá rasa má vlastní strom talentů (záložka „Rasa“) a v něm aktivní rasovou dovednost (jako rasové schopnosti ve WoW).
+// Rasové dovednosti nestojí zdroj (každá třída má jiný), omezuje je jen přebíjení. race = která rasa je smí mít.
+Object.assign(SKILLS, {
+  hwill:      { name: 'Lidská vůle', glyph: '✊', type: 'buff', race: 'human', breakCc: true, dur: 4, stats: { ccRed: 1, atkPct: 0.2 }, cd: 30, color: '#ffe08a',
+                desc: 'Okamžitě zruší zmrazení a zpomalení. Na 4 s jsi vůči nim imunní a máš +20 % útok. Jde použít i ve zmrazení.' },
+  stoneform:  { name: 'Kamenná podoba', glyph: '🗿', type: 'buff', race: 'dwarf', dur: 8, stats: { dmgRed: 0.4, ccRed: 1, msPct: -0.2 }, cd: 30, color: '#b0a090',
+                desc: 'Na 8 s zkameníš: -40 % přijatého poškození a imunita vůči zpomalení, ale -20 % rychlost pohybu.' },
+  shadowmeld: { name: 'Splynutí se stínem', glyph: '🌑', type: 'buff', race: 'elf', stealth: true, dur: 3, stats: { msPct: 0.4 }, cd: 20, color: '#8a7ac8',
+                desc: 'Na 3 s zmizíš: nepřátelé tě ztratí z očí a přestanou útočit, +40 % pohyb. První útok ze stínu je kritický a má +100 % poškození.' },
+  bloodfury:  { name: 'Krvavá zuřivost', glyph: '🩸', type: 'buff', race: 'orc', dur: 12, stats: { atkPct: 0.3, spdPct: 0.15, healPct: -0.5 }, cd: 45, color: '#e04030',
+                desc: 'Na 12 s +30 % útok a +15 % rychlost útoku, ale léčení je o polovinu slabší.' },
+  raise:      { name: 'Povstání mrtvých', glyph: '💀', type: 'summon', race: 'undead', pet: 'skeleton', count: 2, dur: 15, skel: true, cd: 20, color: '#d8d0b8',
+                desc: 'Ze země povstanou 2 kostlivci a 15 s bojují za tebe (najednou nejvýš 4 kostlivci).' }
+});
+// Kostlivci nemrtvých: bojovník zblízka a mág na dálku (talent Kostěný mág)
+PETS.skeleton = { name: 'Kostlivec', sprite: 'skeleton', scale: 1, speed: 70, dmg: 0.45, cd: 1.0, range: 14, elem: 'phys', skel: true, ring: '#7dffb0', pal: { c: '#2a6a4a', C: '#1a4a32', e: '#7dffb0' } };
+PETS.skelmage = { name: 'Kostěný mág', sprite: 'skeleton', scale: 1, speed: 55, dmg: 0.5, cd: 1.4, range: 110, ranged: true, elem: 'frost', proj: '#9fe0ff', skel: true, ring: '#7fe0ff', pal: { c: '#3a5a8a', C: '#24365a', e: '#7fe0ff' } };
+const SKEL_MAX = 4;   // nejvíc kostlivců najednou (talenty přidávají)
+
+// Druid v medvědí a vlčí podobě útočí drápy zblízka (třídní rys Proměnlivost)
+SKILLS.claw = { name: 'Drápnutí', glyph: '🐾', primary: true, type: 'melee', elem: 'phys', range: 26, arc: 130, dmg: 1.15, gen: 4, color: '#e0c090', desc: 'Základní útok v podobě šelmy: drápy zasáhnou nepřátele před tebou.' };
+// Lovec: střelba v pohybu (inspirace Strafe z Diabla 3)
+SKILLS.strafe = { name: 'Palba za běhu', glyph: '🌀', type: 'buff', strafe: { every: 0.2, dmg: 0.6, range: 150 }, dur: 3, stats: { msPct: 0.2 }, cost: 30, cd: 8, color: '#e8e4d4',
+  desc: 'Na 3 s střílíš do všech stran: každých 0,2 s šíp na nepřítele do vzdálenosti 150 (60 % útoku). Můžeš se volně pohybovat, +20 % pohyb.' };
+
 // ---------- Rozložení stromů ----------
 // [sloupec 0–6, řádek, rodiče]
 const SPEC_LAYOUT = {
@@ -140,7 +166,7 @@ const TALENTS = {
         Pc: tP('Rozzuření', 'Kritický zásah tě s 15% šancí rozzuří (+10 % útok, +15 % rychlost útoku na 5 s).', 2, { enrageChance: 0.15 }),
         Pd: tP('Brutalita', '+10 % krit. poškození.', 2, { critDmg: 0.10 }),
         S3e: tE('Zesílené Běsnění', 'Běsnění udeří ještě jednou navíc.', { skhits_rampage: 1 }),
-        S2c: tC(['Krvavá vichřice', 'Vichřice tě léčí o 10 % poškození.', { skheal_whirl: 0.10 }], ['Bouře ocele', 'Vichřice +30 % plocha.', { skr_whirl: 0.3 }]),
+        S2c: tC(['Krvavá vichřice', 'Vichřice tě léčí o 10 % poškození.', { skheal_whirl: 0.10 }], ['Bouře ocele', 'Vichřice +20 % plocha a vtahuje nepřátele k tobě.', { skr_whirl: 0.2, whirlPull: 1 }]),
         M1: tP('Mistr dvou čepelí', 'Se dvěma zbraněmi +4 % rychlost útoku a +2 % krit. šance.', 3, { dw_spdPct: 0.04, dw_crit: 0.02 }),
         S3c: tC(['Krvavé běsnění', 'Běsnění tě vždy rozzuří.', { skenrage_rampage: 1 }], ['Masakr', 'Běsnění +50 % poškození nepřátelům pod 30 % života.', { skexec_rampage: 0.5 }]),
         Pe: tP('Neukojitelnost', 'Zabití obnoví 5 zuřivosti.', 2, { killRes: 5 }),
@@ -186,7 +212,7 @@ const TALENTS = {
         Pi: tP('Krvavá stopa', 'Poškození v čase trvá o 1 s déle.', 2, { dotDur: 1 }),
         Pj: tP('Mistr zbraní', '+5 % fyzické poškození.', 2, { physPct: 0.05 }),
         Pk: tP('Válečná zkušenost', '+4 % života.', 2, { hpPct: 0.04 }),
-        K1: tKEY('Popravčí', '+80 % poškození nepřátelům pod 30 % života.', { execPct: 0.8 }),
+        K1: tKEY('Popravčí', 'Poprava okamžitě zabije běžné nepřátele i elity pod 20 % života a zabití jí obnoví přebíjení. +40 % poškození nepřátelům pod 30 % života.', { execPct: 0.4, executeKill: 1 }),
         K2: tKEY('Kolosální síla', 'Smrtící úder, Rozsekání a Poprava +40 % poškození.', { skd_mortal: 0.4, skd_cleave: 0.4, skd_execute: 0.4 }),
         K3: tKEY('Krvavé řemeslo', 'Krvácení a další poškození v čase +60 %.', { dotPct: 0.6 })
       } }
@@ -198,7 +224,7 @@ const TALENTS = {
       B1: tBASE('missile'), B2: tBASE('blink'),
       Ca: tE('Zesílená Magická střela', 'Magická střela vystřelí 2 střely.', { primCount: 1 }),
       Cb: tP('Arkánní intelekt', '+10 maximální many.', 3, { resMax: 10 }),
-      Cc: tE('Zesílený Teleport', 'Teleport má o 3 s kratší přebíjení.', { skcd_blink: 3 }),
+      Cc: tE('Zesílený Teleport', 'Teleport má o 2 s kratší přebíjení a na místě, odkud zmizíš, vybuchne mrazivá vlna (zmrazí na 1,2 s).', { skcd_blink: 2, blinkNova: 1.2 }),
       CS1: tK('amissiles'), Cd: tP('Arkánní tok', '+15 % obnova many.', 3, { resRegenPct: 0.15 }), CS2: tK('mshield'),
       CS1e: tE('Zesílené Arkánní střely', 'Arkánní střely vystřelí 2 střely navíc.', { skc_amissiles: 2 }),
       Ce: tP('Arkánní síla', '+5 % arkánní poškození.', 2, { arcanePct: 0.05 }),
@@ -240,7 +266,7 @@ const TALENTS = {
         Pi: tP('Vytrvalé plameny', 'Poškození v čase trvá o 1 s déle.', 2, { dotDur: 1 }),
         Pj: tP('Plamenný mág', '+5 % ohnivé poškození.', 2, { firePct: 0.05 }),
         Pk: tP('Ohnivá krev', '+4 % života.', 2, { hpPct: 0.04 }),
-        K1: tKEY('Spalování', 'Hoření a další poškození v čase +60 %.', { dotPct: 0.6 }),
+        K1: tKEY('Spalování', 'Hoření a další poškození v čase +40 % a po smrti nepřítele přeskočí na 2 další.', { dotPct: 0.4, dotSpread: 2 }),
         K2: tKEY('Esuova zuřivost', '+12 % krit. šance a +30 % krit. poškození.', { crit: 0.12, critDmg: 0.3 }),
         K3: tKEY('Ohnivá smršť', 'Ohnivé zásahy vždy zapálí a hořícím nepřátelům způsobuješ +20 % poškození.', { ignite: 1, burnBonus: 0.2 })
       } },
@@ -272,7 +298,7 @@ const TALENTS = {
         Pj: tP('Zimní mág', '+5 % mrazivé poškození.', 2, { frostPct: 0.05 }),
         Pk: tP('Ledová krev', '+6 % odolnost vůči mrazu a +3 % života.', 2, { resFrost: 0.06, hpPct: 0.03 }),
         K1: tKEY('Tříštění', 'Zmrazení nepřátelé po smrti explodují (150 % útoku kolem).', { shatter: 1.5 }),
-        K2: tKEY('Lavina', '+25 % poškození zpomaleným a zmrazeným nepřátelům.', { slowedBonus: 0.25 }),
+        K2: tKEY('Ledová zbroj', 'Kdo tě zasáhne zblízka, zamrzne na 1,5 s (každý nejvýš jednou za 4 s). +15 % poškození zpomaleným a zmrazeným.', { frostArmor: 1.5, slowedBonus: 0.15 }),
         K3: tKEY('Věčná zima', '+12 % šance zmrazit při zásahu.', { freezeChance: 0.12 })
       } }
     ]
@@ -368,7 +394,7 @@ const TALENTS = {
       B1: tBASE('shot'), B2: tBASE('vault'),
       Ca: tE('Zesílený Výstřel', 'Výstřel proletí 1 nepřítelem.', { primPierce: 1 }),
       Cb: tP('Výdrž', '+4 % života.', 3, { hpPct: 0.04 }),
-      Cc: tE('Zesílený Úskok', 'Úskok má o 2 s kratší přebíjení.', { skcd_vault: 2 }),
+      Cc: tE('Zesílený Úskok', 'Úskok má o 1 s kratší přebíjení a na místě, odkud uskočíš, zůstane výbušná past.', { skcd_vault: 1, vaultTrap: 1 }),
       CS1: tK('trap'), Cd: tP('Soustředění', '+15 % obnova soustředění.', 3, { resRegenPct: 0.15 }), CS2: tK('sting'),
       CS1e: tE('Zesílená Výbušná past', 'Můžeš položit o 1 past víc a výbuch má +25 % plochu.', { trapMax: 1, skr_trap: 0.25 }),
       Ce: tP('Mrštnost', '+2 % úhyb.', 2, { dodge: 0.02 }),
@@ -399,12 +425,12 @@ const TALENTS = {
         M1: tP('Dlouhý luk', 'Výstřel +8 % poškození.', 3, { skd_shot: 0.08 }),
         S3c: tC(['Zápalné šípy', 'Výbušný šíp zapálí zasažené (60 % útoku za s, 4 s).', { skburn_eshot: 0.6 }], ['Kazetový šíp', 'Výbušný šíp má o 2 s kratší přebíjení.', { skcd_eshot: 2 }]),
         Pe: tP('Úhyb střelce', '+2 % úhyb.', 2, { dodge: 0.02 }),
-        S4: tK('rapid'), S5: tK('kshot'),
+        S4: tK('strafe'), S5: tK('kshot'),
         Pf: tP('Odstřelovač', '+10 % poškození nepřátelům pod 30 % života.', 2, { execPct: 0.10 }),
-        S4e: tE('Zesílená Rychlá palba', 'Rychlá palba trvá o 2 s déle.', { skdur_rapid: 2 }),
+        S4e: tE('Zesílená Palba za běhu', 'Palba za běhu trvá o 1,5 s déle.', { skdur_strafe: 1.5 }),
         Pg: tP('Soustředěná mysl', 'Kritický zásah obnoví 2 soustředění.', 2, { critRes: 2 }),
         S5e: tE('Zesílený Smrtící výstřel', 'Smrtící výstřel má o 2 s kratší přebíjení.', { skcd_kshot: 2 }),
-        S4c: tC(['Ostrostřelec', 'Během Rychlé palby +15 % krit. šance.', { rapid_crit: 0.15 }], ['Bez oddechu', 'Rychlá palba má o 5 s kratší přebíjení.', { skcd_rapid: 5 }]),
+        S4c: tC(['Průstřelná palba', 'Šípy z Palby za běhu proletí 2 nepřáteli a během ní máš +15 % krit. šance.', { strafePierce: 2, strafe_crit: 0.15 }], ['Bez oddechu', 'Palba za běhu má o 3 s kratší přebíjení a stojí o 30 % méně.', { skcd_strafe: 3, skcost_strafe: 0.3 }]),
         Ph: tC(['Osamělý vlk', 'Vlk tě nedoprovází, zato máš +20 % útok.', { loneWolf: 0.20 }], ['Multivýstřel', 'Výstřel vystřelí 2 šípy.', { primCount: 1 }]),
         S5c: tC(['Poslední slovo', 'Zabití Smrtícím výstřelem obnoví 25 soustředění.', { skkillres_kshot: 25 }], ['Průstřel', 'Smrtící výstřel proletí všemi nepřáteli.', { skpierce_kshot: 99 }]),
         Pi: tP('Rychlé tětivy', '+5 % rychlost útoku.', 2, { spdPct: 0.05 }),
@@ -534,19 +560,110 @@ const TALENTS = {
   }
 };
 
+// ---------- Rasové stromy (od 1.13.0) ----------
+// Malý strom pro každou rasu (12 uzlů, 18 úrovní). Body se berou ze stejné zásoby jako u stromů třídy.
+const RACE_LAYOUT = {
+  R1: [3, 0, []],
+  Ra: [1, 1, ['R1']], R1e: [3, 1, ['R1']], Rb: [5, 1, ['R1']],
+  Rc: [1, 2, ['Ra']], R1c: [3, 2, ['R1e']], Rd: [5, 2, ['Rb']],
+  R2: [2, 3, ['Rc', 'R1c']], R3: [4, 3, ['R1c', 'Rd']],
+  Re: [3, 4, ['R2', 'R3']],
+  K1: [2, 5, ['Re']], K2: [4, 5, ['Re']]
+};
+const RACE_GATES = [[2, 3], [3, 6], [5, 10]];
+// Ikony klíčových pasivek rasových stromů (id uzlů jsou u všech ras stejná, proto zvlášť)
+const RACE_KEY_ICONS = { human: { K1: 'crowned-heart', K2: 'gold-stack' }, dwarf: { K1: 'dwarf-king', K2: 'hammer-drop' }, elf: { K1: 'dodging', K2: 'bowman' },
+  orc: { K1: 'orc-head', K2: 'tribal-mask' }, undead: { K1: 'graveyard', K2: 'grim-reaper' } };
+const RACE_TALENTS = {
+  human: { name: 'Lidé', icon: '👑', desc: 'Všestrannost, odhodlání a štěstí.', nodes: {
+    R1: tK('hwill'),
+    Ra: tP('Vojenský výcvik', '+3 % útok.', 3, { atkPct: 0.03 }),
+    R1e: tE('Neochvějná vůle', 'Lidská vůle tě navíc vyléčí o 20 % života.', { skheal_hwill: 0.2 }),
+    Rb: tP('Houževnatost', '+4 % života.', 3, { hpPct: 0.04 }),
+    Rc: tP('Rychlé učení', '+5 % zkušeností.', 2, { xpPct: 0.05 }),
+    R1c: tC(['Vůdce', 'Lidská vůle trvá o 3 s déle.', { skdur_hwill: 3 }], ['Odhodlání', 'Lidská vůle má o 12 s kratší přebíjení.', { skcd_hwill: 12 }]),
+    Rd: tP('Všestrannost', '-4 % přebíjení dovedností.', 2, { cdr: 0.04 }),
+    R2: tP('Druhý dech', 'Když život klesne pod 30 %, okamžitě se vyléčíš o 25 % (jednou za 60 s).', 1, { secondWind: 0.25 }),
+    R3: tP('Taktik', '+8 % síla dovedností (mimo základní útok).', 1, { skillPct: 0.08 }),
+    Re: tP('Odolnost', '+5 % všechny odolnosti.', 2, { resAll: 0.05 }),
+    K1: tKEY('Hrdina lidstva', '+10 % útok, +10 % života a +8 % rychlost pohybu.', { atkPct: 0.1, hpPct: 0.1, msPct: 0.08 }),
+    K2: tKEY('Zlatá horečka', '+30 % zlata, +20 % lepší kořist a +10 % zkušeností.', { goldPct: 0.3, mfPct: 0.2, xpPct: 0.1 })
+  } },
+  dwarf: { name: 'Trpaslíci', icon: '⛏', desc: 'Kámen, ocel a neochvějná výdrž.', nodes: {
+    R1: tK('stoneform'),
+    Ra: tP('Kamenná kůže', '-2 % přijatého poškození.', 3, { dmgRed: 0.02 }),
+    R1e: tE('Žulová podoba', 'Během Kamenné podoby vracíš 40 % poškození útočníkům.', { stoneform_thorns: 0.4 }),
+    Rb: tP('Horská krev', '+4 % života.', 3, { hpPct: 0.04 }),
+    Rc: tP('Pivní žaludek', '+0,3 % života za sekundu.', 2, { regen: 0.003 }),
+    R1c: tC(['Hora', 'Kamenná podoba trvá o 4 s déle.', { skdur_stoneform: 4 }], ['Otřes', 'Na konci Kamenné podoby otřes zraní (300 % útoku) a omráčí nepřátele kolem.', { stoneQuake: 3 }]),
+    Rd: tP('Kovaná pěst', '+5 % fyzické poškození.', 2, { physPct: 0.05 }),
+    R2: tP('Kamenná krev', 'Když život klesne pod 35 %, na 6 s dostáváš o 40 % méně poškození (jednou za 60 s).', 1, { stoneSkin: 0.4 }),
+    R3: tP('Pevný postoj', '-25 % trvání zmrazení a zpomalení.', 1, { ccRed: 0.25 }),
+    Re: tP('Horník', '+10 % zlata a +2 obrana.', 2, { goldPct: 0.1, def: 2 }),
+    K1: tKEY('Horský král', '+20 % života a -10 % přijatého poškození, ale -5 % rychlost pohybu.', { hpPct: 0.2, dmgRed: 0.1, msPct: -0.05 }),
+    K2: tKEY('Kladivo hor', 'S obouruční zbraní +15 % útok a +20 % krit. poškození.', { th_atkPct: 0.15, th_critDmg: 0.2 })
+  } },
+  elf: { name: 'Elfové', icon: '🌙', desc: 'Mrštnost, stíny a přesnost.', nodes: {
+    R1: tK('shadowmeld'),
+    Ra: tP('Lehký krok', '+3 % rychlost pohybu.', 3, { msPct: 0.03 }),
+    R1e: tE('Hluboký stín', 'Splynutí se stínem trvá o 2 s déle.', { skdur_shadowmeld: 2 }),
+    Rb: tP('Bystré oko', '+2 % krit. šance.', 3, { crit: 0.02 }),
+    Rc: tP('Mrštnost', '+2 % úhyb.', 2, { dodge: 0.02 }),
+    R1c: tC(['Stínový tanec', 'Splynutí se stínem má o 8 s kratší přebíjení.', { skcd_shadowmeld: 8 }], ['Smrtící stín', 'Útok ze stínu má +100 % poškození navíc.', { stealthDmg: 1 }]),
+    Rd: tP('Lesní moudrost', '+10 % obnova zdroje.', 2, { resRegenPct: 0.1 }),
+    R2: tP('Vítr v zádech', 'Pohybové dovednosti (skok, úskok, teleport) mají o 25 % kratší přebíjení.', 1, { moveCdr: 0.25 }),
+    R3: tP('Rychlé reflexy', 'Po úhybu máš na 3 s +20 % útok.', 1, { dodgeAtk: 0.2 }),
+    Re: tP('Dlouhověkost', '+0,3 % života za sekundu.', 2, { regen: 0.003 }),
+    K1: tKEY('Tanečník s čepelemi', '+12 % úhyb a +10 % rychlost pohybu.', { dodge: 0.12, msPct: 0.1 }),
+    K2: tKEY('Elfí přesnost', '+10 % krit. šance a +30 % krit. poškození.', { crit: 0.1, critDmg: 0.3 })
+  } },
+  orc: { name: 'Orkové', icon: '🪓', desc: 'Zuřivost, síla a vůdcovství.', nodes: {
+    R1: tK('bloodfury'),
+    Ra: tP('Hrubá síla', '+3 % útok.', 3, { atkPct: 0.03 }),
+    R1e: tE('Neutišitelná zuřivost', 'Krvavá zuřivost už neoslabuje léčení.', { bloodfury_healPct: 0.5 }),
+    Rb: tP('Otužilost', '+4 % života.', 3, { hpPct: 0.04 }),
+    Rc: tP('Válečný řev', '+10 % krit. poškození.', 2, { critDmg: 0.1 }),
+    R1c: tC(['Válečný štvanec', 'Krvavá zuřivost trvá o 6 s déle.', { skdur_bloodfury: 6 }], ['Krvavá lázeň', 'Během Krvavé zuřivosti +6 % vysávání života.', { bloodfury_ls: 0.06 }]),
+    Rd: tP('Tvrdá kůže', '-2 % přijatého poškození.', 2, { dmgRed: 0.02 }),
+    R2: tP('Pomsta', 'Když tě zásah ubere víc než 10 % života, máš na 4 s +15 % útok.', 1, { revenge: 0.15 }),
+    R3: tP('Velitel', '+15 % síla mazlíčků a kostlivců.', 1, { petPct: 0.15 }),
+    Re: tP('Bojová zkušenost', '+2 % krit. šance.', 2, { crit: 0.02 }),
+    K1: tKEY('Krvavý válečník', 'Rasová Krvavá zuřivost pod 50 % života je dvojnásobná (+40 % útok, +20 % rychlost útoku).', { orcRage2: 1 }),
+    K2: tKEY('Nezastavitelný', 'Zabití prodlouží Krvavou zuřivost o 1 s a -20 % trvání zmrazení a zpomalení.', { furyExtend: 1, ccRed: 0.2 })
+  } },
+  undead: { name: 'Nemrtví', icon: '💀', desc: 'Kostlivci, vysávání a nesmrtelnost.', nodes: {
+    R1: tK('raise'),
+    Ra: tP('Mrtvé maso', '+4 % života.', 3, { hpPct: 0.04 }),
+    R1e: tE('Kostěná armáda', 'Povstání mrtvých vyvolá o 1 kostlivce víc.', { skc_raise: 1 }),
+    Rb: tP('Síla hrobu', '+12 % síla kostlivců.', 3, { skelPct: 0.12 }),
+    Rc: tP('Pojídání mrtvol', 'Zabití tě vyléčí o 1 % života.', 2, { killHeal: 0.01 }),
+    R1c: tC(['Věčná služba', 'Kostlivci vydrží o 8 s déle.', { skdur_raise: 8 }], ['Kostěný mág', 'Jeden z vyvolaných kostlivců je kostěný mág, který střílí ledové střely.', { skelMage: 1 }]),
+    Rd: tP('Vůle opuštěných', '-15 % trvání zmrazení a zpomalení.', 2, { ccRed: 0.15 }),
+    R2: tP('Vzkříšení padlých', 'Zabitý nepřítel s 10% šancí povstane jako tvůj kostlivec na 10 s.', 1, { raiseOnKill: 0.1 }),
+    R3: tP('Kostěný štít', 'Každý tvůj kostlivec ti snižuje přijaté poškození o 3 %.', 1, { boneShield: 0.03 }),
+    Re: tP('Žízeň po krvi', '+1 % vysávání života.', 2, { ls: 0.01 }),
+    K1: tKEY('Armáda mrtvých', 'Najednou můžeš mít o 3 kostlivce víc a Vzkříšení padlých má šanci 25 %.', { skelMax: 3, raiseOnKill: 0.15 }),
+    K2: tKEY('Pán smrti', 'Kostlivci mají +50 % sílu a když zaniknou, vybuchnou (150 % útoku kolem).', { skelPct: 0.5, skelBoom: 1.5 })
+  } }
+};
+
 // Klíče, které talenty smí používat (kontrola v testech + výchozí 0)
 const TALENT_KEYS = ['skillPct', 'cdr', 'resMax', 'resRegenPct', 'genPct', 'killRes', 'critRes', 'killHeal', 'enrageChance', 'enrageDur',
   'enrageAlways', 'bleedHit', 'offhand', 'ignite', 'burnBonus', 'slowedBonus', 'shatter', 'dotSpread', 'dottedBonus', 'vulnPct',
-  'manaShield', 'loneWolf', 'petSpd', 'petLs', 'primCount', 'primPierce', 'arrowPierce', 'eclipse', 'trapMax', 'auraPct', 'formDur', 'lowHpDmg', 'msPct'];
-const COND_PREFIXES = ['dw', 'dw1', 'th', 'sh'];
+  'manaShield', 'loneWolf', 'petSpd', 'petLs', 'primCount', 'primPierce', 'arrowPierce', 'eclipse', 'trapMax', 'auraPct', 'formDur', 'lowHpDmg', 'msPct',
+  'secondWind', 'stoneQuake', 'stoneSkin', 'stealthDmg', 'moveCdr', 'dodgeAtk', 'revenge', 'orcRage2', 'furyExtend', 'skelPct', 'skelMage',
+  'raiseOnKill', 'boneShield', 'skelMax', 'skelBoom', 'executeKill', 'whirlPull', 'frostArmor', 'vaultTrap', 'blinkNova', 'dotLeech', 'strafePierce', 'elfDash', 'orcRage'];
+const COND_PREFIXES = ['dw', 'dw1', 'dw2', 'th', 'sh'];
 const SKILL_KEY_PREFIXES = ['skd', 'skr', 'skc', 'skdur', 'skcd', 'skcost', 'skgen', 'skpierce', 'skstun', 'skslow', 'skdot', 'skheal',
   'skvuln', 'skburn', 'skbleed', 'skfreeze', 'skexec', 'skenrage', 'skhits', 'skkillres'];
 
 // ---------- Strom → seznam uzlů ----------
 const _treeCache = {};
 // Vrátí stromy třídy: [{ key:'core'|specId, name, icon, desc, gates, nodes:[…] }]
-function classTrees(cls) {
-  if (_treeCache[cls]) return _treeCache[cls];
+// Klíč stromů: 'warrior' (jen třída) nebo 'warrior:orc' (třída + rasový strom), viz talentKey(ch)
+function classTrees(key) {
+  if (_treeCache[key]) return _treeCache[key];
+  const [cls, race] = key.split(':');
   const T = TALENTS[cls];
   const build = (key, def, layout, gates, isCore) => {
     const nodes = Object.keys(layout).map(slot => {
@@ -562,16 +679,23 @@ function classTrees(cls) {
     return { key, name: def.name, icon: def.icon, desc: def.desc, gates, nodes, core: isCore, rows: Math.max(...nodes.map(n => n.row)) + 1 };
   };
   const trees = [build('core', T.core, CORE_LAYOUT, CORE_GATES, true)].concat(T.specs.map(s => build(s.id, s, SPEC_LAYOUT, SPEC_GATES, false)));
-  _treeCache[cls] = trees;
+  if (race && RACE_TALENTS[race]) {
+    const rt = build('race', RACE_TALENTS[race], RACE_LAYOUT, RACE_GATES, false); rt.isRace = true;
+    rt.nodes.forEach(n => { if (n.type === 'key') n.icon = (RACE_KEY_ICONS[race] || {})[n.slot]; });
+    trees.push(rt);
+  }
+  _treeCache[key] = trees;
   return trees;
 }
 // K jaké dovednosti patří zesílení / volba (podle pozice ve stromu)
 function skillOfEnh(nodes, slot, isCore) {
   const map = isCore ? { Ca: 'B1', Cc: 'B2', CS1e: 'CS1', CS2e: 'CS2', CS3e: 'CS3' }
-    : { S1e: 'S1', S1c: 'S1', S2e: 'S2', S2c: 'S2', S3e: 'S3', S3c: 'S3', S4e: 'S4', S4c: 'S4', S5e: 'S5', S5c: 'S5' };
+    : { S1e: 'S1', S1c: 'S1', S2e: 'S2', S2c: 'S2', S3e: 'S3', S3c: 'S3', S4e: 'S4', S4c: 'S4', S5e: 'S5', S5c: 'S5', R1e: 'R1', R1c: 'R1' };
   const s = map[slot];
   return s && nodes[s] ? nodes[s].skill : null;
 }
+// Klíč stromů postavy (třída + rasa)
+function talentKey(ch) { return ch.race && RACE_TALENTS[ch.race] ? ch.cls + ':' + ch.race : ch.cls; }
 function talentNodes(cls) { return classTrees(cls).flatMap(t => t.nodes); }
 function nodeById(cls, id) { return talentNodes(cls).find(n => n.id === id); }
 // Body utracené za uzel (volba = 1 bod, hodnota 1/2 = zvolená možnost)
@@ -583,14 +707,14 @@ function nodeStats(n, v) {
 }
 // Talentové body: do úrovně 60 bod za každou úroveň, potom bod za každé 3 úrovně
 function talentPointsTotal(level) { return level <= 60 ? level - 1 : 59 + Math.floor((level - 60) / 3); }
-function treePoints(ch, key) { return classTrees(ch.cls).find(t => t.key === key).nodes.reduce((s, n) => s + nodeSpent(n, ch.talents[n.id]), 0); }
-function talentsSpent(ch) { return talentNodes(ch.cls).reduce((s, n) => s + nodeSpent(n, ch.talents[n.id]), 0); }
+function treePoints(ch, key) { return classTrees(talentKey(ch)).find(t => t.key === key).nodes.reduce((s, n) => s + nodeSpent(n, ch.talents[n.id]), 0); }
+function talentsSpent(ch) { return talentNodes(talentKey(ch)).reduce((s, n) => s + nodeSpent(n, ch.talents[n.id]), 0); }
 function gateFor(tree, row) { let need = 0; tree.gates.forEach(([r, n]) => { if (row >= r) need = n; }); return need; }
 
 // Dovednosti, které postava zná (výchozí + odemčené talenty)
 function knownSkills(ch) {
   const out = CLASSES[ch.cls].base.slice();
-  talentNodes(ch.cls).forEach(n => { if (n.type === 'skill' && (ch.talents[n.id] || 0) > 0) out.push(n.skill); });
+  talentNodes(talentKey(ch)).forEach(n => { if (n.type === 'skill' && (ch.talents[n.id] || 0) > 0) out.push(n.skill); });
   return out;
 }
 

@@ -36,7 +36,7 @@ Výběr ikony z game-icons.net: ikona musí být poznat i na 40 px. Pozor na sm�
 Stejně jako zbraň, jen bez kroků 3–5: `ITEM_TYPES` (+ `armor: 'heavy'|'light'` u zbroje), `ITEM_KINDS.<slot>.types`, ikona v `tools/gen-item-icons.js`, pixelová ikona v `ICONS`.
 
 ## Nová třída
-1. `js/classes.js` → `CLASSES`: jméno, staty (`hp`, `atk`, `def`, `spd`), `elem`, zdroj `res` (jméno, max, regen; záporný regen = generuje se útoky jako zuřivost), `main` (hlavní atribut), `armor` (preferovaná zbroj), `weapons`, `starter`, `colors` (barvy oblečení na postavě), `base` (2 výchozí dovednosti; první určuje, jestli je třída „kouzelník“ → rychlost sesílání, viz `isCasterClass`), případně `pet`.
+1. `js/classes.js` → `CLASSES`: jméno, staty (`hp`, `atk`, `def`, `spd`, případně `ms` = pohyb), **třídní rys `trait` { name, desc }** a jeho číselné pole (`dr`, `barrier`, `dotLeech`, `rangeBonus`, `shapeshift` – logika v `heroStats`/`heroHit`/`hurtHero` v `js/entities.js`; viz `docs/rebalanc.md`), `elem`, zdroj `res` (jméno, max, regen; záporný regen = generuje se útoky jako zuřivost), `main` (hlavní atribut), `armor` (preferovaná zbroj), `weapons`, `starter`, `colors` (barvy oblečení na postavě), `base` (2 výchozí dovednosti; první určuje, jestli je třída „kouzelník“ → rychlost sesílání, viz `isCasterClass`), případně `pet`.
 2. Dovednosti v `SKILLS` (`js/classes.js` / `js/talents.js`) včetně ikon (`SKILL_ICONS` v `js/icons.js`).
 3. **Talentový strom** v `js/talents.js` (2 specializace, viz `docs/talenty.md`); kalkulačka v `kalkulacka/` ho převezme sama.
 4. `js/data.js` → `RACE_CLASSES`: které rasy ji smí hrát (rozhodnutí o kombinacích je v `PROJEKT.md`, změnu potvrdit s Jirkou).
@@ -46,11 +46,12 @@ Stejně jako zbraň, jen bez kroků 3–5: `ITEM_TYPES` (+ `armor: 'heavy'|'ligh
 8. Testy: `node tests/validate_talents.js`, `tests/skills_smoke.py`, `tests/items.py`, `tests/visuals.py`, `tests/racecls.py`, bot `tests/bot.py` pro novou třídu.
 
 ## Nová rasa
-1. `js/data.js` → `RACES`: jméno, staty (`hp`, `atk`, `def`, `spd`, `crit`), `bonus` (staty nebo schopnosti, např. trpaslík `titanGrip`), `desc` (krátký český popis včetně bonusu).
+1. `js/data.js` → `RACES`: jméno, staty (`hp`, `atk`, `def`, `spd` = rychlost útoku, **`ms` = rychlost pohybu**, `crit`), `bonus` (staty nebo schopnosti, např. trpaslík `titanGrip`, elf `elfDash`, ork `orcRage`), **`trait`** (jméno rasového rysu) a `desc` (krátký český popis včetně bonusu). Rasa musí být znát ve hře (pohyb, odolnost, mechanika), ne jen v číslech.
+1b. **Rasový strom** v `js/talents.js` → `RACE_TALENTS[rasa]` (rozložení `RACE_LAYOUT`, 12 uzlů): `R1` = aktivní rasová dovednost (nová položka v `SKILLS` s `race: 'id'`, bez ceny zdroje, jen přebíjení) + ikona v `SKILL_ICONS`, zesílení `R1e`, volba `R1c`, pasivky, dvě klíčové pasivky `K1`/`K2`. Nové klíče přidat do `TALENT_KEYS` a naprogramovat. Kalkulačka strom převezme sama.
 2. `js/data.js` → `RACE_CLASSES` (povolené třídy) a zápis do rozhodnutí v `PROJEKT.md`.
 3. **Pixelová postava** 16×16 v `SPRITES` (`js/sprites.js`):
    - `k` = obrys, **`e` = oči** (nutné: mýtický set rozžhaví právě pixely `e`, blikání je taky přes `e`),
    - písmena oblečení zaregistrovat v `RACE_CLOTH` (jinak se oblečení nepřebarví podle třídy),
    - Jirka chce výrazné, čitelné siluety; návrh dát na výběr (2–3 varianty, snímek zvětšený).
 4. Okno tvorby postavy a menu berou rasy z `RACES` samy.
-5. Testy: `tests/racecls.py`, `tests/visuals.py` (efekt očí na nové rase), snímek okna tvorby postavy.
+5. Testy: `tests/racecls.py`, `tests/visuals.py` (efekt očí na nové rase), `node tests/validate_talents.js` (kontroluje i rasové stromy), `tests/rebalance.py` (doplnit test rasové mechaniky), snímek okna tvorby postavy.

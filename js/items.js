@@ -104,7 +104,6 @@ const EQUIP_SLOTS = {
   ring2: { name: 'Prsten',      accepts: ['ring'],              icon: 'ring' }
 };
 const EQUIP_ORDER = ['main', 'off', 'head', 'neck', 'cloak', 'chest', 'gloves', 'legs', 'boots', 'ring1', 'ring2'];
-const ITEM_GROWTH = 1.06;
 
 // minRift = od které úrovně riftu může rarita padnout; dur = odolnost
 // weight = váha při losování rarity (lepší kořist násobí všechny kromě šedé)
@@ -522,7 +521,7 @@ function rollAffixes(n, ilvl, exclude, ctx = {}) {
 function rollBase(defs, ilvl, mult) {
   const out = {};
   defs.forEach(([k, v0, vl, grow, cap]) => {
-    let v = (v0 + (vl || 0) * ilvl) * (grow ? Math.pow(ITEM_GROWTH, ilvl - 1) : 1) * mult * (0.9 + Math.random() * 0.2);
+    let v = (v0 + (vl || 0) * ilvl) * (grow ? itemPow(ilvl) : 1) * mult * (0.9 + Math.random() * 0.2);
     if (cap) v = Math.min(cap, v);
     v += out[k] || 0;   // stejný stat z druhu i z váhy zbroje se sčítá
     out[k] = (k === 'def' || k === 'atk' || k === 'hp') ? Math.max(1, Math.round(v)) : +v.toFixed(4);
@@ -678,6 +677,6 @@ function repairCost(it) {
   if (it.dur === undefined || it.dur >= it.maxDur) return 0;
   return Math.max(1, Math.round((it.maxDur - it.dur) / it.maxDur * sellValue(it) * 4));
 }
-function sellValue(it) { return Math.max(1, Math.round(RARITIES[it.rarity].sell * Math.pow(GOLD_GROWTH, it.ilvl))); }
-function buyPrice(it) { return Math.round(RARITIES[it.rarity].price * Math.pow(GOLD_GROWTH, it.ilvl)); }
+function sellValue(it) { return Math.max(1, Math.round(RARITIES[it.rarity].sell * goldPow(it.ilvl))); }
+function buyPrice(it) { return Math.round(RARITIES[it.rarity].price * goldPow(it.ilvl)); }
 

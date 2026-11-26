@@ -1,6 +1,6 @@
 // Herní data a balanc. Změna čísla = jiná obtížnost.
 
-const GAME_VERSION = '1.12.0';
+const GAME_VERSION = '1.13.0';
 const TILE = 16;                 // velikost dlaždice v px
 const VIEW_W = 460, VIEW_H = 260; // logické rozlišení světa (zvětšuje se pixelově)
 
@@ -17,18 +17,20 @@ const ELEMENTS = {
 const RES_NAMES = { phys: 'Zbroj', fire: 'Oheň', frost: 'Mráz', shadow: 'Stín', nature: 'Příroda', arcane: 'Arkána' };
 const HERO_RES_CAP = 0.6;
 
-// Rasy: základní staty (rostou s úrovní) a pasivní bonus
+// Rasy: základní staty (rostou s úrovní), pohyb, pasivní bonusy a rasový rys (od 1.13.0 má každá rasa i vlastní strom
+// talentů s aktivní rasovou dovedností – RACE_TALENTS v js/talents.js).
+// spd = rychlost útoku a sesílání, ms = rychlost pohybu, dodge = úhyb, trait = rasový rys (logika v js/entities.js a js/skills.js)
 const RACES = {
-  human:  { name: 'Člověk',   hp: 105, atk: 11, def: 3, spd: 1.00, crit: 0.05, bonus: { mfPct: 0.10, dropPct: 0.05 },
-            desc: 'Vyvážený. Šťastlivec: +10 % lepší kořist, +5 % šance na předmět.' },
-  dwarf:  { name: 'Trpaslík', hp: 135, atk: 9,  def: 6, spd: 0.85, crit: 0.05, bonus: { goldPct: 0.15, titanGrip: 1 },
-            desc: 'Odolný a pomalejší. Horník: +15 % zlata. Horský stisk: obouruční meč nebo kladivo udrží v každé ruce.' },
-  elf:    { name: 'Elf',      hp: 85,  atk: 10, def: 2, spd: 1.30, crit: 0.12, bonus: { healPct: 0.15 },
-            desc: 'Rychlý, častěji kriticky zasáhne. Lesní dar: +15 % léčení.' },
-  orc:    { name: 'Ork',      hp: 110, atk: 13, def: 2, spd: 0.90, crit: 0.05, bonus: { atkPct: 0.10 },
-            desc: 'Slabší obrana. Hrubá síla: +10 % útok.' },
-  undead: { name: 'Nemrtvý',  hp: 90,  atk: 10, def: 3, spd: 1.00, crit: 0.05, ls: 0.06, bonus: { shadowPct: 0.10 },
-            desc: 'Vysává 6 % poškození jako život. Temná moc: +10 % stínové poškození.' }
+  human:  { name: 'Člověk',   hp: 105, atk: 11, def: 3, spd: 1.00, ms: 1.00, crit: 0.05, bonus: { xpPct: 0.10, mfPct: 0.10, ccRed: 0.20 },
+            trait: 'Přizpůsobivost', desc: 'Vyvážený ve všem. +10 % zkušeností, +10 % lepší kořist, o 20 % kratší zmrazení a zpomalení.' },
+  dwarf:  { name: 'Trpaslík', hp: 135, atk: 9,  def: 7, spd: 0.92, ms: 0.86, crit: 0.05, bonus: { goldPct: 0.15, titanGrip: 1, resAll: 0.08, ccRed: 0.15 },
+            trait: 'Horská výdrž', desc: 'Nejodolnější, ale pomalý (-14 % pohyb, -8 % rychlost útoku). +8 % všechny odolnosti, +15 % zlata. Horský stisk: obouruční meč nebo kladivo udrží v každé ruce.' },
+  elf:    { name: 'Elf',      hp: 85,  atk: 10, def: 2, spd: 1.08, ms: 1.14, crit: 0.10, bonus: { dodge: 0.08, elfDash: 1 },
+            trait: 'Lesní mrštnost', desc: 'Nejrychlejší a nejmrštnější, ale křehký. +14 % pohyb, +8 % úhyb, +10 % krit. šance. Po pohybové dovednosti máš 2 s +30 % pohyb a +15 % úhyb.' },
+  orc:    { name: 'Ork',      hp: 115, atk: 13, def: 2, spd: 0.97, ms: 1.00, crit: 0.05, bonus: { atkPct: 0.10, orcRage: 1 },
+            trait: 'Krvavý vztek', desc: 'Hrubá síla, slabší obrana. +10 % útok. Pod 50 % života +20 % útok a +10 % rychlost útoku.' },
+  undead: { name: 'Nemrtvý',  hp: 95,  atk: 10, def: 3, spd: 1.00, ms: 0.95, crit: 0.05, ls: 0.06, bonus: { shadowPct: 0.10, killHeal: 0.01 },
+            trait: 'Neživot', desc: 'Vysává 6 % poškození jako život a každé zabití ho vyléčí o 1 %. +10 % stínové poškození. Rasový strom: kostlivci.' }
 };
 
 // Růst postavy s úrovní
@@ -44,7 +46,17 @@ function raceAllows(race, cls) { return !RACE_CLASSES[race] || RACE_CLASSES[race
 
 const LEVEL_CAP = Infinity;   // bez stropu – vyšší úrovně jdou čím dál pomaleji
 const LVL_HP = 0.09, LVL_ATK = 0.07, LVL_DEF = 0.5;
-function xpToNext(lvl) { return Math.round(100 * Math.pow(1.17, lvl - 1)); }
+// XP na další úroveň: do úrovně 30 +17 % za úroveň jako dřív, pak růst zpomaluje k +1,5 % (úroveň 100 ≈ 3 mil., 200 ≈ 33 mil.)
+// Velká čísla zkráceně: 12 345 → „12,3 tis.“, 4 500 000 → „4,5 mil.“
+function fmtBig(v) {
+  const a = Math.abs(v), f = (x, u) => (Math.round(x * 10) / 10).toLocaleString('cs-CZ') + u;
+  if (a < 1e4) return f(v, '');
+  if (a < 1e6) return f(v / 1e3, ' tis.');
+  if (a < 1e9) return f(v / 1e6, ' mil.');
+  if (a < 1e12) return f(v / 1e9, ' mld.');
+  return f(v / 1e12, ' bil.');
+}
+function xpToNext(lvl) { return Math.round(100 * Math.exp(growthSum(Math.max(1, lvl), 30, Math.log(1.17), 0.015, 40))); }
 
 // ---------- Nepřátelé ----------
 // ai: melee | ranged | charger | caster | exploder | swarm
@@ -131,7 +143,7 @@ const BOSS_EXPOSED_MUL = 1.5;       // vyčerpaný boss dostává +50 % poškoze
 
 // ---------- Škálování riftu ----------
 const RIFT = {
-  hp: 1.24, atk: 1.15, xp: 1.13, gold: 1.12,   // násobky za úroveň
+  // růst života, útoku a zkušeností podle úrovně: RIFT_HP_CURVE, RIFT_ATK_CURVE, RIFT_XP_CURVE níže
   density: 0.03,                                // +3 % nepřátel za úroveň
   // „Jatka“ (od 1.10.0): skupiny běžných nepřátel jsou 3× větší. Každý z nich dává jen třetinu XP, zlata, postupu
   // a šance na předmět, takže za celé podzemí vychází odměny stejně jako dřív (sedí i ceny u obchodníka, riftRunGold).
@@ -147,19 +159,72 @@ const RIFT = {
   deathDurability: 0.10,                        // smrt: -10 % maximální odolnosti nasazených předmětů
   eliteChance: lvl => Math.min(0.5, 0.18 + lvl * 0.015)
 };
-function riftMult(base, lvl) { return Math.pow(base, lvl - 1); }
+
+// ---------- Škálování (od 1.13.0) ----------
+// Dřív rostlo všechno exponenciálně (nepřátelé ×1,24 za úroveň podzemí, předměty ×1,06 za úroveň předmětu, XP ×1,17),
+// takže od podzemí ~40 nešlo hrát a čísla byla nesmyslná (podzemí 300: život nepřítele 10^29).
+// Teď růst postupně zpomaluje. growthSum = součet přírůstků (v logaritmu) od 1 do x: do x0 roste o g0 za krok,
+// potom se přírůstek plynule zmenšuje až ke gmin (rychlost změny určuje tau).
+function growthSum(x, x0, g0, gmin, tau) {
+  if (x <= x0) return g0 * (x - 1);
+  const t = x - x0;
+  return g0 * (x0 - 1) + gmin * t + (g0 - gmin) * tau * (1 - Math.exp(-t / tau));
+}
+// Síla předmětů (útok zbraní a rukavic, život na zbroji): do úrovně předmětu 60 +6 % za úroveň jako dřív, pak pomaleji (až +0,5 %)
+function itemPow(ilvl) { return Math.exp(growthSum(Math.max(1, ilvl), 60, Math.log(1.06), 0.005, 70)); }
+// Zlato roste stejně jako síla předmětů, takže ceny a příjmy zůstávají v poměru
+function goldPow(ilvl) { return itemPow(ilvl + 1); }
+
+// Úroveň hrdiny: +1 % útoku a života za každou úroveň (násobí všechno ostatní)
+const LVL_MUL = 0.01;
+function levelMul(lvl) { return 1 + LVL_MUL * (lvl - 1); }
+// Doporučená úroveň hrdiny pro podzemí L (podzemí 100 → 80, 250 → 200, 350 → 280)
+function recLevel(L) { return Math.max(1, Math.round(0.8 * (L - 1)) + 1); }
+// Úroveň, na které běžně hráč je, když hraje podzemí L (pro testy balancu)
+function naturalLevel(L) { return Math.max(1, Math.round(0.8 * (L - 1) + 1 + 12 * (1 - Math.exp(-L / 10)))); }
+// Rozdíl úrovní (jako ve WoW a Grim Dawn): za každou úroveň pod doporučenou dávají nepřátelé hrdinovi o 3 % víc
+// poškození a hrdina jim o 3 % míň (násobí se, 20 úrovní ≈ ×1,8, 80 úrovní ≈ ×10). Nad doporučenou úrovní
+// je to naopak −1 % za úroveň, nejvýš 15 úrovní.
+const LVL_GAP = { under: 1.03, over: 0.99, overMax: 15 };
+function levelGapMul(L, lvl) {
+  const d = recLevel(L) - lvl;
+  return d > 0 ? Math.pow(LVL_GAP.under, d) : Math.pow(LVL_GAP.over, Math.min(LVL_GAP.overMax, -d));
+}
+// Nepřátelé: násobek života a útoku podle úrovně podzemí (bez rozdílu úrovní)
+// Hodnoty jsou nastavené podle simulace (tests/balance.py): hrdina na přirozené úrovni s výbavou z daného podzemí
+// zabije elitu zhruba za 2–3 s v podzemí 1, 7 s v podzemí 20, 13 s ve 100 a 18 s ve 300 a elita ho zabije
+// asi za 30 zásahů v podzemí 1, 17 ve 20 a 12 od podzemí 100 výš (válečník vydrží víc, mág méně). Mezi body se dopočítává plynule, za posledním bodem
+// roste dál stejným tempem (život i útok ~+1,3 % za úroveň).
+const RIFT_HP_CURVE  = [[1, 1], [5, 2.4], [10, 6.5], [20, 42], [30, 180], [40, 750], [60, 3900], [80, 12000], [100, 26500],
+  [150, 92000], [200, 207000], [250, 427000], [300, 865000], [400, 3540000]];
+const RIFT_ATK_CURVE = [[1, 1], [5, 1.9], [10, 3.9], [20, 11.5], [30, 34.5], [40, 100], [60, 510], [80, 1360], [100, 3000],
+  [150, 8900], [200, 19100], [250, 39000], [300, 74400], [400, 251000]];
+// Zkušenosti za nepřítele (tempo: na přirozené úrovni dá jedno podzemí 30 → ½ úrovně, 100 → ⅕, 300 → 1/10 úrovně)
+const RIFT_XP_CURVE  = [[1, 1], [5, 1.63], [10, 3.0], [20, 10.2], [30, 29.7], [60, 245], [100, 1093], [150, 3100], [200, 6080],
+  [300, 17900], [400, 51400]];
+// Plynulé dopočítání mezi body tabulky (v logaritmu), za koncem pokračuje posledním sklonem
+function curveAt(tab, x) {
+  let i = 1;
+  while (i < tab.length - 1 && x > tab[i][0]) i++;
+  const [x0, y0] = tab[i - 1], [x1, y1] = tab[i];
+  return Math.exp(Math.log(y0) + (Math.log(y1) - Math.log(y0)) * (x - x0) / (x1 - x0));
+}
+function riftHpMul(L) { return curveAt(RIFT_HP_CURVE, Math.max(1, L)); }
+function riftAtkMul(L) { return curveAt(RIFT_ATK_CURVE, Math.max(1, L)); }
+function riftXpMul(L) { return curveAt(RIFT_XP_CURVE, Math.max(1, L)); }
+// Pro testy: síla nepřátel vůči hrdinovi úrovně lvl (rozdíl úrovní se ve hře počítá u hrdiny – každý v družině zvlášť)
+function riftMonMul(L, lvl) { const g = levelGapMul(L, lvl); return { hp: riftHpMul(L) * g, atk: riftAtkMul(L) * g }; }
 function riftIlvl(lvl) { return 2 * lvl + 1; }
 // Bonus „lepší kořist“ z úrovně riftu (rift 1 = 0, rift 10 ≈ +37 %, 20 ≈ +64 %, 40 ≈ +99 %, 100 ≈ +142 %, strop +200 %)
 function riftMf(lvl) { return RIFT.mfMax * (lvl - 1) / (lvl - 1 + RIFT.mfHalf); }
 
 // Zlato
-const GOLD_GROWTH = 1.06;   // za úroveň předmětu (ilvl)
 const GOLD_BASE = 2;
 // Odhad zlata za jeden dokončený běh podzemí bez bonusů z výbavy: zlato z nepřátel a strážce + prodej kořisti.
 // Počítá se, že hráč zabije jen tolik nepřátel, kolik je potřeba na 100 % postupu (rozmístí se jich 145 %), a strážce.
 // Od 1.10.0 je nepřátel 3× víc, ale každý běžný dává ⅓ zlata (RIFT.crowd) – součet za podzemí zůstal stejný.
-// Změřeno z herních funkcí (populateRift, rollRarity): podzemí 1 ≈ 310, 10 ≈ 1 200, 20 ≈ 4 700, 30 ≈ 17 000, 50 ≈ 240 000.
-function riftRunGold(L) { return GOLD_BASE * Math.pow(GOLD_GROWTH, riftIlvl(L)) * (130 + 4.1 * (L - 1)); }
+// Změřeno z herních funkcí (populateRift, rollRarity): podzemí 1 ≈ 310, 10 ≈ 1 100, 20 ≈ 4 500, 30 ≈ 17 400, 50 ≈ 137 000 (od 1.13.0 roste podle goldPow).
+function riftRunGold(L) { return GOLD_BASE * goldPow(riftIlvl(L)) * (130 + 4.1 * (L - 1)); }
 // Ceny zaokrouhlené na 3 platné číslice (42, 154, 1 550, 24 000 …)
 function niceGold(v) { const p = Math.pow(10, Math.max(0, Math.floor(Math.log10(Math.max(1, v))) - 2)); return Math.max(1, Math.round(v / p) * p); }
 
@@ -182,3 +247,4 @@ const SHRINES = {
 
 const INV_MAX = 40, STASH_MAX = 60;
 const POTION_CD = 15, POTION_HEAL = 0.5, GLOBE_HEAL = 0.2;
+
