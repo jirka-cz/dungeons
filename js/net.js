@@ -800,3 +800,146 @@ function showNetModal() {
 function netUi() { if (UI.modalKind === 'net') showNetModal(); if (typeof buildPartyFrames === 'function') buildPartyFrames(); }
 
 window.addEventListener('load', netHookFx);
+
+// ---------- Přenos uložení na jiné zařízení (krátký kód) ----------
+// Odesílající zařízení si na serveru PeerJS zabere ID „wd-xfer-KÓD“ a čeká. Přijímající se připojí přes kód
+// a dostane celé uložení (stejný formát jako dlouhý kód WD5:…) po kouscích. Po potvrzení nahradí své uložení.
+
+const XFER_PREFIX = 'wd-xfer-';
+const XFER_CHUNK = 16000;            // znaků v jedné zprávě
+const XFER_LIFE = 10 * 60 * 1000;    // jak dlouho kód platí
+const Xfer = { role: null, side: null, peer: null, code: null, state: '', msg: '', parts: null, head: null, conn: null };   // side = kde zobrazit stav (send/recv)
+
+function verNum(v) { return String(v || '0').split('.').reduce((a, x) => a * 1000 + (+x || 0), 0); }
+function xferSummary(s) { return { chars: (s.chars || []).map(c => ({ name: c.name, race: c.race, cls: c.cls, level: c.level })), gold: s.gold || 0 }; }
+
+function xferStop() {
+  try { if (Xfer.conn) Xfer.conn.close(); } catch (e) {}
+  try { if (Xfer.peer) Xfer.peer.destroy(); } catch (e) {}
+  Object.assign(Xfer, { role: null, side: null, peer: null, code: null, state: '', msg: '', parts: null, head: null, conn: null });
+}
+function xferFail(side, msg) { xferStop(); Xfer.side = side; xferSet('err', msg); }
+function xferSet(state, msg) { Xfer.state = state; Xfer.msg = msg || ''; xferUi(); }
+
+function xferSend() {
+  if (typeof Peer === 'undefined') { toast('Knihovna pro spojení se nenačetla.'); return; }
+  xferStop();
+  persist();
+  const code = netCode(), peer = new Peer(XFER_PREFIX + code, netOpts());
+  Object.assign(Xfer, { role: 'send', side: 'send', peer, code: null });
+  xferSet('wait', 'Připravuji kód…');
+  setTimeout(() => { if (Xfer.peer === peer && !Xfer.code) xferFail('send', 'Server pro spojení neodpovídá. Zkontroluj internet a zkus to znovu.'); }, 15000);
+  setTimeout(() => { if (Xfer.peer === peer && Xfer.state !== 'done') xferFail('send', 'Kód vypršel. Klepni znovu na Odeslat.'); }, XFER_LIFE);
+  peer.on('open', () => { Xfer.code = code; xferSet('wait', 'Na druhém zařízení otevři Přenos postav a zadej tento kód.'); });
+  peer.on('error', e => {
+    if (Xfer.peer !== peer) return;
+    if (e.type === 'unavailable-id' && !Xfer.code) { xferSend(); return; }
+    if (!Xfer.code) xferFail('send', 'Kód se nepodařilo připravit. Zkontroluj připojení k internetu.');
+  });
+  peer.on('disconnected', () => { try { peer.reconnect(); } catch (e) {} });
+  peer.on('connection', conn => {
+    conn.on('open', () => {
+      persist();
+      const data = exportSave(G.save), n = Math.ceil(data.length / XFER_CHUNK);
+      conn.send({ t: 'head', ver: GAME_VERSION, n, sum: xferSummary(G.save) });
+      for (let i = 0; i < n; i++) conn.send({ t: 'part', i, s: data.slice(i * XFER_CHUNK, (i + 1) * XFER_CHUNK) });
+      xferSet('wait', 'Druhé zařízení se připojilo, čekám na potvrzení…');
+    });
+    conn.on('data', d => {
+      if (!d || Xfer.peer !== peer) return;
+      if (d.t === 'ok') { xferSet('done', 'Hotovo! Postavy jsou na druhém zařízení.'); setTimeout(() => { if (Xfer.peer === peer) { try { peer.destroy(); } catch (e) {} Xfer.peer = null; } }, 1000); }
+      else if (d.t === 'no') xferSet('wait', 'Druhé zařízení přenos odmítlo. Kód stále platí.');
+      else if (d.t === 'old') xferSet('wait', `Druhé zařízení má starší verzi hry (${d.ver}). Ať tam obnoví stránku a zadá kód znovu.`);
+    });
+    conn.on('close', () => { if (Xfer.peer === peer && Xfer.state === 'wait' && /potvrzení/.test(Xfer.msg)) xferSet('wait', 'Druhé zařízení se odpojilo. Kód stále platí.'); });
+  });
+}
+
+function xferRecv(code) {
+  code = String(code || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+  if (!code) { toast('Zadej kód z druhého zařízení'); return; }
+  if (typeof Peer === 'undefined') { toast('Knihovna pro spojení se nenačetla.'); return; }
+  if (Net.role) { toast('Nejdřív opusť místnost s přáteli.'); return; }
+  xferStop();
+  const peer = new Peer(netOpts());
+  Object.assign(Xfer, { role: 'recv', side: 'recv', peer, code });
+  xferSet('wait', 'Připojuji se…');
+  const fail = msg => { if (Xfer.peer === peer) xferFail('recv', msg); };
+  setTimeout(() => { if (Xfer.peer === peer && !Xfer.head) fail('Spojení se nepodařilo navázat. Zkontroluj kód a internet na obou zařízeních.'); }, 20000);
+  peer.on('error', e => fail(e.type === 'peer-unavailable' ? `Kód ${code} neplatí. Zkontroluj ho, nebo na druhém zařízení klepni znovu na Odeslat.` : 'Připojení se nepodařilo. Zkontroluj kód a internet.'));
+  peer.on('open', () => {
+    const conn = peer.connect(XFER_PREFIX + code, { reliable: true, serialization: 'json' });
+    Xfer.conn = conn;
+    conn.on('data', d => {
+      if (!d || Xfer.peer !== peer) return;
+      if (d.t === 'head') {
+        if (verNum(d.ver) > verNum(GAME_VERSION)) { conn.send({ t: 'old', ver: GAME_VERSION }); fail(`Tady je starší verze hry (${GAME_VERSION}, na druhém zařízení ${d.ver}). Obnov stránku a zadej kód znovu.`); return; }
+        Xfer.head = d; Xfer.parts = [];
+        xferSet('wait', 'Přijímám…');
+      } else if (d.t === 'part' && Xfer.head) {
+        Xfer.parts[d.i] = d.s;
+        if (Xfer.parts.filter(x => x !== undefined).length === Xfer.head.n) xferGot(conn);
+      }
+    });
+    conn.on('close', () => { if (Xfer.peer === peer && Xfer.state !== 'done' && Xfer.state !== 'ask') fail('Spojení s druhým zařízením se přerušilo.'); });
+  });
+}
+
+function xferGot(conn) {
+  let s;
+  try { s = importSave(Xfer.parts.join('')); } catch (e) { xferFail('recv', 'Přijatá data jsou poškozená. Zkus to znovu.'); return; }
+  const apply = () => {
+    delete s._notice;
+    G.save = s; persist();
+    try { conn.send({ t: 'ok' }); } catch (e) {}
+    const peer = Xfer.peer;
+    setTimeout(() => { try { peer.destroy(); } catch (e) {} }, 800);
+    Object.assign(Xfer, { role: null, peer: null, conn: null, state: '', parts: null, head: null });
+    showMenu(); toast('Postavy přeneseny');
+  };
+  if (!G.save.chars.length) { apply(); return; }
+  const list = (Xfer.head.sum.chars || []).map(c => `<li><b>${c.name}</b> <span class="muted small">${RACES[c.race] ? RACES[c.race].name : ''} ${CLASSES[c.cls] ? CLASSES[c.cls].name : ''} · úr. ${c.level}</span></li>`).join('') || '<li class="muted">žádné postavy</li>';
+  const here = G.save.chars.map(c => `${c.name} (úr. ${c.level})`).join(', ');
+  Xfer.state = 'ask';
+  Xfer.apply = apply;
+  showModal(`<h2>Přijmout postavy?</h2>
+    <p>Z druhého zařízení přijde:</p><ul class="net-list">${list}</ul>
+    <p class="small">Sdílené zlato: <b class="gold">${fmt(Xfer.head.sum.gold)}</b> ${GI} a truhla.</p>
+    <p class="warn">Postavy na tomto zařízení se nahradí: ${here}.</p>
+    <div class="actions"><button class="primary" onclick="Xfer.apply()">Přijmout</button><button onclick="xferDecline()">Zrušit</button></div>`, false, 'xfer');
+}
+function xferDecline() {
+  const c = Xfer.conn, p = Xfer.peer;
+  try { if (c) c.send({ t: 'no' }); } catch (e) {}
+  Object.assign(Xfer, { role: null, side: null, peer: null, conn: null, code: null, state: '', msg: '', parts: null, head: null });
+  setTimeout(() => { try { if (p) p.destroy(); } catch (e) {} }, 400);
+  showTransfer();
+}
+
+// ---------- Okno „Přenos postav“ ----------
+
+function showTransfer() {
+  const st = Xfer.state, busy = !!Xfer.role, side = Xfer.side;
+  let status = '';
+  if (Xfer.role === 'send' && Xfer.code) status = `<div class="net-code">Kód: <b id="xfer-code">${Xfer.code}</b></div>`;
+  if (Xfer.msg) status += `<p class="${st === 'err' ? 'warn' : st === 'done' ? 'ok' : 'muted'} small" id="xfer-msg">${Xfer.msg}</p>`;
+  const cancel = `<div class="actions"><button onclick="xferStop();showTransfer()">${st === 'done' ? 'OK' : 'Zrušit'}</button></div>`;
+  showModal(`<h2>Přenos postav</h2>
+    <p class="muted small">Přenese všechny postavy, zlato a truhlu na jiné zařízení (třeba z počítače do mobilu). Obě zařízení musí mít hru otevřenou a být na internetu.
+      Na přijímajícím zařízení se dosavadní postavy nahradí.</p>
+    <div class="net-box"><b>Odeslat z tohoto zařízení</b>
+      ${Xfer.role === 'send' || (side === 'send' && st === 'done') ? status + cancel
+        : `<p class="muted small">Dostaneš krátký kód, který zadáš na druhém zařízení.</p>${side === 'send' ? status : ''}
+        <button class="primary" id="xfer-send" ${busy ? 'disabled' : ''} onclick="xferSend()">Odeslat postavy</button>`}</div>
+    <div class="net-box"><b>Přijmout na tomto zařízení</b>
+      ${Xfer.role === 'recv' ? status + cancel
+        : `<p class="muted small">Zadej kód z druhého zařízení.</p>${side === 'recv' ? status : ''}
+        <div class="net-join"><input id="xfer-in" maxlength="6" placeholder="KÓD" autocomplete="off" autocapitalize="characters" onkeydown="if(event.key==='Enter')xferRecv(this.value)">
+        <button class="primary" id="xfer-recv" ${busy ? 'disabled' : ''} onclick="xferRecv($('xfer-in').value)">Přijmout</button></div>`}</div>
+    <details class="xfer-old"><summary class="small">Záložní dlouhý kód (když nejde přenos přes internet)</summary>
+      <p class="muted small">Zkopíruj kód, pošli si ho (e-mail, zpráva) a na druhém zařízení ho sem vlož a načti.</p>
+      <button onclick="doExport()">Zkopírovat kód uložení</button>
+      <textarea id="save-code" rows="3" placeholder="Sem vlož kód uložení (WD5:...)"></textarea>
+      <div class="actions"><button onclick="doImport()">Načíst z kódu</button></div></details>`, false, 'xfer');
+}
+function xferUi() { if (UI.modalKind === 'xfer' && Xfer.state !== 'ask') showTransfer(); }

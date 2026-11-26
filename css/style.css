@@ -472,3 +472,8 @@ body.touch-ui #party { top: auto; bottom: 46%; width: 120px; }
 .sb-bar .bar-slot { width: 46px; height: 46px; }
 @media (max-width: 600px) { .sb-grid { grid-template-columns: minmax(0, 1fr); } .sb-bar .bar-slot { width: 38px; height: 38px; } .sb-desc { display: none; } }
 
+/* Přenos postav */
+#modal-box p.ok { color: #4fd05a; font-weight: 600; }
+.xfer-old { margin-top: 10px; } .xfer-old summary { cursor: pointer; color: var(--muted, #aaa); padding: 4px 0; }
+.xfer-old textarea { width: 100%; margin-top: 6px; }
+.menu-empty-xfer { margin-top: 6px; }

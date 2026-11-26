@@ -27,7 +27,7 @@ function showModal(html, wide, kind) {
   $('modal').hidden = false;
   drawIcons();
 }
-function hideModal() { $('modal').hidden = true; UI.modalKind = null; UI.npcWin = null; $('itip').hidden = true; if (G.char && G.scene !== 'menu') buildHud(); }
+function hideModal() { if (UI.modalKind === 'xfer') xferStop(); $('modal').hidden = true; UI.modalKind = null; UI.npcWin = null; $('itip').hidden = true; if (G.char && G.scene !== 'menu') buildHud(); }
 function modalOpen() { return !$('modal').hidden; }
 function closeMenu() { if (UI.modalKind === 'talents' && talentsDirty()) { closeTalentsAsk(); return; } if (UI.modalKind === 'talents') UI.tDraft = null; hideModal(); UI.sel = null; UI.pickSkill = null; }
 
@@ -134,7 +134,7 @@ function showMenu() {
       <div><b>${c.name}</b><div class="muted small">${RACES[c.race].name} – ${CLASSES[c.cls].name}</div>
       <div class="small">Úroveň ${c.level} · podzemí ${c.maxRift}</div></div>
       <button class="ghost del" onclick="event.stopPropagation();deleteChar(${i})" aria-label="Smazat">✕</button>
-    </div>`).join('') || '<p class="muted">Zatím nemáš žádnou postavu.</p>';
+    </div>`).join('') || '<p class="muted">Zatím nemáš žádnou postavu.</p><button class="menu-empty-xfer" onclick="showTransfer()">⇄ Přenést postavy z jiného zařízení</button>';
   $('menu-play').hidden = !chars.length;
   $('menu-gold').textContent = fmt(G.save.gold);
   drawIcons();
@@ -866,10 +866,9 @@ function showSettings() {
     <label class="check"><input type="checkbox" ${s.dmgNumbers ? 'checked' : ''} onchange="G.save.settings.dmgNumbers=this.checked;persist()"> Zobrazovat čísla poškození</label>
     <h3>Automaticky prodávat sebrané předměty</h3><p class="muted small">Zaškrtnuté rarity se po sebrání rovnou prodají za zlato. Najdeš to i v okně Postava a batoh.</p><div class="sell-grid">${sellBoxes}</div>
     <h3>Uložení</h3>
-    <p class="muted small">Hra se ukládá automaticky do tohoto prohlížeče. Pro přenos na jiné zařízení použij kód.</p>
-    <button onclick="doExport()">Zkopírovat kód uložení</button>
-    <textarea id="save-code" rows="3" placeholder="Sem vlož kód uložení (WD5:...)"></textarea>
-    <div class="actions"><button onclick="doImport()">Načíst z kódu</button><button onclick="closeMenu()">Zavřít</button></div>
+    <p class="muted small">Hra se ukládá automaticky do tohoto prohlížeče. Na jiné zařízení (třeba do mobilu) přeneseš postavy krátkým kódem.</p>
+    <button onclick="showTransfer()">⇄ Přenos postav</button>
+    <div class="actions"><button onclick="closeMenu()">Zavřít</button></div>
     <p class="muted small">Verze ${GAME_VERSION}</p>`);
 }
 function doExport() {
@@ -1084,5 +1083,6 @@ function bindUi() {
   $('menu-new').onclick = showCreate;
   $('menu-play').onclick = () => playChar();
   $('menu-settings').onclick = () => showSettings();
+  $('menu-xfer').onclick = () => showTransfer();
   $('menu-fs').onclick = () => toggleFullscreen();
 }

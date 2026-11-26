@@ -60,6 +60,7 @@
 `python3 tests/controls.py`, `tests/czkeys.py`, `tests/mobauto.py`, `tests/mob2.py`, `tests/panels.py`, `tests/land_tal.py`. Vizuální změny vždy ověřit snímky: počítač, mobil na výšku, mobil na šířku.
 
 ## Hra více hráčů (od 1.8.0)
+- **Přenos postav (⇄ v hlavním menu, v prázdném menu tlačítko „Přenést postavy z jiného zařízení“, Nastavení → Přenos postav):** Odeslat postavy = velký 5místný kód, na druhém zařízení ho zadat a Přijmout. Před nahrazením existujících postav potvrzení se seznamem přicházejících postav. Pod tím rozbalovací záložní dlouhý kód (zkopírovat / vložit a načíst).
 - **Herní menu → 👥 Hrát s přáteli:** založit místnost (velký kód k přeposlání) nebo se připojit kódem; seznam hráčů (třída, úroveň, ve městě / v podzemí), Opustit místnost.
 - **Rámečky spoluhráčů** vlevo (jméno, úroveň, život, „† padl“, „v podzemí / ve městě“). Na mobilu níž, aby nepřekážely.
 - **Návrh podzemí:** u obelisku tlačítko „Navrhnout“; ostatním okno s úrovní, informací o síle a odpočtem 30 s (Přijmout / Odmítnout); navrhovatel vidí, kdo už souhlasí, a může návrh zrušit.

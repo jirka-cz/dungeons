@@ -5,9 +5,9 @@ Tohle je hlavní vstupní bod pro každý nový chat s Claudem. Popisuje, co hra
 ## Co to je
 - 2D akční RPG v prohlížeči ve stylu Diabla 3/4. Rifty s náhodnými mapami, strážce na konci, kořist, talenty, aktivní dovednosti.
 - Hraje se na počítači i na mobilu (na výšku i na šířku).
-- Zdarma pro kamarády. Každý má vlastní uložené postavy v prohlížeči (localStorage) a může je přenést exportním kódem.
+- Zdarma pro kamarády. Každý má vlastní uložené postavy v prohlížeči (localStorage) a může je přenést na jiné zařízení krátkým kódem (přímé spojení přes PeerJS) nebo záložním dlouhým kódem.
 - Autor (Jirka) neprogramuje. Všechno vzniká přes zadání v češtině, Claude píše kód, testuje ho a vysvětluje změny srozumitelně.
-- Aktuální verze: **1.16.0** (konstanta `GAME_VERSION` v `js/data.js`).
+- Aktuální verze: **1.17.0** (konstanta `GAME_VERSION` v `js/data.js`).
 
 ## Kde hra běží
 | Co | Kde |
@@ -61,7 +61,7 @@ Každé větší téma má vlastní dokument a vlastní chat (viz `docs/CHATY.md
 | `js/inventory.js` | výbava, batoh, truhla, obchod, oprava |
 | `js/ui.js` | okna (menu, postava, talenty, obchod, nastavení…) |
 | `js/hud.js` | HUD, lišta dovedností, rámečky spoluhráčů, dotykové ovládání |
-| `js/net.js` | hra více hráčů: místnost, společné město, hlasování o podzemí, snímky stavu, odměny hostům |
+| `js/net.js` | hra více hráčů: místnost, společné město, hlasování o podzemí, snímky stavu, odměny hostům; přenos postav na jiné zařízení krátkým kódem |
 | `js/lib/peerjs.min.js` | knihovna PeerJS 1.5.5 (MIT), vlastní kopie – spojení přes WebRTC |
 | `js/engine.js` | herní smyčka, více hrdinů (`withHero`, `G.heroes`, `G.me`), ovládání, kamera, vykreslování |
 | `css/style.css` | veškerý vzhled |

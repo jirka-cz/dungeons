@@ -52,6 +52,7 @@ Město (obchodník, kovář, truhla, obelisk) → rift zvolené úrovně → pln
 - `PROJEKT.md` a `docs/` – dokumentace pro další vývoj
 
 ## Verze
+- **1.17.0** – Přenos postav na jiné zařízení krátkým kódem (⇄ v hlavním menu nebo Nastavení → Přenos postav): na jednom zařízení Odeslat, na druhém zadat 5místný kód. Přenesou se postavy, zlato i truhla, před nahrazením existujících postav se hra zeptá. Dlouhý kód zůstává jako záloha.
 - **1.16.0** – obnova života a many v boji jen 25 %, mimo boj 150 % (ukazatel V boji / Odpočinek); v podzemí padají lahvičky many.
 - **1.15.0** – Kniha dovedností (P): přiřazení tažením nebo dvěma kliky/klepnutími; lišta má 8 pozic a při zaplnění přibývají další řádky (7–9, Shift + 1–9); na mobilu druhý kruh koleček dovedností.
 - **1.14.0** – pomalejší obnova many, soustředění a ducha (mana omezuje víc než přebíjení), pomalejší levelování na začátku a ve středu hry, portál po bossovi se ptá „Do města / Zůstat“.
