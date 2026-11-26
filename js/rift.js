@@ -96,19 +96,30 @@ function populateRift() {
       affixes = [pick(keys)];
       if (L >= 6 && Math.random() < 0.5) { const b = pick(keys.filter(k => k !== affixes[0])); if (b) affixes.push(b); }
     }
-    const n = elite ? 3 : (def.ai === 'swarm' ? 5 + rnd(4) : 3 + rnd(3) + (L >= 8 ? 1 : 0));
+    // „jatka“: běžné skupiny jsou RIFT.crowd× větší (hejna o něco méně), elity mají s sebou doprovod
+    const base = def.ai === 'swarm' ? 5 + rnd(4) : 3 + rnd(3) + (L >= 8 ? 1 : 0);
+    const n = elite ? 3 : Math.round(base * RIFT.crowd * (def.ai === 'swarm' ? 0.7 : 1));
+    const [f0, f1] = RIFT.eliteFollowers, follow = elite ? f0 + rnd(f1 - f0 + 1) : 0;
+    const total = n + follow, spread = Math.min(3.2, 1.4 + Math.sqrt(total) * 0.5);
+    // část skupiny může být jiný druh z tématu (ne u elit)
+    const others = T.monsters.filter(t => t !== type);
+    const mixType = !elite && others.length && Math.random() < RIFT.mixChance ? pick(others) : null;
+    const mixN = mixType ? Math.round(n * 0.3) : 0;
     packId++;
-    for (let i = 0; i < n; i++) {
-      const x = (cx + rand(-1.8, 1.8)) * TILE + 8, y = (cy + rand(-1.8, 1.8)) * TILE + 8;
-      const p = nearestFree(W, x, y, def.r);
-      const m = spawnMonster(type, p.x, p.y, { elite: affixes, pack: packId });
+    const spot = r => { const p = nearestFree(W, (cx + rand(-spread, spread)) * TILE + 8, (cy + rand(-spread, spread)) * TILE + 8, r); return p; };
+    for (let i = 0; i < total; i++) {
+      const isElite = elite && i < n;
+      const t = !elite && i >= n - mixN ? mixType : type;
+      const p = spot(MONSTERS[t].r);
+      const m = spawnMonster(t, p.x, p.y, isElite ? { elite: affixes, pack: packId } : { crowd: true, pack: packId });
       pts += m.pts;
     }
     // víc hráčů = větší skupiny (+10 % nepřátel za každého dalšího hráče, zbytek se dorovná náhodou)
-    const extra = n * (G.partyMul - 1), add = Math.floor(extra + Math.random());
+    const extra = total * (G.partyMul - 1), add = Math.floor(extra + Math.random());
     for (let i = 0; i < add; i++) {
-      const p = nearestFree(W, (cx + rand(-1.8, 1.8)) * TILE + 8, (cy + rand(-1.8, 1.8)) * TILE + 8, def.r);
-      spawnMonster(type, p.x, p.y, { elite: affixes, pack: packId });
+      const isElite = elite && i < Math.round(add * n / total);
+      const p = spot(def.r);
+      spawnMonster(type, p.x, p.y, isElite ? { elite: affixes, pack: packId } : { crowd: true, pack: packId });
     }
   }
 }

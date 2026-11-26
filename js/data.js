@@ -1,6 +1,6 @@
 // Herní data a balanc. Změna čísla = jiná obtížnost.
 
-const GAME_VERSION = '1.9.0';
+const GAME_VERSION = '1.10.0';
 const TILE = 16;                 // velikost dlaždice v px
 const VIEW_W = 460, VIEW_H = 260; // logické rozlišení světa (zvětšuje se pixelově)
 
@@ -133,6 +133,13 @@ const BOSS_EXPOSED_MUL = 1.5;       // vyčerpaný boss dostává +50 % poškoze
 const RIFT = {
   hp: 1.24, atk: 1.15, xp: 1.13, gold: 1.12,   // násobky za úroveň
   density: 0.03,                                // +3 % nepřátel za úroveň
+  // „Jatka“ (od 1.10.0): skupiny běžných nepřátel jsou 3× větší. Každý z nich dává jen třetinu XP, zlata, postupu
+  // a šance na předmět, takže za celé podzemí vychází odměny stejně jako dřív (sedí i ceny u obchodníka, riftRunGold).
+  crowd: 3,
+  crowdHp: 0.4, crowdAtk: 0.5,                  // běžní nepřátelé v davu jsou křehčí a slabší (elity a bossové beze změny)
+  crowdGlobe: 0.5,                              // šance na kouli zdraví z běžného nepřítele ×0,5 (za podzemí 1,5× víc koulí)
+  eliteFollowers: [4, 6],                       // elitní skupina má s sebou 4–6 běžných nepřátel stejného druhu
+  mixChance: 0.35,                              // šance, že ve skupině je přimíchaný i druhý druh nepřítele
   mfMax: 2.0, mfHalf: 40,                       // lepší kořist z riftu: roste se zpomalením, v riftu 41 polovina z max. +200 %
   dropPerLevel: 0.01,                           // +1 % šance na předmět za úroveň
   progressGoal: 100,
@@ -150,6 +157,7 @@ const GOLD_GROWTH = 1.06;   // za úroveň předmětu (ilvl)
 const GOLD_BASE = 2;
 // Odhad zlata za jeden dokončený běh podzemí bez bonusů z výbavy: zlato z nepřátel a strážce + prodej kořisti.
 // Počítá se, že hráč zabije jen tolik nepřátel, kolik je potřeba na 100 % postupu (rozmístí se jich 145 %), a strážce.
+// Od 1.10.0 je nepřátel 3× víc, ale každý běžný dává ⅓ zlata (RIFT.crowd) – součet za podzemí zůstal stejný.
 // Změřeno z herních funkcí (populateRift, rollRarity): podzemí 1 ≈ 310, 10 ≈ 1 200, 20 ≈ 4 700, 30 ≈ 17 000, 50 ≈ 240 000.
 function riftRunGold(L) { return GOLD_BASE * Math.pow(GOLD_GROWTH, riftIlvl(L)) * (130 + 4.1 * (L - 1)); }
 // Ceny zaokrouhlené na 3 platné číslice (42, 154, 1 550, 24 000 …)

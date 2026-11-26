@@ -343,6 +343,13 @@ function spawnMonster(typeId, x, y, o = {}) {
     dots: {}, slowT: 0, slowPct: 0, stunT: 0, stunImm: 0, cd: rand(0.5, 1.5), spec: rand(1, 3), wind: 0,
     aggro: false, face: 1, hitT: 0, bob: Math.random() * 6, pack: o.pack || null, affT: rand(1, 3)
   };
+  // dav („jatka“): běžný nepřítel z velké skupiny – slabší a s menšími odměnami (m.rw = podíl odměn)
+  m.rw = 1;
+  if (o.crowd && !o.elite) {
+    m.rw = 1 / RIFT.crowd;
+    m.maxHp = Math.max(1, Math.round(m.maxHp * RIFT.crowdHp)); m.atk *= RIFT.crowdAtk;
+    m.xp *= m.rw; m.pts *= m.rw; m.gold *= m.rw;
+  }
   m.hp = m.maxHp;
   if (o.elite) {
     m.elite = o.elite; m.tint = ELITE_AFFIXES[o.elite[0]].color;
@@ -385,14 +392,14 @@ function killMonster(m) {
   eachHero(() => {
     const st = G.st;
     if (gold) dropGold(m.x, m.y, m.gold * st.goldMul * rand(0.7, 1.3) * (m.boss ? 15 : 1));
-    const dropC = (m.elite ? RIFT.eliteDrop : RIFT.dropChance) * st.dropMul * (1 + RIFT.dropPerLevel * L);
+    const dropC = (m.elite ? RIFT.eliteDrop : RIFT.dropChance * (m.rw || 1)) * st.dropMul * (1 + RIFT.dropPerLevel * L);
     if (m.boss) { const n = 3 + rnd(3); for (let i = 0; i < n; i++) dropItem(m.x + rand(-20, 20), m.y + rand(-20, 20), true); }
     else if (Math.random() < dropC) dropItem(m.x, m.y, false);
   });
-  if (Math.random() < (m.elite ? 0.6 : RIFT.globeChance)) G.loot.push({ kind: 'globe', x: m.x + rand(-6, 6), y: m.y + rand(-6, 6), t: 0 });
+  if (Math.random() < (m.elite ? 0.6 : RIFT.globeChance * ((m.rw || 1) < 1 ? RIFT.crowdGlobe : 1))) G.loot.push({ kind: 'globe', x: m.x + rand(-6, 6), y: m.y + rand(-6, 6), t: 0 });
   if (m.def && m.def.split && m.scale >= 1) for (let i = 0; i < 2; i++) {
-    const s = spawnMonster(m.type, m.x + rand(-6, 6), m.y + rand(-6, 6), { scale: 0.65, hpMul: 0.35, minion: true });
-    s.aggro = true; s.pts = 0.2; s.xp = 0.3;
+    const s = spawnMonster(m.type, m.x + rand(-6, 6), m.y + rand(-6, 6), { scale: 0.65, hpMul: 0.35, minion: true, crowd: (m.rw || 1) < 1 });
+    s.aggro = true; s.pts = 0.2 * s.rw; s.xp = 0.3 * s.rw;
   }
   if (m.elite && m.elite.includes('molten')) hazard({ x: m.x, y: m.y, r: 30, delay: 1.1, dmg: m.atk * 1.6, elem: 'fire', color: '#ff6a2a' });
   if (m.ai === 'exploder' && !m.exploded) explodeBloater(m);

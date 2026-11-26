@@ -23,8 +23,25 @@ Ve hře se rifty jmenují **Podzemí** (od 1.7.2). V kódu a v dokumentaci zůst
 
 ### Elity (`ELITE_AFFIXES`)
 - Skupina s 1–2 afixy: Ohnivý, Mrazivý, Jedovatý, Obrněný, Rychlý, Upíří.
-- Mají víc života (×2,6) a útoku (×1,25) a dávají víc XP, postupu a zlata (`ELITE_MULT`).
+- Mají víc života (×2,6) a útoku (×1,25) a dávají víc XP, postupu a zlata (`ELITE_MULT`). Od 1.10.0 je doprovází 4–6 běžných nepřátel.
 - Šance na elitu roste s úrovní (max. 50 %).
+
+## Jatka – velké skupiny (od v1.10.0)
+Cíl: hodně nepřátel jako v Diablu 3, ale bez záplavy zlata. Nastavení v `RIFT` (`js/data.js`), rozmístění v `populateRift` (`js/rift.js`), slabší dav v `spawnMonster` (`js/entities.js`).
+
+| Co | Hodnota |
+|---|---|
+| Velikost běžné skupiny | 3× víc (`crowd`): 9–18 nepřátel, hejna netopýrů ×2,1 (11–17) |
+| Smíšená skupina | 35 % šance (`mixChance`), že 30 % skupiny je jiný druh z tématu |
+| Elitní skupina | 3 elity + 4–6 běžných nepřátel stejného druhu (`eliteFollowers`) |
+| Běžný nepřítel v davu | 40 % života (`crowdHp`), 50 % útoku (`crowdAtk`) |
+| Odměny za běžného nepřítele | ⅓ zlata, XP, postupu a šance na předmět (`m.rw`); dělí se i slizy po rozpůlení |
+| Koule zdraví | šance z běžného nepřítele ×0,5 (`crowdGlobe`) → za podzemí 1,5× víc koulí |
+| Elity, strážci, přivolaní pomocníci | beze změny |
+
+Počet skupin a elit na mapě zůstal stejný (rozmísťují se podle postupu), takže je v podzemí ~280–370 nepřátel místo ~100–145. Součet zlata, XP a postupu všech nepřátel je stejný jako dřív (změřeno: podzemí 1 ≈ 330 zlata, 10 ≈ 1 100, 20 ≈ 4 250), takže dál platí `riftRunGold` a ceny u obchodníka.
+
+Bot testy (v1.10.0, rifty 1–6, 4 třídy): vyčištění do strážce trvá asi o 20–40 % déle než dřív, smrti, úrovně, zlato i počet předmětů za podzemí vychází stejně. Výkon: 470 nepřátel v podzemí 40, z toho 84 útočících – výpočet snímku 0,6 ms.
 
 ## Strážci (bossové) – od v1.6.0
 Data jsou v `BOSSES` (`js/data.js`), logika, útoky a animace v `js/bosses.js`.
@@ -93,7 +110,7 @@ Náhodně v riftu, dotykem dají dočasný bonus:
 - `js/entities.js` – AI nepřátel, elitní afixy, nebezpečné zóny, kořist.
 
 ## Postup a pojistka (v1.6.1)
-- `populateRift` rozmisťuje skupiny s rozestupem 7 dlaždic; když se na malou mapu nevejde dost nepřátel (cíl je 145 % postupu), rozestup se postupně zmenší až na 3.
+- `populateRift` rozmisťuje skupiny (od 1.10.0 velké, viz Jatka) s rozestupem 7 dlaždic; když se na malou mapu nevejde dost nepřátel (cíl je 145 % postupu), rozestup se postupně zmenší až na 3.
 - `checkRiftStuck` (jednou za sekundu): když v riftu nezbývá nikdo, kdo dává postup, a boss ještě nebyl, postup se doplní na 100 % a boss se objeví.
 
 ## Otevřené nápady
