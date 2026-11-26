@@ -231,6 +231,7 @@ function update(dt) {
   const me = G.me || G.hero;
   // každý hrdina ve svém kontextu (místní hráč se ovládá vstupem, ostatní přes h.control)
   for (const h of G.heroes.slice()) withHero(h, () => updateHero(h, dt));
+  if (G.scene === 'town' && me) withHero(me, npcProximity);   // okna objektů: přiblížení otevře, odchod zavře
   if (G.scene === 'rift') {
     G.rift.time += dt;
     G.flowT -= dt;
@@ -842,6 +843,24 @@ function interactNpc(n) {
   else if (n.id === 'smith') showSmith();
   else if (n.id === 'stash') showStash();
   else if (n.id === 'obelisk') showRiftSelect();
+  UI.npcWin = n;   // okno patří k tomuto objektu → odchodem se zavře
+}
+
+// ---------- Okna objektů ve městě: otevřou se přiblížením, zavřou odchodem ----------
+const NPC_OPEN_R = 28, NPC_CLOSE_R = 56;   // px (dlaždice = 16 px): otevře se blíž než ~2 dlaždice, zavře se dál než 3,5 dlaždice
+const NPC_KIND = { vendor: 'vendor', smith: 'smith', stash: 'stash', obelisk: 'obelisk' };
+// Je otevřené okno objektu (ne jiné okno přes něj, např. postava nebo potvrzení)?
+function npcWinShown() { return G.scene === 'town' && !!UI.npcWin && modalOpen() && UI.modalKind === NPC_KIND[UI.npcWin.id]; }
+function npcProximity() {
+  const h = G.hero;
+  if (G.scene !== 'town' || !h || h.dead) return;
+  if (npcWinShown() && dist(h, UI.npcWin) > NPC_CLOSE_R) closeMenu();
+  G.world.npcs.forEach(n => {
+    const near = dist(h, n) < NPC_OPEN_R;
+    // otevře se jen při vstupu do blízkosti; po ručním zavření až po odchodu a novém příchodu
+    if (near && !n.near && !modalOpen() && (!h.interact || h.interact === n)) { h.interact = null; h.path = null; interactNpc(n); }
+    n.near = near;
+  });
 }
 
 function persist() { if (!G.headless && G.save) writeSave(G.save); }
@@ -853,7 +872,8 @@ function frame(now) {
   const dt = Math.min(0.05, (now - (lastT || now)) / 1000);
   lastT = now;
   if ((G.scene === 'rift' || G.scene === 'town') && G.hero) {
-    if (!modalOpen() || netLive()) update(dt);   // ve hře více hráčů se nezastavuje ani s otevřeným oknem
+    // ve hře více hráčů se nezastavuje ani s otevřeným oknem; ve městě ani s oknem objektu (odchodem se zavře)
+    if (!modalOpen() || netLive() || npcWinShown()) update(dt);
     netTick(dt);
     render();
     G.uiT -= dt;

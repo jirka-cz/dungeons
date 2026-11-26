@@ -27,7 +27,7 @@ function showModal(html, wide, kind) {
   $('modal').hidden = false;
   drawIcons();
 }
-function hideModal() { $('modal').hidden = true; UI.modalKind = null; $('itip').hidden = true; if (G.char && G.scene !== 'menu') buildHud(); }
+function hideModal() { $('modal').hidden = true; UI.modalKind = null; UI.npcWin = null; $('itip').hidden = true; if (G.char && G.scene !== 'menu') buildHud(); }
 function modalOpen() { return !$('modal').hidden; }
 function closeMenu() { if (UI.modalKind === 'talents' && talentsDirty()) { closeTalentsAsk(); return; } if (UI.modalKind === 'talents') UI.tDraft = null; hideModal(); UI.sel = null; UI.pickSkill = null; }
 
@@ -405,7 +405,7 @@ function showRiftSelect() {
   // družina je v podzemí hostitele → jen návrat k ní
   if (Net.role === 'guest' && Net.hostScene === 'rift') {
     showModal(`<h2>Obelisk podzemí</h2><p>Družina je v <b>Podzemí ${Net.hostLevel}</b>.</p>
-      <div class="actions"><button class="primary" onclick="hideModal();netSend({ t: 'rejoin' })">Připojit se k družině</button><button onclick="closeMenu()">Zavřít</button></div>`);
+      <div class="actions"><button class="primary" onclick="hideModal();netSend({ t: 'rejoin' })">Připojit se k družině</button><button onclick="closeMenu()">Zavřít</button></div>`, false, 'obelisk');
     return;
   }
   UI.riftSel = clamp(UI.riftSel || done || 1, 1, max);
@@ -428,7 +428,7 @@ function showRiftSelect() {
     ${netLive() ? '<p class="net-note">Hraješ v družině: vybranou úroveň musí potvrdit ostatní hráči.</p>' : ''}
     <div class="rift-list">${rows.join('')}</div>
     ${pick}
-    <div class="actions"><button onclick="closeMenu()">Zavřít</button></div>`, true);
+    <div class="actions"><button onclick="closeMenu()">Zavřít</button></div>`, true, 'obelisk');
 }
 // Vstup do podzemí: sólo hned, v družině návrh, který potvrdí ostatní
 function riftGo(L) { if (netLive()) netPropose(L); else startRift(L); }
@@ -729,12 +729,13 @@ function showLegend() {
     <p class="muted small">Ikony: <a href="https://game-icons.net" target="_blank" style="color:var(--soul)">game-icons.net</a> (Lorc, Delapouite a další), CC BY 3.0.</p>
     <h3>Počítač</h3>
     ${row('WASD / šipky', 'Pohyb.')}
-    ${row('Levé tlačítko', 'Držení = základní útok směrem ke kurzoru. Klik na postavu ve městě = promluv s ní.')}
+    ${row('Levé tlačítko', 'Držení = základní útok směrem ke kurzoru. Klik na postavu ve městě = dojdi k ní a promluv s ní.')}
     ${row('Pravý klik na 1. slot', 'Zapne/vypne automatický základní útok (útočí ke kurzoru, když je nepřítel v dosahu).')}
     ${row('Pravé tlačítko', 'Dovednost ve slotu RMB na místo kurzoru.')}
     ${row('1 – 4', 'Dovednosti z lišty.')}
     ${row('Q', 'Lektvar léčení.')}${row('I / C', 'Postava a batoh.')}${row('K', 'Talenty a dovednosti.')}
     ${row('M / Tab', 'Velká mapa.')}${row('T', 'Teleport do města (5 s, pohyb ho přeruší).')}${row('Esc', 'Menu s teleportem do města.')}
+    ${row('Město', 'Přijdi k obchodníkovi, kováři, truhle nebo obelisku a okno se otevře samo. Když dál držíš pohyb a odejdeš, zase se zavře.')}
     <h3>Mobil</h3>
     ${row('Joystick vlevo', 'Pohyb.')}${row('Automaticky', 'Základní útok sám míří na nejbližšího nepřítele v dosahu.')}${row('Velké tlačítko', 'Drž = dojdi k nejbližšímu nepříteli a útoč.')}${row('Kolečka', 'Dovednosti, lektvar a portál.')}
     <h3>Podzemí</h3>

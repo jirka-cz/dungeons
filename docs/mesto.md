@@ -1,6 +1,6 @@
 # Město
 
-## Jak to funguje teď (v1.9.0)
+## Jak to funguje teď (v1.11.0)
 Mapa 40 × 28 dlaždic, obklopená lesem, s cestami a pochodněmi (`genTown()` v `js/world.js`).
 
 | Místo | Co dělá | Okno |
@@ -10,6 +10,14 @@ Mapa 40 × 28 dlaždic, obklopená lesem, s cestami a pochodněmi (`genTown()` v
 | Truhla | sdílené úložiště všech postav (60 míst) | `showStash` |
 | Obelisk riftů | volba úrovně riftu (jakákoli už dosažená) | `showRiftSelect` |
 | Studna, dva domy bez funkce | dekorace, místo pro budoucí obsah | – |
+
+### Otevírání oken objektů (v1.11.0)
+- **Přiblížení otevře okno samo** (jako klik): blíž než 28 px (~2 dlaždice) od obchodníka, kováře, truhly nebo obelisku (`npcProximity`, `NPC_OPEN_R` v `js/engine.js`). Otevře se jen při vstupu do blízkosti a jen když není otevřené jiné okno.
+- **Odchod okno zavře:** dál než 56 px (~3,5 dlaždice, `NPC_CLOSE_R`). Rozdíl obou vzdáleností brání blikání okna na hranici.
+- Ve městě se hra s otevřeným oknem objektu nezastavuje (`npcWinShown` v hlavní smyčce), takže držený pohyb (klávesy i joystick) pokračuje. Jiná okna (postava, talenty, potvrzení) hru dál zastaví a odchodem se nezavřou.
+- Po ručním zavření (✕, Esc) se okno znovu otevře až po odchodu a novém příchodu. Při příchodu do města (spawn) se nic neotevře – spawn je od obelisku 44 px.
+- Klik na postavu z dálky funguje jako dřív (dojde a otevře); cestou se okna jiných objektů neotvírají.
+- Okno obelisku má druh `obelisk` (`showModal(..., 'obelisk')`), aby se poznalo, ke kterému objektu patří (`UI.npcWin`).
 
 - Do města se jde portálem po zabití strážce, nebo teleportem: Esc/T → „Teleport do města“, sesílá se 5 s a přeruší ho pohyb nebo útok.
 - Ve městě jde resetovat potvrzené talenty.
@@ -51,10 +59,10 @@ Mapa 40 × 28 dlaždic, obklopená lesem, s cestami a pochodněmi (`genTown()` v
 - `js/rift.js` – `enterTown`;
 - `js/inventory.js` – obchod, oprava, truhla;
 - `js/ui.js` – okna;
-- `js/engine.js` – interakce s NPC a recall.
+- `js/engine.js` – interakce s NPC (klik, přiblížení a odchod: `interactNpc`, `npcProximity`) a recall.
 
 ## Otevřené nápady
 - Dva prázdné domy a studna se dají využít (např. další obchodník, crafting) – jen pokud to Jirka zadá.
 
 ## Testy
-`python3 tests/vendor.py` (obnovení a vylepšení obchodníka, uložení zboží, snímky počítač/mobil), `python3 tests/panels.py` (okna obchodu, kováře, truhly), `tests/flows.py`, `tests/mobauto.py` (město na mobilu).
+`python3 tests/npcwin.py` (okna objektů: přiblížení otevře, odchod zavře, Esc, klik, mobilní joystick), `python3 tests/vendor.py` (obnovení a vylepšení obchodníka, uložení zboží, snímky počítač/mobil), `python3 tests/panels.py` (okna obchodu, kováře, truhly), `tests/flows.py`, `tests/mobauto.py` (město na mobilu).

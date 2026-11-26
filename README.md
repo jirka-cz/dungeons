@@ -52,6 +52,7 @@ Město (obchodník, kovář, truhla, obelisk) → rift zvolené úrovně → pln
 - `PROJEKT.md` a `docs/` – dokumentace pro další vývoj
 
 ## Verze
+- **1.11.0** – město: okno obchodníka, kováře, truhly a obelisku se otevře samo, když k nim přijdeš (blíž než ~2 dlaždice). Když dál držíš pohyb a odejdeš (dál než 3,5 dlaždice), okno se samo zavře; hra se s oknem objektu ve městě nezastavuje. Po ručním zavření se okno znovu otevře až po odchodu a novém příchodu. Klik na postavu funguje dál.
 - **1.10.0** – „jatka“ v podzemí: skupiny běžných nepřátel jsou 3× větší (v podzemí je ~280–370 nepřátel místo ~100–145), někdy se do skupiny přimíchá druhý druh a elity mají s sebou 4–6 běžných nepřátel. Běžní nepřátelé v davu mají 40 % života a 50 % útoku a každý dává jen třetinu zlata, XP, postupu a šance na předmět – za celé podzemí tak vychází zlato, zkušenosti i kořist stejně jako dřív. Elity a strážci beze změny.
 - **1.9.0** – obchodník: obnovení zboží za zlato (10 % zlata za jeden běh podzemí, každé další o 5 % dráž, po dokončeném podzemí znovu od 10 %) a vylepšení obchodníka (úroveň n stojí n běhů, max. 20; každá úroveň +0,5 % epické, +0,3 % legendární, +0,1 % diamantové zboží). Zboží se ukládá a nové je zdarma jen po dokončeném podzemí (ne po teleportu do města nebo znovunačtení).
 - **1.8.1** – hra více hráčů: když se místnost nepodaří založit nebo se k ní nepřipojit (síť, špatný kód), hra to po 15–20 s oznámí místo nekonečného čekání.

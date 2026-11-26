@@ -22,6 +22,7 @@
 - **Okna** (`showModal` v `js/ui.js`):
   - Menu, Tvorba postavy, Herní menu, Postava, Talenty, Obchod, Kovář, Truhla, Volba podzemí (obelisk), Nastavení, Legenda, Hrát s přáteli (místnost), Návrh podzemí (hlasování);
   - každé má nahoře křížek ✕.
+  - Okna objektů ve městě (Obchod, Kovář, Truhla, obelisk) se otevřou přiblížením a zavřou odchodem (držený pohyb pokračuje i s otevřeným oknem) – podrobně `docs/mesto.md`.
 - **Nastavení:**
   - zvuk;
   - automatický útok;
