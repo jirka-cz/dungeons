@@ -5,7 +5,8 @@
 |---|---|
 | Pohyb | WASD nebo šipky |
 | Základní útok | držet levé tlačítko (míří ke kurzoru). Pravý klik na 1. slot lišty zapne automatický útok ke kurzoru (také v Nastavení). |
-| Dovednosti | pravé tlačítko a klávesy 1–4 (čtou se přes `e.code`, takže fungují i na české klávesnici) |
+| Dovednosti | pravé tlačítko a klávesy 1–9, další řádky lišty Shift + 1–9 (čtou se přes `e.code`, takže fungují i na české klávesnici: Shift + „+“ = ⇧1) |
+| Kniha dovedností | P (nebo tlačítko s knihou v HUD) |
 | Lektvar | Q |
 | Postava / Talenty / Mapa | I / K / M |
 | Teleport do města | Esc nebo T → menu → teleport (5 s) |
@@ -13,12 +14,19 @@
 
 ## Ovládání na mobilu
 - Joystick vlevo.
-- Vpravo velké tlačítko útoku a kolečka dovedností. Velikost se přizpůsobuje výšce obrazovky.
+- Vpravo velké tlačítko útoku a dva kruhy koleček dovedností: vnitřní RMB a 1–3, vnější 4–8 (lišta pozice 1–9). Nad nimi lektvar a portál. Velikost se přizpůsobuje výšce obrazovky.
 - Útok vždy automaticky míří na nejbližšího nepřítele. Držení tlačítka útoku hrdinu k nepříteli přiblíží.
-- Naučená dovednost se objeví na liště hned.
+- Naučená dovednost se objeví na liště hned (na první volné místo).
+
+## Lišta a Kniha dovedností (v1.15)
+- **Lišta:** řádek má 8 pozic – LMB, RMB, 1–6 – a lektvar. Když jsou všechny pozice plné a zbývá dovednost, přibude **pod ní další řádek** se stejným počtem pozic (klávesy 7, 8, 9, pak ⇧1 … ⇧9), nejvýš 3 řádky (`BAR_COLS`, `BAR_MAX_ROWS`, `barRows`, `normBar`, `barKey` v `js/ui.js`).
+- **Kniha dovedností** (`showSpellbook`): všechny dovednosti postavy (základní + odemčené v talentech, včetně buffů a léčení) s cenou, přebíjením a popisem; u dovednosti na liště je štítek s klávesou.
+  - Počítač: přetáhni dovednost na pozici, nebo klikni na dovednost a pak na pozici. Klik na obsazenou pozici dovednost „vezme“ a další klik ji přesune (obsah pozic se prohodí). Tlačítko **Odebrat z lišty**.
+  - Mobil: klepni na dovednost a pak na pozici (tažení je vypnuté, aby šlo okno posouvat).
+- Prázdná pozice na liště otevře Knihu dovedností. V okně talentů zůstává rychlé přiřazení a odkaz na knihu.
 
 ## HUD a okna
-- **HUD:** koule života a zdroje, XP lišta, lišta dovedností (SVG ikony), buffy, ukazatel postupu riftu, tlačítka Postava / Talenty / Celá obrazovka / Menu. Na tlačítku Talenty svítí tečka, když jsou volné body.
+- **HUD:** koule života a zdroje, XP lišta, lišta dovedností (SVG ikony), buffy, ukazatel postupu riftu, tlačítka Postava / Talenty / Kniha dovedností / Celá obrazovka / Menu. Na tlačítku Talenty svítí tečka, když jsou volné body.
 - **Okna** (`showModal` v `js/ui.js`):
   - Menu, Tvorba postavy, Herní menu, Postava, Talenty, Obchod, Kovář, Truhla, Volba podzemí (obelisk), Nastavení, Legenda, Hrát s přáteli (místnost), Návrh podzemí (hlasování);
   - každé má nahoře křížek ✕.

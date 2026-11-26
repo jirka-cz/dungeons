@@ -17,6 +17,7 @@
   - verze < 5 (idle 0.x) začíná nově, zlato zůstane;
   - `talentVer 2` vrátí body po přestavbě stromů;
   - `sellFix103` jednou vypne automatický prodej;
+  - lišta se doplní na 8 pozic (v1.15, `migrateSave`);
   - `resCap14` (u postavy i u uložení) jednou ořízne odolnosti předmětů na 10 % na živel;
   - `talentVer 3` (1.13.0) vrátí body po rebalancu a přidání rasových stromů;
   - `classItems12` (u postavy) přesune nasazené legendárky a sety, které třída už nesmí nosit, do batohu (nebo truhly).
@@ -39,6 +40,7 @@ Předpoklady: Node.js a Python s Playwrightem (`pip install playwright` a `pytho
 | `tests/controls.py`, `czkeys.py` | ovládání, česká klávesnice, recall |
 | `tests/mobauto.py`, `mob2.py` | dotykové ovládání a automatický útok |
 | `tests/flows.py`, `panels.py` | průchod menu a okny |
+| `tests/spellbook.py` | Kniha dovedností (klik, tažení, přesun, odebrání), řádky lišty, klávesy 1–9 a Shift, migrace lišty, mobil (dvě klepnutí, dva kruhy) |
 | `tests/portal.py` | portál po bossovi se ptá (Do města / Zůstat, Enter), PC i mobil |
 | `tests/visuals.py` | ikony předmětů, očarování a sety, mýtický tier (padání, efekty 3/6 dílů, snímky inventáře a podzemí), trpasličí úchop |
 | `tests/racecls.py`, `autosell.py`, `shrine.py` | omezení rasa/třída, automatický prodej, svatyně |

@@ -16,7 +16,7 @@ function newSave() {
 
 function newChar(name, race, cls, save) {
   const ch = { id: Date.now() + Math.floor(Math.random() * 1000), name, race, cls, level: 1, xp: 0, talents: {}, equip: {}, inv: [], maxRift: 1,
-               bar: [CLASSES[cls].base[0], CLASSES[cls].base[1], null, null, null, null], talentVer: 3, classItems12: true, resCap14: true, created: Date.now(),
+               bar: [CLASSES[cls].base[0], CLASSES[cls].base[1], null, null, null, null, null, null], talentVer: 3, classItems12: true, resCap14: true, created: Date.now(),
                vendor: { lvl: 0, rolls: 0, stock: null } };
   const w = starterWeapon(cls, save.nextUid++);
   ch.equip[w.slot === 'weapon' ? 'main' : 'off'] = w;
@@ -37,7 +37,8 @@ function migrateSave(s) {
   // v1.0.3: automatický prodej je nově ve výchozím stavu vypnutý (jednorázově vypnout i ve starších uloženích)
   if (!(s.settings || {}).sellFix103) { for (const r in out.settings.autoSell) out.settings.autoSell[r] = false; out.settings.sellFix103 = true; }
   out.chars.forEach(ch => {
-    ch.bar = ch.bar || [null, null, null, null, null, null]; ch.talents = ch.talents || {}; ch.inv = ch.inv || []; ch.equip = ch.equip || {};
+    ch.bar = ch.bar || [];
+    while (ch.bar.length < 8) ch.bar.push(null);   // v1.15: lišta má 8 pozic (LMB, RMB, 1–6) ch.talents = ch.talents || {}; ch.inv = ch.inv || []; ch.equip = ch.equip || {};
     // v1.9: obchodník u postavy (úroveň, placená obnovení, uložené zboží)
     ch.vendor = ch.vendor || { lvl: 0, rolls: 0, stock: null };
     // v1.4: odolnosti na předmětech max 10 % na živel (rebalanc), jednou pro všechny předměty postavy

@@ -622,7 +622,8 @@ function confirmTalents() {
   const now = knownSkills(ch);
   ch.bar = ch.bar.map(id => id && !now.includes(id) ? null : id);
   const added = now.filter(id => !before.includes(id));
-  added.forEach(id => { if (!ch.bar.includes(id)) { const f = ch.bar.indexOf(null); if (f >= 0) ch.bar[f] = id; } });
+  added.forEach(id => { if (!ch.bar.includes(id)) { const f = barFirstFree(ch); if (f >= 0) ch.bar[f] = id; } });
+  normBar(ch);
   UI.tDraft = null;
   onGearChange(); buildHud(); sfx('levelup');
   toast(added.length ? `Talenty potvrzeny · na lištu: ${added.map(id => SKILLS[id].name).join(', ')}` : 'Talenty potvrzeny');
@@ -652,19 +653,74 @@ function skillChip(id, attrs = '') {
     <span class="sk-glyph">${skillIcon(id)}</span><span class="sk-name">${S.name}</span></div>`;
 }
 
-const BAR_KEYS = ['LMB', 'RMB', '1', '2', '3', '4'];
+// ---------- Lišta dovedností ----------
+// Řádek má 8 pozic: [LMB, RMB, 1–6], další řádky po 8 (7, 8, 9, ⇧1 … ⇧9). Nový řádek se ukáže, až se zaplní všechny předchozí a zbývá dovednost.
+const BAR_COLS = 8, BAR_MAX_ROWS = 3;
+function barKey(i) { if (i === 0) return 'LMB'; if (i === 1) return 'RMB'; const n = i - 1; return n <= 9 ? String(n) : n <= 18 ? '⇧' + (n - 9) : ''; }
+// index pozice pro číselnou klávesu (shift = druhá devítka)
+function barIndexForKey(d, shift) { return (shift ? d + 9 : d) + 1; }
+function barRows(ch) {
+  const bar = ch.bar; let last = -1;
+  bar.forEach((id, i) => { if (id) last = i; });
+  let rows = Math.max(1, Math.floor(last / BAR_COLS) + 1);
+  const full = r => { for (let i = 0; i < r * BAR_COLS; i++) if (!bar[i]) return false; return true; };
+  if (rows < BAR_MAX_ROWS && full(rows) && knownSkills(ch).some(id => !bar.includes(id))) rows++;   // nový řádek jen když se další dovednost nevejde
+  return rows;
+}
+// Délka lišty = počet zobrazených řádků × 8 (doplní prázdné, uřízne prázdné řádky navíc)
+function normBar(ch) {
+  const n = barRows(ch) * BAR_COLS;
+  while (ch.bar.length < n) ch.bar.push(null);
+  if (ch.bar.length > n) ch.bar.length = n;
+  return ch.bar;
+}
+function barFirstFree(ch) { normBar(ch); return ch.bar.indexOf(null); }
 function barSlotsHtml() {
-  return G.char.bar.map((id, i) => `<div class="bar-slot" data-bar="${i}" ${id ? `data-tip="${SKILLS[id].name}: ${SKILLS[id].desc}"` : ''}>
-    ${id ? `<span class="sk-glyph">${skillIcon(id)}</span>` : ''}<span class="key">${BAR_KEYS[i]}</span></div>`).join('');
+  const bar = normBar(G.char), rows = bar.length / BAR_COLS;
+  let h = '';
+  for (let r = 0; r < rows; r++) h += `<div class="bar-row">${bar.slice(r * BAR_COLS, (r + 1) * BAR_COLS).map((id, j) => { const i = r * BAR_COLS + j;
+    return `<div class="bar-slot ${id && UI.pickSkill === id ? 'sel' : ''}" data-bar="${i}" ${id ? `data-tip="${SKILLS[id].name}: ${SKILLS[id].desc}"` : ''}>
+    ${id ? `<span class="sk-glyph">${skillIcon(id)}</span>` : ''}<span class="key">${barKey(i)}</span></div>`; }).join('')}</div>`;
+  return h;
 }
 
+function refreshSkillWindows() { if (UI.modalKind === 'talents') showTalents(); else if (UI.modalKind === 'spellbook') showSpellbook(); }
 function assignSkill(id, slot) {
   const bar = G.char.bar, old = bar.indexOf(id);
-  if (old >= 0) bar[old] = bar[slot];
+  if (old >= 0) bar[old] = bar[slot] || null;
   bar[slot] = id;
   UI.pickSkill = null;
+  normBar(G.char);
   persist(); buildHud();
-  if (UI.modalKind === 'talents') showTalents();
+  refreshSkillWindows();
+}
+function removeFromBar(id) {
+  const bar = G.char.bar, i = bar.indexOf(id);
+  if (i >= 0) bar[i] = null;
+  UI.pickSkill = null; normBar(G.char); persist(); buildHud(); refreshSkillWindows();
+}
+
+// ---------- Kniha dovedností ----------
+function showSpellbook() {
+  const ch = G.char; if (!ch) return;
+  normBar(ch);
+  const known = knownSkills(ch), base = CLASSES[ch.cls].base, pick = UI.pickSkill, touch = isTouchUi();
+  const card = id => {
+    const S = SKILLS[id], at = ch.bar.indexOf(id), info = skillInfo(id);
+    return `<div class="sb-card ${pick === id ? 'sel' : ''}" data-skill="${id}" onclick="UI.pickSkill=UI.pickSkill==='${id}'?null:'${id}';showSpellbook()">
+      <span class="sk-glyph">${skillIcon(id)}</span>
+      <div class="sb-txt"><b>${S.name}</b>${at >= 0 ? `<span class="sb-on">${barKey(at)}</span>` : ''}
+        <div class="muted small">${info || 'zdarma'}</div><div class="small sb-desc">${S.desc}</div></div></div>`;
+  };
+  const groups = [['Základní', known.filter(id => base.includes(id))], ['Z talentů', known.filter(id => !base.includes(id))]].filter(g => g[1].length);
+  showModal(`<h2>Kniha dovedností</h2>
+    <p class="muted small">${touch ? 'Klepni na dovednost a pak na místo na liště.' : 'Přetáhni dovednost na lištu, nebo na ni klikni a pak klikni na pozici.'} Nové dovednosti odemkneš v talentech.</p>
+    ${groups.map(([t, ids]) => `<h4>${t}</h4><div class="sb-grid">${ids.map(card).join('')}</div>`).join('')}
+    <h4>Lišta</h4>
+    <div class="bar-edit sb-bar">${barSlotsHtml()}</div>
+    <p class="muted small">${touch ? 'Na mobilu: LMB = velké tlačítko útoku, RMB a 1–3 vnitřní kruh, 4–8 vnější kruh.' : 'Když se lišta zaplní, přibude další řádek (klávesy 7–9, pak Shift + 1–9).'}</p>
+    <div class="actions">${pick && ch.bar.includes(pick) ? `<button onclick="removeFromBar('${pick}')">Odebrat z lišty</button>` : ''}
+      <button onclick="UI.pickSkill=null;showTalents()">Talenty (K)</button><button onclick="closeMenu()">Zavřít</button></div>`, true, 'spellbook');
 }
 
 const TROW = 60;   // výška řádku stromu v px
@@ -730,7 +786,7 @@ function showTalents() {
     <div class="skills-box">
       <div><div class="muted small">Tvoje dovednosti – přetáhni na lištu (nebo klikni na dovednost a pak na slot):</div>
         <div class="skill-list">${known.map(id => skillChip(id, `onclick="UI.pickSkill='${id}';showTalents()"`)).join('')}</div></div>
-      <div><div class="muted small">Lišta (myš / 1–4):</div><div class="bar-edit">${barSlotsHtml()}</div></div>
+      <div><div class="muted small">Lišta (myš / 1–9, Shift + 1–9) · <a href="#" onclick="event.preventDefault();showSpellbook()">Kniha dovedností (P)</a>:</div><div class="bar-edit">${barSlotsHtml()}</div></div>
     </div>
     <div class="tdetail">${talentDetailHtml()}
       ${dirty ? `<div class="tconfirm"><span>Nepotvrzené změny${diff ? ` (${diff > 0 ? '+' : ''}${diff} ${Math.abs(diff) === 1 ? 'bod' : Math.abs(diff) < 5 ? 'body' : 'bodů'})` : ''}</span>
@@ -967,6 +1023,7 @@ function initDrag() {
     const cell = e.target.closest('#modal-box [data-src], #modal-box [data-skill]');
     if (!cell) return;
     down = { cell, src: cell.dataset.src || null, skill: cell.dataset.skill || null, x: e.clientX, y: e.clientY };
+    if (down.skill && e.pointerType === 'touch' && cell.classList.contains('sb-card')) { down = null; return; }   // v knize na mobilu: klepnutí, ne tažení (aby šlo okno posouvat)
     if (down.src && !itemBySrc(down.src)) down = null;
   });
   document.addEventListener('pointermove', e => {
@@ -993,7 +1050,7 @@ function initDrag() {
     if (drag) {
       drag.ghost.remove(); drag = null;
       const el = document.elementFromPoint(e.clientX, e.clientY);
-      if (d.skill) { const slot = el && el.closest('[data-bar]'); if (slot) assignSkill(d.skill, +slot.dataset.bar); else showTalents(); return; }
+      if (d.skill) { const slot = el && el.closest('[data-bar]'); if (slot) assignSkill(d.skill, +slot.dataset.bar); else refreshSkillWindows(); return; }
       const t = el && el.closest('#modal-box [data-drop]');
       dropItemTo(d.src, t ? t.dataset.drop : null);
       UI.sel = null; refreshPanel();
@@ -1008,7 +1065,10 @@ function initDrag() {
   // klik na slot lišty při vybrané dovednosti
   document.addEventListener('click', e => {
     const slot = e.target.closest('#modal-box [data-bar]');
-    if (slot && UI.pickSkill) assignSkill(UI.pickSkill, +slot.dataset.bar);
+    if (!slot) return;
+    const i = +slot.dataset.bar, id = G.char.bar[i];
+    if (UI.pickSkill) assignSkill(UI.pickSkill, i);
+    else if (id) { UI.pickSkill = id; refreshSkillWindows(); }   // klik na obsazenou pozici = vezmi dovednost a přesuň ji jinam
   });
 }
 

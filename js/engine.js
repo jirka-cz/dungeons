@@ -112,9 +112,10 @@ function initInput() {
     if (k.startsWith('arrow')) e.preventDefault();
     if (k === 'enter' && G.portalAsk && G.portalAsk.open) { portalPrompt(false); G.portalAsk.go(); return; }
     if (k === 'q') usePotion();
-    if (['1', '2', '3', '4'].includes(k) && !e.repeat) useBarSlot(+k + 1);
+    if (/^[1-9]$/.test(k) && !e.repeat) { useBarSlot(barIndexForKey(+k, e.shiftKey)); e.preventDefault(); }
     if (k === 'i' || k === 'c') showCharacter();
     if (k === 'k' || k === 'n') showTalents();
+    if (k === 'p') showSpellbook();
     if (k === 'f') toggleFullscreen();
     if (k === 'm' || k === 'tab') { G.mapBig = !G.mapBig; e.preventDefault(); }
     if (k === 't') townPortal();

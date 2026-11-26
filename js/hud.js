@@ -8,25 +8,31 @@ function buildHud() {
   const res = CLASSES[ch.cls].res;
   $('res-orb').style.setProperty('--res', res.color);
   $('res-name').textContent = res.name;
-  $('action-bar').innerHTML = ch.bar.map((id, i) => `
-    <div class="ab-slot${i === 0 && G.save.settings.autoAttack ? ' auto' : ''}" data-slot="${i}" ${id ? `data-tip="${SKILLS[id].name}: ${SKILLS[id].desc}${i === 0 ? ' (pravým klikem zapneš/vypneš automatický útok)' : ''}"` : 'data-tip="Prázdný slot – přiřaď dovednost v Talentech (K)"'}>
+  normBar(ch);
+  const abSlot = (id, i) => `
+    <div class="ab-slot${i === 0 && G.save.settings.autoAttack ? ' auto' : ''}" data-slot="${i}" ${id ? `data-tip="${SKILLS[id].name}: ${SKILLS[id].desc}${i === 0 ? ' (pravým klikem zapneš/vypneš automatický útok)' : ''}"` : 'data-tip="Prázdný slot – přiřaď dovednost v Knize dovedností (P)"'}>
       ${id ? `<span class="sk-glyph">${skillIcon(id)}</span>` : ''}
-      <div class="ab-cd"></div><span class="ab-cdt"></span><span class="key">${BAR_KEYS[i]}</span></div>`).join('') +
-    `<div class="ab-slot potion" data-slot="potion" data-tip="Lektvar léčení (Q): doplní ${Math.round(POTION_HEAL * 100)} % života."><span class="sk-glyph">${giSvg('round-potion', '#ff5050')}</span><div class="ab-cd"></div><span class="ab-cdt"></span><span class="key">Q</span></div>`;
+      <div class="ab-cd"></div><span class="ab-cdt"></span><span class="key">${barKey(i)}</span></div>`;
+  const potion = `<div class="ab-slot potion" data-slot="potion" data-tip="Lektvar léčení (Q): doplní ${Math.round(POTION_HEAL * 100)} % života."><span class="sk-glyph">${giSvg('round-potion', '#ff5050')}</span><div class="ab-cd"></div><span class="ab-cdt"></span><span class="key">Q</span></div>`;
+  let rowsHtml = '';
+  for (let r = 0; r < ch.bar.length / BAR_COLS; r++)
+    rowsHtml += `<div class="ab-row">${ch.bar.slice(r * BAR_COLS, (r + 1) * BAR_COLS).map((id, j) => abSlot(id, r * BAR_COLS + j)).join('')}${r === 0 ? potion : '<div class="ab-slot potion ab-spacer"></div>'}</div>`;
+  $('action-bar').innerHTML = rowsHtml;
   // dotyková tlačítka
   // rozložení kolem velkého tlačítka útoku (jako Diablo Immortal): [úhel, poloměr]
-  const pos = [[188, 96], [154, 96], [120, 96], [88, 100], [138, 160]];
+  // vnitřní kruh: RMB, 1–3; vnější kruh: 4–8 (lišta pozice 1–9)
+  const pos = [[182, 96], [151, 96], [120, 96], [89, 98], [178, 168], [157, 168], [136, 168], [115, 168], [94, 170]];
   const k = Math.max(0.68, Math.min(1, window.innerHeight / 460));   // nízký displej (mobil na šířku) = menší rozložení
   const place = ([ang, r], size) => { const a = ang * Math.PI / 180, R = r * k, S = size * k, c = 44 * k;
     return `right:${Math.round(c - Math.cos(a) * R - S / 2)}px;bottom:${Math.round(c + Math.sin(a) * R - S / 2)}px;width:${Math.round(S)}px;height:${Math.round(S)}px;font-size:${Math.round(S * 0.42)}px`; };
   $('tbtns').innerHTML = `<button class="tb attack" data-tb="0" style="width:${Math.round(88 * k)}px;height:${Math.round(88 * k)}px;font-size:${Math.round(38 * k)}px">${ch.bar[0] ? `<span class="sk-glyph">${skillIcon(ch.bar[0])}</span>` : '⚔'}</button>` +
-    [1, 2, 3, 4, 5].map((i, k) => {
+    [1, 2, 3, 4, 5, 6, 7, 8, 9].map((i, k) => {
       const id = ch.bar[i];
       return `<button class="tb skill" data-tb="${i}" style="${place(pos[k], 52)}">
         ${id ? `<span class="sk-glyph">${skillIcon(id)}</span>` : ''}<div class="ab-cd"></div><span class="ab-cdt"></span></button>`;
     }).join('') +
-    `<button class="tb small potion" data-tb="potion" style="${place([168, 172], 44)}">${giSvg('round-potion', '#ff5050')}<div class="ab-cd"></div></button>` +
-    `<button class="tb small portal" data-tb="portal" style="${place([100, 165], 40)}">⌂</button>`;
+    `<button class="tb small potion" data-tb="potion" style="${place([124, 236], 44)}">${giSvg('round-potion', '#ff5050')}<div class="ab-cd"></div></button>` +
+    `<button class="tb small portal" data-tb="portal" style="${place([100, 240], 40)}">⌂</button>`;
   $('touch').hidden = !isTouchUi();
   document.body.classList.toggle('touch-ui', isTouchUi());
   $('action-bar').classList.toggle('touch-hidden', isTouchUi());
@@ -230,6 +236,8 @@ function initTouch() {
 
   $('hb-char').onclick = showCharacter;
   $('hb-tal').onclick = showTalents;
+  $('hb-book').onclick = showSpellbook;
+  $('hb-book').innerHTML = `<svg class="hb-gi" viewBox="0 0 512 512" aria-hidden="true">${ITEM_GI.orb}</svg>`;
   $('hb-menu').onclick = showGameMenu;
   $('hb-fs').onclick = () => toggleFullscreen();
   $('action-bar').addEventListener('contextmenu', e => {
@@ -240,5 +248,5 @@ function initTouch() {
     s.classList.toggle('auto', G.save.settings.autoAttack);
     toast(G.save.settings.autoAttack ? 'Automatický útok zapnut' : 'Automatický útok vypnut – útoč držením levého tlačítka');
   });
-  $('action-bar').addEventListener('click', e => { const s = e.target.closest('.ab-slot'); if (s && s.dataset.slot === 'potion') usePotion(); else if (s && !G.char.bar[+s.dataset.slot]) showTalents(); });
+  $('action-bar').addEventListener('click', e => { const s = e.target.closest('.ab-slot'); if (s && s.dataset.slot === 'potion') usePotion(); else if (s && s.dataset.slot !== undefined && !s.classList.contains('ab-spacer') && !G.char.bar[+s.dataset.slot]) showSpellbook(); });
 }
