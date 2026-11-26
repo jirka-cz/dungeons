@@ -57,3 +57,9 @@
 - **Návrh podzemí:** u obelisku tlačítko „Navrhnout“; ostatním okno s úrovní, informací o síle a odpočtem 30 s (Přijmout / Odmítnout); navrhovatel vidí, kdo už souhlasí, a může návrh zrušit.
 - Nad spoluhráči jejich jméno, kroužek oživování nad padlým.
 - V družině se hra s otevřeným oknem nezastavuje.
+
+## Lišta efektů (od 1.13.1)
+- Pod ukazatelem podzemí (`#buffs`, `renderBuffs` a `heroEffects` v `js/hud.js`): dočasné buffy, rysy rasy/třídy, které právě působí (arkánní bariéra s aktuální hodnotou, krvavý vztek orka, kostlivci, stín), a postihy červeně (zmrazení, zpomalení, nižší úroveň než doporučená).
+- Najetím myší se ukáže popis, na mobilu klepnutím (popis zůstane 4 s). Prvky se nepřekreslují celé, jen text, aby na ně šlo klepnout.
+- Okno postavy: rasa a třída jako štítky v nadpisu (popis rysu po najetí/klepnutí) a sekce **Efekty** (trvalé rysy + to samé co lišta, s plným popisem).
+- Nový buff nebo efekt: přidat do `heroEffects` (jméno, ikona z game-icons, popis), u dovednosti se popis bere z `SKILLS[id].desc`.

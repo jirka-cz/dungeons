@@ -40,7 +40,7 @@ JS = r"""
   ok('černokněžník: DoT léčí', h.hp > hpW, `${Math.round(hpW)} → ${Math.round(h.hp)}`);
 
   // lovec: poškození roste se vzdáleností
-  h = setup('human', 'hunter'); const near = mon(30, 1e6), far = mon(200, 1e6);
+  h = setup('human', 'hunter'); const near = mon(30, 1e6), far = mon(200, 1e6); near.x = h.x + 30; near.y = h.y; far.x = h.x + 220; far.y = h.y;
   G.st.crit = 0; let dN = 0, dF = 0; for (let i = 0; i < 30; i++) { dN += heroHit(near, 1, 'phys', { noProc: true }); dF += heroHit(far, 1, 'phys', { noProc: true }); }
   ok('lovec: vzdálený cíl dostane víc', dF > dN * 1.08, `${dN} vs ${dF}`);
 

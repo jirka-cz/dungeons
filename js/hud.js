@@ -38,6 +38,62 @@ function buffIcon(b) {
   return ex ? `<span class="bf-i">${giSvg(ex, b.color)}</span>` : (b.glyph || '✦');
 }
 
+// Všechny efekty na hrdinovi pro HUD a okno postavy: dočasné buffy, rysy rasy a třídy, které právě působí, a postihy.
+// { key, name, icon (HTML), color, time (text), desc, bad }
+function statText(stats) { return Object.keys(stats || {}).filter(k => stats[k]).map(k => statLine(k, stats[k])).join(', '); }
+function heroEffects(h, st) {
+  h = h || G.hero; st = st || G.st;
+  if (!h || !st) return [];
+  const out = [], M = st.mods || {}, ch = h.char || G.char, R = RACES[ch.race], C = CLASSES[ch.cls];
+  const gi = (name, color) => `<span class="bf-i">${giSvg(name, color)}</span>`;
+  h.buffs.forEach(b => {
+    const S = SKILLS[b.id], extra = statText(b.stats);
+    const desc = b.id === 'enrage' ? 'Rozzuření: ' + extra : (S ? S.desc : extra) + (S && extra ? ' (' + extra + ')' : '');
+    out.push({ key: b.id, name: b.name || (S && S.name) || b.id, icon: buffIcon(b), color: b.color, time: b.t === Infinity ? '∞' : Math.ceil(b.t) + ' s',
+      desc: desc || 'Dočasný bonus.', bad: false });
+  });
+  if (st.barrier) {
+    const full = st.maxHp * st.barrier, cur = Math.round(h.barrier || 0);
+    out.push({ key: 'barrier', name: C.trait.name, icon: gi('magic-shield', '#9fc8ff'), color: '#9fc8ff', time: fmtBig(cur),
+      desc: `${C.trait.desc} Teď ${fmtBig(cur)} z ${fmtBig(Math.round(full))}. Na postavě je vidět jako modrá bublina.` });
+  }
+  if (M.orcRage && h.hp < st.maxHp * 0.5) out.push({ key: 'orcrage', name: R.trait, icon: gi('fire-punch', '#ff6040'), color: '#ff6040', time: '',
+    desc: `Pod 50 % života: +${M.orcRage2 ? 40 : 20} % útok a +${M.orcRage2 ? 20 : 10} % rychlost útoku.` });
+  if (h.stealth > 0 && !h.buffs.some(b => b.id === 'shadowmeld')) out.push({ key: 'stealth', name: 'Ve stínu', icon: gi('hood', '#8a7ac8'), color: '#8a7ac8', time: Math.ceil(h.stealth) + ' s',
+    desc: 'Běžní nepřátelé tě nevidí. První útok bude kritický a silnější.' });
+  const sk = typeof skeletonsOf === 'function' ? skeletonsOf(h).length : 0;
+  if (sk) out.push({ key: 'skel', name: 'Kostlivci', icon: gi('skeleton', '#d8d0b8'), color: '#d8d0b8', time: '×' + sk,
+    desc: `Bojují za tebe ${sk} kostlivci (nejvýš ${SKEL_MAX + (M.skelMax || 0)}).` + (M.boneShield ? ` Kostěný štít: -${Math.round(Math.min(0.3, M.boneShield * sk) * 100)} % poškození.` : '') });
+  if (h.frozen > 0) out.push({ key: 'frozen', name: 'Zmrazení', icon: gi('frozen-block', '#8fd8ff'), color: '#8fd8ff', time: Math.ceil(h.frozen) + ' s', desc: 'Nemůžeš se hýbat ani útočit.', bad: true });
+  if (h.slowT > 0) out.push({ key: 'slow', name: 'Zpomalení', icon: gi('snowflake-2', '#8fd8ff'), color: '#8fd8ff', time: Math.ceil(h.slowT) + ' s', desc: `Pohybuješ se o ${Math.round((h.slowP || 0) * 100)} % pomaleji.`, bad: true });
+  if (G.scene === 'rift' && st.gap && Math.abs(st.gap - 1) > 0.005) {
+    const L = G.rift.level, rec = recLevel(L), d = rec - ch.level;
+    out.push(d > 0
+      ? { key: 'gap', name: 'Nízká úroveň', icon: gi('broken-shield', '#ff6b6b'), color: '#ff6b6b', time: '-' + d, bad: true,
+          desc: `Podzemí ${L} doporučuje úroveň ${rec}, ty máš ${ch.level}. Nepřátelé ti dávají ×${st.gap.toFixed(2).replace('.', ',')} poškození a ty jim ×${(1 / st.gap).toFixed(2).replace('.', ',')}.` }
+      : { key: 'gap', name: 'Vyšší úroveň', icon: gi('upgrade', '#7ad07a'), color: '#7ad07a', time: '+' + (-d),
+          desc: `Podzemí ${L} doporučuje úroveň ${rec}, ty máš ${ch.level}. Nepřátelé jsou o ${Math.round((1 - st.gap) * 100)} % slabší.` });
+  }
+  return out;
+}
+// Lišta efektů v HUD: prvky se nepřekreslují celé (jen text), aby šlo na ně najet myší i klepnout prstem
+function renderBuffs(list) {
+  const box = $('buffs'), have = {};
+  [...box.children].forEach(el => have[el.dataset.key] = el);
+  const keys = new Set(list.map(e => e.key));
+  for (const k in have) if (!keys.has(k)) have[k].remove();
+  list.forEach((e, i) => {
+    let el = have[e.key];
+    if (!el) { el = document.createElement('span'); el.dataset.key = e.key; el.innerHTML = `<i class="bi">${e.icon}</i><b class="bt"></b>`; }
+    el.className = 'buff' + (e.bad ? ' bad' : ''); el.style.borderColor = e.color || '#888';
+    const tip = effectTip(e).replace(/&quot;/g, '"');
+    if (el.dataset.tip !== tip) el.dataset.tip = tip;
+    const bt = el.querySelector('.bt'); if (bt.textContent !== (e.time || '')) bt.textContent = e.time || '';
+    if (box.children[i] !== el) box.insertBefore(el, box.children[i] || null);
+  });
+}
+function effectTip(e) { return `${e.name}${e.time ? ' (' + e.time + ')' : ''}: ${e.desc}`.replace(/"/g, '&quot;'); }
+
 // Rámečky spoluhráčů (jméno, úroveň, život, kde jsou)
 function buildPartyFrames() {
   const el = $('party');
@@ -113,7 +169,8 @@ function updateHud() {
   }
   updatePartyFrames();
   // buffy
-  $('buffs').innerHTML = h.buffs.map(b => `<span class="buff" style="border-color:${b.color || '#888'}">${buffIcon(b)} ${b.t === Infinity ? '∞' : Math.ceil(b.t) + 's'}</span>`).join('');
+  // buffy a efekty (najetím / klepnutím se ukáže popis); překreslit jen při změně, ať tooltip neproblikává
+  renderBuffs(heroEffects(h, G.st));
   // kořist
   $('loot-log').innerHTML = G.lootLog.map(l => `<div style="opacity:${l.t > 6 ? (8 - l.t) / 2 : 1}"><span style="color:${l.color}">${l.name}</span> <span class="muted">${l.note}</span></div>`).join('');
   const bn = $('banner');

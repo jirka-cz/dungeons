@@ -289,6 +289,15 @@ function statRows(rows) {
   return rows.filter(r => r).map(([n, v, tip]) => `<div class="srow" ${tip ? `data-tip="${tip}"` : ''}><span>${n}</span><b>${v}</b></div>`).join('');
 }
 
+// Rysy rasy a třídy a právě aktivní efekty (buffy, postihy) s popisem – v okně postavy
+function effectsHtml(st) {
+  const ch = G.char, R = RACES[ch.race], C = CLASSES[ch.cls];
+  const rows = [
+    { name: `Rys rasy: ${R.trait}`, icon: `<span class="bf-i">${giSvg(RACE_KEY_ICONS[ch.race].K1, '#e0c080')}</span>`, desc: R.desc, time: 'trvale' },
+    { name: `Rys třídy: ${C.trait.name}`, icon: `<span class="bf-i">${skillIcon(C.base[0])}</span>`, desc: C.trait.desc, time: 'trvale' }
+  ].concat(G.hero ? heroEffects(G.hero, st) : []);
+  return `<div class="effects"><h4>Efekty</h4>${rows.map(e => `<div class="eff ${e.bad ? 'bad' : ''}">${e.icon}<div><b>${e.name}</b><br><span class="muted">${e.desc}</span></div><span class="t">${e.time || ''}</span></div>`).join('')}</div>`;
+}
 function charStatsHtml(st) {
   const ch = G.char, need = xpToNext(ch.level);
   const main = `<div class="big3">
@@ -344,7 +353,7 @@ function charStatsHtml(st) {
         st.healMul > 1 && ['Silnější léčení', `+${P(st.healMul - 1)}`], st.rebirth && ['Znovuzrození', 'ano'], st.titanGrip && ['Titánský stisk', 'ano']]) || '<div class="muted small">Žádné</div>'}
       <h4>Kořist</h4>${statRows([['Zlato', `+${P(st.goldMul - 1)}`], ['Lepší kořist', `+${P(st.mf)}`], ['Šance na předmět', `+${P(st.dropMul - 1)}`], st.xpMul > 1 && ['Zkušenosti', `+${P(st.xpMul - 1)}`]])}`;
   }
-  return main + `<div class="srows">${basic}</div>
+  return main + `<div class="srows">${basic}</div>${effectsHtml(st)}
     <button class="ghost small-btn" onclick="UI.detail=!UI.detail;showCharacter()">${UI.detail ? 'Skrýt detail ▴' : 'Detail ▾'}</button>
     <div class="srows">${detail}</div>`;
 }
@@ -364,7 +373,10 @@ function dollHtml(sel) {
 function showCharacter() {
   const ch = G.char, st = heroStats();
   if (UI.sel && !itemBySrc(UI.sel)) UI.sel = null;
-  showModal(`<h2>${ch.name} <span class="muted small">${RACES[ch.race].name} – ${CLASSES[ch.cls].name}</span></h2>
+  const R = RACES[ch.race], C = CLASSES[ch.cls];
+  const raceTip = `${R.name} – ${R.trait}: ${R.desc} Rasová dovednost: ${SKILLS[RACE_TALENTS[ch.race].nodes.R1.skill].name} (strom Rasa v Talentech).`;
+  const clsTip = `${C.name} – ${C.trait.name}: ${C.trait.desc}`;
+  showModal(`<h2>${ch.name} <span class="char-chip" data-tip="${raceTip}">${R.name}</span><span class="char-chip" data-tip="${clsTip}">${C.name}</span></h2>
     <div class="char">
       <div>${dollHtml(UI.sel)}
         <div class="bag-head"><b>Batoh</b> <span class="muted small">${ch.inv.length}/${INV_MAX}</span>
@@ -862,7 +874,15 @@ function initTooltips() {
     tip.style.top = (r.top > 70 ? r.top - tip.offsetHeight - 6 : r.bottom + 6) + 'px';
   };
   document.addEventListener('mouseover', e => { const el = e.target.closest('[data-tip]'); if (el && !drag) show(el); });
-  document.addEventListener('mouseout', e => { if (e.target.closest('[data-tip]')) tip.hidden = true; });
+  document.addEventListener('mouseout', e => { if (e.target.closest('[data-tip]') && !(UI.tipPin > Date.now())) tip.hidden = true; });
+  // dotyk: klepnutí na buff nebo štítek rasy/třídy ukáže popis na 4 s
+  document.addEventListener('click', e => {
+    const el = e.target.closest('#buffs [data-tip], .char-chip[data-tip], .traits [data-tip]');
+    if (!el) return;
+    const touch = G.touch || matchMedia('(pointer: coarse)').matches;
+    setTimeout(() => show(el), 0); clearTimeout(UI.tipT);
+    if (touch) { UI.tipPin = Date.now() + 4000; UI.tipT = setTimeout(() => { tip.hidden = true; }, 4000); }
+  });
 }
 
 function itemTipHtml(src) {
