@@ -33,6 +33,7 @@ Každé větší téma má vlastní dokument a vlastní chat (viz `docs/CHATY.md
 | Rozhraní | `docs/rozhrani.md` | ovládání PC/mobil, HUD, okna, nastavení, celá obrazovka |
 | Technika | `docs/technika.md` | engine, ukládání a migrace, testy, nasazení, verze |
 | Kooperace | `docs/kooperace.md` | hra více hráčů: etapy, pravidla družiny, více hrdinů v kódu |
+| Rozšiřování | `docs/rozsireni.md` | **nová rasa, třída, typ zbraně/zbroje: kompletní seznam míst v kódu a pravidla vzhledu** |
 
 ## Struktura kódu
 Čisté HTML + JavaScript + CSS, bez knihoven a bez sestavování. Výjimka (schválená): pro hru více hráčů se použije knihovna PeerJS na spojení přes kód místnosti. Skripty jsou globální (bez modulů) a načítají se v tomto pořadí (`index.html`):
@@ -70,6 +71,8 @@ Každé větší téma má vlastní dokument a vlastní chat (viz `docs/CHATY.md
 - **Klíčová pasivka** (zlatý uzel): nejvýš jedna v každém stromu, ne jedna celkem.
 - **Portréty postav zůstávají pixelové.** Malované portréty byly zkoušené a zamítnuté.
 - **Ikony** jen z game-icons.net (CC BY 3.0, uvést autory). Žádné emoji jako ikony dovedností.
+- **Vzhled předmětů:** bílá hladká ikona na dlaždici v barvě rarity (styl C1), očarování = kulatý znak vpravo dole (O1), set = znak setu vlevo nahoře (S1), mýtický = animovaný ohnivý prstenec bez rámečku (E2). Postavy zůstávají pixelové.
+- **Rozšiřování:** Jirka bude přidávat nové rasy, třídy a typy zbraní. Každá novinka musí dostat i vzhled (ikonu předmětu, pixelovou postavu s očima `e`, znaky setů) podle `docs/rozsireni.md`. Vzhled nejdřív ukázat ve 2–4 variantách a nechat Jirku vybrat.
 - **Šedé předměty se automaticky neprodávají.** Automatický prodej je ve výchozím stavu vypnutý.
 - **Česká klávesnice:** číselné klávesy se čtou přes `e.code` (Digit/Numpad), ne přes `e.key`.
 - **Omezení rasa/třída:** člověk bez černokněžníka a druida; trpaslík bez mága, černokněžníka a druida; elf bez černokněžníka a válečníka; ork bez druida a mága; nemrtvý bez lovce a druida.
@@ -86,3 +89,4 @@ Každé větší téma má vlastní dokument a vlastní chat (viz `docs/CHATY.md
 5. Pokud se změnilo něco, co dokumenty popisují, aktualizovat příslušný `docs/*.md`.
 6. Commit a push do `main`. GitHub Pages se aktualizuje sama za 1–2 minuty.
 7. Jirkovi stručně česky napsat, co se změnilo a co má vyzkoušet.
+8. Při přidání nové rasy, třídy nebo typu zbraně/zbroje projít kontrolní seznam v `docs/rozsireni.md` (data, ikona, pixelová postava, legendárky a sety, testy).
