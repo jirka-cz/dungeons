@@ -698,6 +698,7 @@ function netApplyReward(r) {
   }
   if (r.log) { G.lootLog.unshift({ name: r.log[0], color: r.log[1], note: r.log[2], t: 0 }); G.lootLog.length = Math.min(G.lootLog.length, 6); }
   if (r.maxRift) ch.maxRift = Math.max(ch.maxRift, r.maxRift);
+  if (r.vendor) vendorRiftDone(ch);
   if (r.dur) { EQUIP_ORDER.forEach(s => { const it = ch.equip[s]; if (it && it.uid === r.dur[0]) { it.dur = r.dur[1]; invalidate(); G.st = heroStats(); } }); }
   if (r.dead) G.rift.deaths = (G.rift.deaths || 0) + 1;
 }

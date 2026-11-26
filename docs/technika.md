@@ -39,6 +39,7 @@ Předpoklady: Node.js a Python s Playwrightem (`pip install playwright` a `pytho
 | `tests/bosses_shots.py` | snímky všech bossů (nástup, velký útok, 2. fáze); `mobile` = telefon na výšku |
 | `tests/coop.py` | více hrdinů: zesílení nepřátel, XP a kořist zvlášť, útoky na spoluhráče, mazlíčci podle majitele (spoluhráče řídí bot) |
 | `tests/riftsel.py` | výběr riftu u obelisku (nejvyšší, poslední, libovolný), snímky počítač/mobil |
+| `tests/vendor.py` | obchodník: ceny obnovení a vylepšení, uložení zboží, nové zboží po podzemí, statistika rarit, snímky počítač/mobil |
 | `tests/items.py` | atributy, váha zbroje, legendárky a sety podle tříd, chytrá kořist, migrace, snímky okna postavy |
 
 ## Hra více hráčů – testy a provoz

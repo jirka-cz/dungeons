@@ -184,6 +184,8 @@ body.touch-ui .hud-btns button { min-width: 38px; min-height: 34px; }
 .two-bags { display: flex; flex-wrap: wrap; gap: 16px; }
 .bag-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; align-items: center; }
 .bag-actions button { padding: 4px 10px; font-size: 13px; }
+.bag-actions button.cant { opacity: 0.55; }
+.vendor-odds { margin-top: 6px; display: flex; flex-wrap: wrap; gap: 4px 6px; max-width: 310px; }
 .sell-zone { border: 1px dashed var(--gold); color: var(--gold); border-radius: 8px; padding: 6px 12px; font-size: 13px; }
 .sell-zone.big { margin-top: 8px; text-align: center; padding: 12px; }
 .cstats { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; }

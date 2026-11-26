@@ -353,10 +353,22 @@ function showVendor() {
       <button class="primary" onclick="buyItem(${it.uid});UI.sel=null;showVendor()">Koupit za ${fmt(it.price)} ${GI}</button>
       ${b.slot ? `<button onclick="buyItem(${it.uid},'${b.slot}');UI.sel=null;showVendor()">Koupit a nasadit</button>` : ''}</div>`);
   } else if (it) det = itemHtml(it, `<div class="item-act"><button onclick="sellItem('inv',${it.uid});UI.sel=null;showVendor()">Prodat +${fmt(sellValue(it))} ${GI}</button></div>`);
-  showModal(`<h2>Obchodník <span class="muted small">zboží pro třídu ${CLASSES[G.char.cls].name}, úroveň podzemí ${G.char.maxRift}</span></h2>
-    <p>Máš <b class="gold">${fmt(G.save.gold)} ●</b>. Zboží se obnoví po každém návratu z podzemí.</p>
+  const V = vendorState(), L = G.char.maxRift, chn = vendorChances(V.lvl, L), maxed = V.lvl >= VENDOR.upMax;
+  const pc = v => (v * 100).toFixed(1).replace('.', ',') + ' %';
+  const odds = [['purple', 'epické'], ['orange', 'legendární'], ['diamond', 'diamantové']].filter(([r]) => chn[r] > 0)
+    .map(([r, n]) => `<span style="color:${RARITIES[r].color}">${n} ${pc(chn[r])}</span>`).join(' · ');
+  const rc = vendorRerollCost(), uc = maxed ? 0 : vendorUpgradeCost();
+  showModal(`<h2>Obchodník <span class="muted small">zboží pro třídu ${CLASSES[G.char.cls].name}, úroveň podzemí ${L}</span></h2>
+    <p>Máš <b class="gold">${fmt(G.save.gold)} ●</b>. Nové zboží po každém dokončeném podzemí.</p>
     <div class="two-bags">
-      <div><div class="bag-head"><b>Zboží</b></div><div class="bag shop" data-drop="sell">${cells || '<p class="muted small">Vyprodáno.</p>'}</div>
+      <div><div class="bag-head"><b>Zboží</b> <span class="muted small">obchodník úr. ${V.lvl}/${VENDOR.upMax}</span></div>
+        <div class="bag shop" data-drop="sell">${cells || '<p class="muted small">Vyprodáno.</p>'}</div>
+        ${odds ? `<div class="vendor-odds small">${odds}</div>` : ''}
+        <div class="bag-actions">
+          <button ${G.save.gold < rc ? 'class="cant"' : ''} onclick="vendorReroll();UI.sel=null;showVendor()">Obnovit zboží ${fmt(rc)} ${GI}</button>
+          ${maxed ? '<span class="muted small">Obchodník je na nejvyšší úrovni</span>'
+            : `<button ${G.save.gold < uc ? 'class="cant"' : ''} title="Další úroveň: +0,5 % epické, +0,3 % legendární, +0,1 % diamantové (od podzemí 16)" onclick="vendorUpgrade();UI.sel=null;showVendor()">Vylepšit obchodníka ${fmt(uc)} ${GI}</button>`}
+        </div>
         <div class="sell-zone big" data-drop="sell">Sem přetáhni pro prodej ${GI}</div></div>
       <div><div class="bag-head"><b>Batoh</b> <span class="muted small">${G.char.inv.length}/${INV_MAX}</span></div>
         <div class="bag" data-drop="inv">${bagCells('inv', INV_MAX, UI.sel)}</div>

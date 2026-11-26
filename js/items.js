@@ -104,7 +104,7 @@ const RARITIES = {
   green:   { name: 'Neobvyklý',  color: '#4fd05a', weight: 30,  minRift: 1,  mult: 1.15, aff: 1, q: 3, sell: 5,  price: 150, dur: 40 },
   purple:  { name: 'Epický',     color: '#b75cff', weight: 6,   minRift: 4,  mult: 1.35, aff: 2, q: 2.2, sell: 18, price: 600, dur: 50 },
   orange:  { name: 'Legendární', color: '#ff9a1f', weight: 1,   minRift: 10, mult: 1.60, aff: 3, q: 1.3, sell: 60, price: 2000, dur: 60 },
-  diamond: { name: 'Diamantový', color: '#5ff0ff', weight: 0.3, minRift: 16, mult: 1.50, aff: 2, q: 1.3, sell: 70, price: 0,   dur: 60 }
+  diamond: { name: 'Diamantový', color: '#5ff0ff', weight: 0.3, minRift: 16, mult: 1.50, aff: 2, q: 1.3, sell: 70, price: 3000, dur: 60 }
 };
 const RARITY_ORDER = ['gray', 'green', 'purple', 'orange', 'diamond'];
 

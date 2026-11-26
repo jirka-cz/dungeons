@@ -1,6 +1,6 @@
 // Herní data a balanc. Změna čísla = jiná obtížnost.
 
-const GAME_VERSION = '1.8.1';
+const GAME_VERSION = '1.9.0';
 const TILE = 16;                 // velikost dlaždice v px
 const VIEW_W = 460, VIEW_H = 260; // logické rozlišení světa (zvětšuje se pixelově)
 
@@ -148,6 +148,21 @@ function riftMf(lvl) { return RIFT.mfMax * (lvl - 1) / (lvl - 1 + RIFT.mfHalf); 
 // Zlato
 const GOLD_GROWTH = 1.06;   // za úroveň předmětu (ilvl)
 const GOLD_BASE = 2;
+// Odhad zlata za jeden dokončený běh podzemí bez bonusů z výbavy: zlato z nepřátel a strážce + prodej kořisti.
+// Počítá se, že hráč zabije jen tolik nepřátel, kolik je potřeba na 100 % postupu (rozmístí se jich 145 %), a strážce.
+// Změřeno z herních funkcí (populateRift, rollRarity): podzemí 1 ≈ 310, 10 ≈ 1 200, 20 ≈ 4 700, 30 ≈ 17 000, 50 ≈ 240 000.
+function riftRunGold(L) { return GOLD_BASE * Math.pow(GOLD_GROWTH, riftIlvl(L)) * (130 + 4.1 * (L - 1)); }
+// Ceny zaokrouhlené na 3 platné číslice (42, 154, 1 550, 24 000 …)
+function niceGold(v) { const p = Math.pow(10, Math.max(0, Math.floor(Math.log10(Math.max(1, v))) - 2)); return Math.max(1, Math.round(v / p) * p); }
+
+// Obchodník: ceny obnovení a vylepšení jsou v násobcích běhu (riftRunGold pro nejvyšší odemčené podzemí postavy)
+const VENDOR = {
+  size: 10,
+  purple: 0.35, orange: 0.08,                         // základní šance na kus zboží (fialová od podzemí 4, oranžová od 10)
+  rerollBase: 0.10, rerollStep: 0.05,                 // obnovení zboží: 10 %, 15 %, 20 % … běhu; po dokončeném podzemí znovu od 10 %
+  upMax: 20,                                          // nejvyšší úroveň obchodníka; úroveň n stojí n běhů (celkem 210 běhů)
+  up: { purple: 0.005, orange: 0.003, diamond: 0.001 } // za každou úroveň: +0,5 % epické, +0,3 % legendární, +0,1 % diamantové (od podzemí 16)
+};
 
 // Svatyně v riftu: dotykem dají dočasný bonus
 const SHRINES = {

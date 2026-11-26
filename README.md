@@ -52,6 +52,7 @@ Město (obchodník, kovář, truhla, obelisk) → rift zvolené úrovně → pln
 - `PROJEKT.md` a `docs/` – dokumentace pro další vývoj
 
 ## Verze
+- **1.9.0** – obchodník: obnovení zboží za zlato (10 % zlata za jeden běh podzemí, každé další o 5 % dráž, po dokončeném podzemí znovu od 10 %) a vylepšení obchodníka (úroveň n stojí n běhů, max. 20; každá úroveň +0,5 % epické, +0,3 % legendární, +0,1 % diamantové zboží). Zboží se ukládá a nové je zdarma jen po dokončeném podzemí (ne po teleportu do města nebo znovunačtení).
 - **1.8.1** – hra více hráčů: když se místnost nepodaří založit nebo se k ní nepřipojit (síť, špatný kód), hra to po 15–20 s oznámí místo nekonečného čekání.
 - **1.8.0** – hra více hráčů (2–4): v menu „Hrát s přáteli“ se založí místnost s kódem nebo se k ní připojí; společné město, výběr podzemí s potvrzením ostatních (30 s), společné podzemí po internetu (u hostitele běží hra, každý si odnese své XP, zlato a kořist), rámečky spoluhráčů, oživení spoluhráče u těla, návrat do rozehraného podzemí.
 - **1.7.2** – rifty se ve hře jmenují „Podzemí“ (obelisk, HUD, okna, talenty, kalkulačka).

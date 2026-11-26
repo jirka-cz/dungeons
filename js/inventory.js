@@ -115,21 +115,73 @@ function sellUpTo(rarity) {
 
 // ---------- Obchodník ----------
 
+// Stav obchodníka je u každé postavy (ukládá se): úroveň, počet placených obnovení od posledního podzemí, aktuální zboží
+function vendorState(ch = G.char) {
+  if (!ch.vendor) ch.vendor = { lvl: 0, rolls: 0, stock: null };
+  return ch.vendor;
+}
+
+// Šance na kus zboží (hody: fialová, přes ni oranžová, přes ni diamantová)
+function vendorRolls(lvl, L) {
+  const U = VENDOR.up;
+  return {
+    purple: L >= RARITIES.purple.minRift ? VENDOR.purple + U.purple * lvl : 0,
+    orange: L >= RARITIES.orange.minRift ? VENDOR.orange + U.orange * lvl : 0,
+    diamond: L >= RARITIES.diamond.minRift ? U.diamond * lvl : 0
+  };
+}
+// Skutečná pravděpodobnost rarity jednoho kusu zboží (pro zobrazení)
+function vendorChances(lvl, L) {
+  const r = vendorRolls(lvl, L);
+  return { diamond: r.diamond, orange: r.orange * (1 - r.diamond), purple: r.purple * (1 - r.orange) * (1 - r.diamond) };
+}
+
 function vendorStock() {
-  if (G.vendorStock) return G.vendorStock;
-  const L = G.char.maxRift, ilvl = riftIlvl(L), cls = G.char.cls, items = [];
+  const V = vendorState();
+  if (V.stock) return V.stock;
+  const L = G.char.maxRift, ilvl = riftIlvl(L), cls = G.char.cls, items = [], ch = vendorRolls(V.lvl, L);
   const kinds = ['weapon', 'weapon', 'offhand', 'head', 'chest', 'gloves', 'legs', 'boots', 'cloak', 'neck', 'ring'];
-  for (let i = 0; i < 10; i++) {
+  for (let i = 0; i < VENDOR.size; i++) {
     let rar = 'green';
-    if (L >= RARITIES.purple.minRift && Math.random() < 0.35) rar = 'purple';
-    if (L >= RARITIES.orange.minRift && Math.random() < 0.08) rar = 'orange';
+    if (Math.random() < ch.purple) rar = 'purple';
+    if (Math.random() < ch.orange) rar = 'orange';
+    if (Math.random() < ch.diamond) rar = 'diamond';
     const it = makeItem(ilvl, rar, G.save.nextUid++, kinds[i % kinds.length], cls);
     it.price = buyPrice(it);
     items.push(it);
   }
-  G.vendorStock = items;
+  V.stock = items;
+  persist();
   return items;
 }
+
+// Cena jednoho běhu pro tuto postavu (nejvyšší odemčené podzemí)
+function vendorRunGold() { return riftRunGold(G.char.maxRift); }
+function vendorRerollCost() { return niceGold(vendorRunGold() * (VENDOR.rerollBase + VENDOR.rerollStep * vendorState().rolls)); }
+function vendorUpgradeCost() { return niceGold(vendorRunGold() * (vendorState().lvl + 1)); }
+
+function vendorReroll() {
+  const V = vendorState(), c = vendorRerollCost();
+  if (G.save.gold < c) { toast('Nemáš dost zlata'); return false; }
+  G.save.gold -= c; V.rolls++; V.stock = null;
+  vendorStock();
+  toast(`Nové zboží za ${fmt(c)} zlata`);
+  return true;
+}
+
+function vendorUpgrade() {
+  const V = vendorState();
+  if (V.lvl >= VENDOR.upMax) { toast('Obchodník je na nejvyšší úrovni'); return false; }
+  const c = vendorUpgradeCost();
+  if (G.save.gold < c) { toast('Nemáš dost zlata'); return false; }
+  G.save.gold -= c; V.lvl++; V.stock = null;
+  vendorStock();
+  toast(`Obchodník vylepšen na úroveň ${V.lvl} – nové zboží`);
+  return true;
+}
+
+// Dokončené podzemí: nové zboží a obnovení zase od nejnižší ceny
+function vendorRiftDone(ch) { const V = vendorState(ch); V.stock = null; V.rolls = 0; }
 
 function buyItem(uid, toSlot) {
   const stock = vendorStock(), it = stock.find(x => x.uid === uid);

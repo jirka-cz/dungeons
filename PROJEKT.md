@@ -7,7 +7,7 @@ Tohle je hlavní vstupní bod pro každý nový chat s Claudem. Popisuje, co hra
 - Hraje se na počítači i na mobilu (na výšku i na šířku).
 - Zdarma pro kamarády. Každý má vlastní uložené postavy v prohlížeči (localStorage) a může je přenést exportním kódem.
 - Autor (Jirka) neprogramuje. Všechno vzniká přes zadání v češtině, Claude píše kód, testuje ho a vysvětluje změny srozumitelně.
-- Aktuální verze: **1.8.1** (konstanta `GAME_VERSION` v `js/data.js`).
+- Aktuální verze: **1.9.0** (konstanta `GAME_VERSION` v `js/data.js`).
 
 ## Kde hra běží
 | Co | Kde |
@@ -27,7 +27,7 @@ Každé větší téma má vlastní dokument a vlastní chat (viz `docs/CHATY.md
 | Jak pokračovat v chatech | `docs/CHATY.md` | instrukce projektu a úvodní zprávy |
 | Talenty | `docs/talenty.md` | stromy, uzly, body, okno talentů, kalkulačka |
 | Postavy | `docs/postavy.md` | rasy, třídy, dovednosti, mazlíčci, úrovně, staty |
-| Město | `docs/mesto.md` | obchodník, kovář, truhla, obelisk, odolnost |
+| Město | `docs/mesto.md` | obchodník (ekonomika zlata, obnovení, vylepšení), kovář, truhla, obelisk, odolnost |
 | Dungeony | `docs/dungeony.md` | rifty, mapy, nepřátelé, elity, bossové a jejich mechaniky, svatyně, obtížnost |
 | Předměty | `docs/predmety.md` | rarity, atributy, zbroj, afixy, legendárky a sety podle tříd, chytrá kořist, automatický prodej |
 | Rozhraní | `docs/rozhrani.md` | ovládání PC/mobil, HUD, okna, nastavení, celá obrazovka |

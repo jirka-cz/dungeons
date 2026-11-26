@@ -49,7 +49,6 @@ function enterTown() {
   G.hero.res = G.st.resMax * (G.char.cls === 'warrior' ? 0 : 1);
   G.partyMul = 1;
   G.rift = { level: 0 };
-  G.vendorStock = null;
   addClassPets();
   onSceneChange();
   persist();
@@ -179,7 +178,8 @@ function bossDefeated(m) {
   eachHero(h => {
     const ch = G.char, w = ch.maxRift;
     ch.maxRift = Math.max(ch.maxRift, R.level + 1);
-    netReward({ maxRift: ch.maxRift });
+    vendorRiftDone(ch);
+    netReward({ maxRift: ch.maxRift, vendor: 1 });
     gainXP(60 * riftMult(RIFT.xp, R.level) * G.st.xpMul);
     if (h === G.me) { was = w; now = ch.maxRift; }
   });
