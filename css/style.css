@@ -70,6 +70,14 @@ body.touch-ui #boss-status { display: block; margin-left: 0; font-size: 10px; wh
 #loot-log { position: absolute; left: 10px; bottom: 120px; font-size: 12px; text-shadow: 0 1px 2px #000; pointer-events: none; max-width: 40vw; }
 #banner { position: absolute; top: 90px; left: 50%; transform: translateX(-50%); background: rgba(10,8,18,0.85); border: 1px solid; border-radius: 8px; padding: 6px 14px; font-weight: 600; pointer-events: none; }
 body.boss-fight #banner { top: 112px; }
+#portal-ask { position: absolute; left: 50%; bottom: 150px; width: max-content; max-width: 92vw; transform: translateX(-50%); z-index: 6; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; justify-content: center;
+  background: rgba(10,8,18,0.92); border: 1px solid #4a8aff; border-radius: 12px; padding: 10px 12px; box-shadow: 0 0 16px -4px #4a8aff; }
+#portal-ask[hidden] { display: none; }
+#portal-ask span { font-weight: 600; flex-basis: 100%; text-align: center; }
+#portal-ask button { min-height: 44px; padding: 0 16px; font-size: 15px; }
+#portal-ask small { color: var(--muted); font-size: 11px; }
+body.touch-ui #portal-ask small { display: none; }
+body.touch-ui #portal-ask { bottom: auto; top: 34%; }
 body.touch-ui.boss-fight #banner { top: 118px; }
 body.touch-ui #banner { font-size: 13px; max-width: 86vw; width: max-content; text-align: center; }
 #bottom { position: absolute; left: 50%; bottom: 8px; transform: translateX(-50%); display: flex; align-items: flex-end; gap: 10px; pointer-events: none; }

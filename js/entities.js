@@ -437,7 +437,7 @@ function killMonster(m) {
   onKillTalents(m, st);
   // odměny: zkušenosti dostane každý hrdina, zlato a předměty padají každému zvlášť (vidí je jen on)
   const L = G.rift.level;
-  eachHero(() => gainXP(m.xp * 2.5 * riftXpMul(L) * G.st.xpMul));
+  eachHero(() => gainXP(m.xp * 2.5 * riftXpMul(L) * xpRate(L) * G.st.xpMul));
   if (m.onDeath) m.onDeath(m);
   if (m.obj) { if (Math.random() < 0.25) G.loot.push({ kind: 'globe', x: m.x, y: m.y, t: 0 }); return; }
   if (!m.boss) addProgress(m.pts);

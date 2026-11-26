@@ -31,7 +31,7 @@ function addPartyHero(member, x, y) {
 
 function resetEntities() {
   G.monsters = []; G.projs = []; G.zones = []; G.hazards = []; G.loot = []; G.pets = []; G.traps = [];
-  G.flow = null; G.portal = null; G.banner = null; G.shrines = []; G.offstage = []; G.decals = []; G.darkness = 0; fxReset();
+  G.flow = null; G.portal = null; G.portalAsk = null; portalPrompt(false); G.banner = null; G.shrines = []; G.offstage = []; G.decals = []; G.darkness = 0; fxReset();
 }
 
 function addClassPets() {
@@ -192,7 +192,7 @@ function bossDefeated(m) {
     ch.maxRift = Math.max(ch.maxRift, R.level + 1);
     vendorRiftDone(ch);
     netReward({ maxRift: ch.maxRift, vendor: 1 });
-    gainXP(60 * riftXpMul(R.level) * G.st.xpMul);
+    gainXP(60 * riftXpMul(R.level) * xpRate(R.level) * G.st.xpMul);
     if (h === G.me) { was = w; now = ch.maxRift; }
   });
   G.bannerBig = { text: 'Podzemí dokončeno!', sub: now > was ? `Odemčeno podzemí ${now}` : 'Portál do města je otevřen', t: 0, color: '#ffd060' };

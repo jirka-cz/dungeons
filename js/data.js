@@ -1,6 +1,6 @@
 // Herní data a balanc. Změna čísla = jiná obtížnost.
 
-const GAME_VERSION = '1.13.1';
+const GAME_VERSION = '1.14.0';
 const TILE = 16;                 // velikost dlaždice v px
 const VIEW_W = 460, VIEW_H = 260; // logické rozlišení světa (zvětšuje se pixelově)
 
@@ -212,6 +212,10 @@ function curveAt(tab, x) {
 function riftHpMul(L) { return curveAt(RIFT_HP_CURVE, Math.max(1, L)); }
 function riftAtkMul(L) { return curveAt(RIFT_ATK_CURVE, Math.max(1, L)); }
 function riftXpMul(L) { return curveAt(RIFT_XP_CURVE, Math.max(1, L)); }
+// v1.14: zpomalení levelování – násobek XP podle podzemí, aby jedno podzemí na doporučené úrovni dalo
+// v podzemí 10 ~1 úroveň, ve 30 ~½, ve 100 ~⅕ a ve 300 ~1/10 (dřív v podzemí 10 přes 4 úrovně)
+const XP_RATE_CURVE = [[1, 0.3], [10, 0.23], [30, 0.14], [60, 0.22], [100, 0.48], [200, 0.7], [300, 0.77]];
+function xpRate(L) { return curveAt(XP_RATE_CURVE, Math.max(1, L)); }
 // Pro testy: síla nepřátel vůči hrdinovi úrovně lvl (rozdíl úrovní se ve hře počítá u hrdiny – každý v družině zvlášť)
 function riftMonMul(L, lvl) { const g = levelGapMul(L, lvl); return { hp: riftHpMul(L) * g, atk: riftAtkMul(L) * g }; }
 function riftIlvl(lvl) { return 2 * lvl + 1; }

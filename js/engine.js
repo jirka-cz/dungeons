@@ -110,6 +110,7 @@ function initInput() {
     if (k === 'escape') { if (modalOpen()) closeMenu(); else if (G.scene !== 'menu') showGameMenu(); }
     if (G.scene === 'menu' || modalOpen()) return;
     if (k.startsWith('arrow')) e.preventDefault();
+    if (k === 'enter' && G.portalAsk && G.portalAsk.open) { portalPrompt(false); G.portalAsk.go(); return; }
     if (k === 'q') usePotion();
     if (['1', '2', '3', '4'].includes(k) && !e.repeat) useBarSlot(+k + 1);
     if (k === 'i' || k === 'c') showCharacter();
@@ -251,7 +252,7 @@ function update(dt) {
     updateShrines();
     G.stuckT = (G.stuckT || 0) - dt;
     if (G.stuckT <= 0) { G.stuckT = 1; checkRiftStuck(); }
-    if (G.portal && !me.dead && dist(G.portal, me) < 12) { goTown(); return; }
+    if (G.portal) portalCheck(me, goTown);
   }
   updatePets(dt);
   updateLoot(dt);
@@ -851,6 +852,20 @@ function drawMinimap() {
 
 // ---------- Scény ----------
 
+// Portál po bossovi: při vstupu se zeptá (omylem vstoupíš a nestihneš sebrat kořist). „Zůstat“ = znovu až po odchodu a návratu.
+function portalCheck(h, go) {
+  const d = h.dead ? 99 : dist(G.portal, h), A = G.portalAsk || (G.portalAsk = { open: false, dismissed: false });
+  A.go = go;
+  if (d < 12 && !A.open && !A.dismissed) portalPrompt(true);
+  else if (d > 20) { A.dismissed = false; if (A.open) portalPrompt(false); }
+}
+function portalPrompt(show) {
+  const el = $('portal-ask'); if (!el) return;
+  el.hidden = !show; if (G.portalAsk) G.portalAsk.open = show;
+  if (!show) return;
+  $('pa-yes').onclick = () => { portalPrompt(false); G.portalAsk.go(); };
+  $('pa-no').onclick = () => { portalPrompt(false); G.portalAsk.dismissed = true; };
+}
 function goTown() {
   if (Net.clientRift) return netGuestLeaveRift();             // host: odchází z podzemí hostitele
   if (netIsHost() && G.scene === 'rift') netEndRiftForGuests();  // hostitel: s ním odchází celá družina

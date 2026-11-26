@@ -93,3 +93,7 @@ Povolené kombinace: `RACE_CLASSES` a `raceAllows()` v `js/data.js`. Obrazovka t
 - Obouruční zbraň v levé ruce dává 50 % útoku (`OFFHAND_2H_MULT`), jednoruční 70 %.
 - Trpaslík, který si talent stejně vezme, dostane +8 % útok se dvěma obouručními zbraněmi.
 
+### Obnova zdroje (v1.14)
+- Mana, soustředění a duch se obnovují pomaleji, aby kouzla omezovala mana, ne jen přebíjení: mág 1,4/s, černokněžník 1,2/s, lovec 1,6/s, druid 1,2/s (dřív 3,5 / 3 / 4 / 3). Základní útok (Magická střela, Stínový šíp, Výstřel, Hněv) doplní +2 (dřív +3), konstanta `PRIMARY_GEN` v `js/classes.js`.
+- Zuřivost válečníka beze změny (generují ji útoky, sama klesá).
+

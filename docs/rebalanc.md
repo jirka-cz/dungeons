@@ -50,7 +50,7 @@ Cíl (zadání Jirky): aby rasa, třída i talenty měly **přímý a viditelný
 - **Úroveň hrdiny**: +1 % útoku a života za úroveň (násobí vše), takže úroveň je cítit.
 - **Doporučená úroveň** podzemí = 0,8 × úroveň podzemí (100 → 80, 250 → 200, 350 → 280). Za každou úroveň **pod** doporučenou ti nepřátelé dávají o 3 % víc a ty jim o 3 % míň (násobí se: 20 úrovní ≈ ×1,8, 80 úrovní ≈ ×10). Nad doporučenou jsou o 1 % slabší za úroveň (max. -15 %). Platí pro každého hráče v družině zvlášť.
   - Příklad ze zadání: hrdina úrovně 200 v podzemí 250 (doporučeno 200) – záleží na výbavě; v podzemí 350 (doporučeno 280) je o 80 úrovní níž → nepřátelé ho ničí 10× silněji a on jim dává desetinu. Nedá se.
-- **Zkušenosti**: do úrovně 30 jako dřív, pak XP na úroveň roste jen o 1,5 % za úroveň (úroveň 100 ≈ 3 mil. XP, 200 ≈ 33 mil.) a XP z nepřátel podle `RIFT_XP_CURVE`. Jedno podzemí na doporučené úrovni dá v podzemí 30 asi ½ úrovně, ve 100 asi ⅕ a ve 300 asi 1/10 – vyšší úrovně jdou pomaleji, jak je rozhodnuto.
+- **Zkušenosti**: do úrovně 30 jako dřív, pak XP na úroveň roste jen o 1,5 % za úroveň (úroveň 100 ≈ 3 mil. XP, 200 ≈ 33 mil.) a XP z nepřátel podle `RIFT_XP_CURVE`. Jedno podzemí na doporučené úrovni dá v podzemí 10 asi 1 úroveň, ve 30 asi ½, ve 100 asi ⅕ a ve 300 asi 1/10 – vyšší úrovně jdou pomaleji, jak je rozhodnuto. Od v1.14 to zajišťuje násobek `XP_RATE_CURVE` (`xpRate` v `js/data.js`); do té doby dávalo podzemí 10 přes 4 úrovně a podzemí 30 tři a půl.
 - Velká čísla se ukazují zkráceně (12,3 tis., 4,5 mil.).
 
 ## Testy

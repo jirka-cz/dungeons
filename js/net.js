@@ -767,7 +767,7 @@ function guestUpdate(dt) {
   G.lootLog.forEach(l => l.t += dt); G.lootLog = G.lootLog.filter(l => l.t < 8);
   G.saveT -= dt;
   if (G.saveT <= 0) { G.saveT = 15; persist(); }
-  if (G.portal && !h.dead && dist(G.portal, h) < 12) netGuestLeaveRift();
+  if (G.portal) portalCheck(h, netGuestLeaveRift);
 }
 
 // ---------- Okno „Hrát s přáteli“ ----------

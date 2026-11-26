@@ -17,7 +17,7 @@ const CLASSES = {
   },
   mage: {
     name: 'Mág', hp: 0.92, atk: 1.25, def: -1, spd: 1.0, elem: 'arcane', main: ['int'], armor: 'light',
-    res: { name: 'Mana', color: '#3a6ae0', max: 100, regen: 3.5, start: 100 },
+    res: { name: 'Mana', color: '#3a6ae0', max: 100, regen: 1.4, start: 100 },
     weapons: ['wand', 'staff', 'orb', 'dagger', 'sword'], starter: 'wand',
     colors: ['#6a4ae0', '#43309a'],
     base: ['missile', 'blink'],
@@ -27,7 +27,7 @@ const CLASSES = {
   },
   warlock: {
     name: 'Černokněžník', hp: 1.0, atk: 1.1, def: 0, spd: 1.0, ls: 0.04, elem: 'shadow', main: ['int'], armor: 'light',
-    res: { name: 'Mana', color: '#7a3ae0', max: 100, regen: 3, start: 100 },
+    res: { name: 'Mana', color: '#7a3ae0', max: 100, regen: 1.2, start: 100 },
     weapons: ['wand', 'dagger', 'staff', 'orb'], starter: 'wand',
     colors: ['#2c3a86', '#11132a'],
     base: ['sbolt', 'drain'],
@@ -37,7 +37,7 @@ const CLASSES = {
   },
   hunter: {
     name: 'Lovec', hp: 0.95, atk: 1.0, def: 0, spd: 1.15, elem: 'phys', pet: 'wolf', main: ['agi'], armor: null,
-    res: { name: 'Soustředění', color: '#d8a030', max: 100, regen: 4, start: 100 },
+    res: { name: 'Soustředění', color: '#d8a030', max: 100, regen: 1.6, start: 100 },
     weapons: ['bow', 'dagger', 'sword', 'axe'], starter: 'bow',
     colors: ['#4a7a3a', '#5a3a1e'],
     base: ['shot', 'vault'],
@@ -47,7 +47,7 @@ const CLASSES = {
   },
   druid: {
     name: 'Druid', hp: 1.05, atk: 0.95, def: 2, spd: 1.0, regen: 0.004, elem: 'nature', main: ['int', 'agi'], armor: null,
-    res: { name: 'Duch', color: '#3ab060', max: 100, regen: 3, start: 100 },
+    res: { name: 'Duch', color: '#3ab060', max: 100, regen: 1.2, start: 100 },
     weapons: ['staff', 'mace', 'orb', 'dagger'], starter: 'staff',
     colors: ['#7a5a2a', '#3e6a2a'],
     base: ['wrath', 'rejuv'],
@@ -120,5 +120,7 @@ const PETS = {
   const cds = { mortal: 2, cleave: 1.5, fireball: 1.5, amissiles: 2, aorb: 3, blizzard: 6, agony: 2, plague: 4, imp: 8, chaos: 3,
     aimed: 2.5, volley: 3, trap: 4, sting: 3, moonfire: 2, rend: 1.5, whirl: 6 };
   for (const id in cds) if (SKILLS[id]) SKILLS[id].cd = Math.max(SKILLS[id].cd || 0, cds[id]);
-  ['missile', 'sbolt', 'shot', 'wrath'].forEach(id => { if (SKILLS[id]) SKILLS[id].gen = Math.max(SKILLS[id].gen || 0, 3); });
+  // základní útok kouzelníků a lovce doplní trochu zdroje (v1.13 sníženo z 3 na 2, mana má omezovat víc než přebíjení)
+  const PRIMARY_GEN = 2;
+  ['missile', 'sbolt', 'shot', 'wrath'].forEach(id => { if (SKILLS[id]) SKILLS[id].gen = Math.max(SKILLS[id].gen || 0, PRIMARY_GEN); });
 })();
