@@ -2,7 +2,8 @@
 //
 // main = hlavní atribut (+1 % útoku za bod; druid bere vyšší z intelektu a obratnosti),
 // armor = preferovaná zbroj pro chytrou kořist (heavy = těžká, light = lehká, null = obojí);
-// heavyArmor = smí nosit těžkou zbroj (v1.18 jen válečník a druid, ostatní jen lehkou).
+// heavyArmor = smí nosit těžkou zbroj: true = všechnu (válečník), seznam typů = jen tyhle (druid jen kroužkovou zbroj),
+// chybí = jen lehkou (mág, černokněžník, lovec).
 // Každá třída má 2 výchozí dovednosti (základní útok + jednu další), ostatní odemykají talenty (js/talents.js).
 
 const CLASSES = {
@@ -47,7 +48,7 @@ const CLASSES = {
     desc: 'Mrštný střelec: drží si odstup, střílí v pohybu, klade pasti a má věrného vlka. Lučištník, nebo Pán šelem.',
   },
   druid: {
-    name: 'Druid', hp: 1.05, atk: 0.95, def: 2, spd: 1.0, regen: 0.004, elem: 'nature', main: ['int', 'agi'], armor: null, heavyArmor: true,
+    name: 'Druid', hp: 1.05, atk: 0.95, def: 2, spd: 1.0, regen: 0.004, elem: 'nature', main: ['int', 'agi'], armor: null, heavyArmor: ['mail'],
     res: { name: 'Duch', color: '#3ab060', max: 100, regen: 1.2, start: 100 },
     weapons: ['staff', 'mace', 'orb', 'dagger'], starter: 'staff',
     colors: ['#7a5a2a', '#3e6a2a'],

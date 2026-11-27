@@ -28,7 +28,7 @@ Povolené kombinace: `RACE_CLASSES` a `raceAllows()` v `js/data.js`. Obrazovka t
 | Mág | Mana | arkána | Intelekt | lehká | jen Kniha kouzel (obouruční) | Magická střela, Teleport | **Arkánní bariéra**: štít 15 % života, obnoví se po 5 s bez zásahu (`barrier`) |
 | Černokněžník | Mana, vysává 4 % života | stín | Intelekt | lehká | jen Kniha kouzel (obouruční) | Stínový šíp, Vysátí | **Temný pakt**: DoT léčí o 10 % svého poškození (`dotLeech`) |
 | Lovec | Soustředění, má vlka | fyzické | Obratnost | lehká | luk, dýka, meč, sekera | Výstřel, Úskok | **Lovec na dálku**: +1 % poškození za 10 bodů vzdálenosti nad 40 (max. +20 %), +5 % pohyb (`rangeBonus`, `ms`) |
-| Druid | Duch, pomalá regenerace života | příroda | Intelekt / Obratnost | obojí | hůl, palcát, koule, dýka | Hněv, Omlazení | **Proměnlivost**: v medvědí/vlčí podobě Drápnutí zblízka místo Hněvu, v měsíční 2 střely, proměna léčí 10 % (`shapeshift`, `effSkill` v `js/skills.js`) |
+| Druid | Duch, pomalá regenerace života | příroda | Intelekt / Obratnost | lehká + kroužková zbroj | hůl, palcát, koule, dýka | Hněv, Omlazení | **Proměnlivost**: v medvědí/vlčí podobě Drápnutí zblízka místo Hněvu, v měsíční 2 střely, proměna léčí 10 % (`shapeshift`, `effSkill` v `js/skills.js`) |
 
 - Ostatní dovednosti se odemykají talenty (`docs/talenty.md`).
 - Základní útoky (`primary`) generují 3 jednotky zdroje.

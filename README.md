@@ -52,6 +52,7 @@ Město (obchodník, kovář, truhla, obelisk) → rift zvolené úrovně → pln
 - `PROJEKT.md` a `docs/` – dokumentace pro další vývoj
 
 ## Verze
+- **1.18.1** – druid smí z těžké zbroje nosit jen kroužkovou zbroj (ne plátovou helmu, kyrys, rukavice, nohavice ani boty); Fénixova zbroj je nově kroužková, Nohavice Kamenné kůže jsou kalhoty. Legendárky a sety se změněným typem (hůl → kniha apod.) se ve starých uloženích převedou samy.
 - **1.18.0** – pravidla výbavy: těžkou zbroj nosí jen válečník a druid; mág a černokněžník drží jen Knihu kouzel (nově obouruční zbraň s útokem jako hůl); hůlka vyřazena. Staré postavy se převedou samy (nevhodné kusy do batohu, kouzelník bez zbraně dostane knihu).
 - **1.17.4** – hra více hráčů: když hostovi spadne spojení (zhasnutá obrazovka, přepnutí aplikace, výpadek Wi-Fi), hra se sama znovu připojí (až 5 pokusů) a vrátí ho do podzemí; v okně Hrát s přáteli je záznam spojení (kdy a proč spadlo).
 - **1.17.3** – přenos postav: když je kód v pořádku, ale uložení se nepodaří převést, hra to řekne i s důvodem (dřív se to hlásilo jako neplatný kód).

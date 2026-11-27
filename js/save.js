@@ -8,7 +8,7 @@ function newSave() {
     v: SAVE_VERSION,
     chars: [], current: -1,
     gold: 0, stash: [], nextUid: 1,
-    resCap14: true, orbFix118: true,
+    resCap14: true, orbFix118: true, uniqFix1181: true,
     settings: { autoSell: { gray: false, green: false, purple: false, orange: false, diamond: false }, dmgNumbers: true, sound: true, autoAttack: false, sellFix103: true },
     lastSeen: Date.now()
   };
@@ -16,7 +16,7 @@ function newSave() {
 
 function newChar(name, race, cls, save) {
   const ch = { id: Date.now() + Math.floor(Math.random() * 1000), name, race, cls, level: 1, xp: 0, talents: {}, equip: {}, inv: [], maxRift: 1,
-               bar: [CLASSES[cls].base[0], CLASSES[cls].base[1], null, null, null, null, null, null], talentVer: 3, classItems12: true, resCap14: true, gearRules118: true, created: Date.now(),
+               bar: [CLASSES[cls].base[0], CLASSES[cls].base[1], null, null, null, null, null, null], talentVer: 3, classItems12: true, resCap14: true, gearRules118: true, gearRules1181: true, created: Date.now(),
                vendor: { lvl: 0, rolls: 0, stock: null } };
   const w = starterWeapon(cls, save.nextUid++);
   ch.equip[w.slot === 'weapon' ? 'main' : 'off'] = w;
@@ -51,9 +51,9 @@ function migrateSave(s) {
     }
     // v1.18: těžká zbroj jen válečník a druid, kouzelníci jen Knihu kouzel – nevhodné nasazené kusy do batohu,
     // mág/černokněžník, který přišel o zbraň, dostane Knihu kouzel stejné úrovně a rarity (legendární/set → epická)
-    if (!ch.gearRules118) {
+    if (!ch.gearRules118 || !ch.gearRules1181) {   // 1.18.1: druid jen kroužková zbroj (stejná kontrola znovu)
       const moved = []; let lostWeapon = null;
-      Object.values(ch.equip).concat(ch.inv, (ch.vendor && ch.vendor.stock) || []).forEach(convertOldBook);
+      Object.values(ch.equip).concat(ch.inv, (ch.vendor && ch.vendor.stock) || []).forEach(it => { syncUniqueType(it); convertOldBook(it); });
       // kniha nasazená v levé ruce: do pravé, když je volná nebo v ní zůstat nesmí (hůlka, hůl, meč)
       if (ch.equip.off && ch.equip.off.type === 'orb') {
         const main = ch.equip.main;
@@ -73,9 +73,9 @@ function migrateSave(s) {
         const rar = ['gray', 'green', 'purple'].includes(lostWeapon.rarity) ? lostWeapon.rarity : 'purple';
         given = ch.equip.main = makeItem(lostWeapon.ilvl, rar, out.nextUid++, 'weapon', ch.cls);
       }
-      ch.gearRules118 = true;
+      ch.gearRules118 = ch.gearRules1181 = true;
       if (moved.length) {
-        if (!out._gear118) { out._gear118 = true; out._notice = (out._notice ? out._notice + ' ' : '') + 'Nová pravidla výbavy: těžkou zbroj nosí jen válečník a druid, mág a černokněžník drží jen Knihu kouzel.'; }
+        if (!out._gear118) { out._gear118 = true; out._notice = (out._notice ? out._notice + ' ' : '') + 'Nová pravidla výbavy: těžkou zbroj nosí jen válečník (druid jen kroužkovou zbroj), mág a černokněžník drží jen Knihu kouzel.'; }
         out._notice += ` ${ch.name}: do batohu přesunuto ${moved.join(', ')}.` + (given ? ` Náhradou dostává ${given.name}.` : '');
       }
     }
@@ -102,13 +102,25 @@ function migrateSave(s) {
     }
   });
   delete out._gear118;
-  if (!s.orbFix118) { out.stash.forEach(convertOldBook); out.orbFix118 = true; }
+  if (!s.orbFix118 || !s.uniqFix1181) { out.stash.forEach(it => { syncUniqueType(it); convertOldBook(it); }); out.orbFix118 = out.uniqFix1181 = true; }
   if (!s.resCap14) { out.stash.forEach(it => { if (capItemRes(it)) out._resNotice = true; }); out.resCap14 = true; }
   if (out._resNotice) { out._notice = (out._notice ? out._notice + ' ' : '') + 'Odolnosti na předmětech byly vyváženy: nejvýš 10 % proti jednomu živlu na předmět.'; delete out._resNotice; }
   return out;
 }
 
 // v1.18: Kniha kouzel je obouruční zbraň – staré knihy (levá ruka, bez útoku) dostanou útok podle úrovně a rarity
+// v1.18.1: legendárka/set, jejíž typ se změnil (hůl → kniha, plát → kroužková…), dostane nový typ a základ (hlavní atribut zůstává)
+function syncUniqueType(it) {
+  if (!it || (!it.leg && !it.set)) return;
+  let type = null;
+  if (it.leg) { const d = LEGENDARIES.find(l => l.id === it.leg); if (d) type = d.type; }
+  else if (SETS[it.set]) { const p = SETS[it.set].pieces[it.slot] || (it.type === 'orb' && SETS[it.set].pieces.weapon); if (p) type = p[1]; }
+  if (!type || type === it.type) return;
+  const kind = ITEM_KINDS.weapon.types.includes(type) ? 'weapon' : it.slot === 'offhand' ? 'weapon' : it.slot;
+  const keep = {}; Object.keys(ATTRS).forEach(k => { if (it.base && it.base[k]) keep[k] = it.base[k]; });
+  it.type = type; it.slot = kind;
+  it.base = Object.assign(rollBase(baseDefsFor(kind, type), it.ilvl || 1, (RARITIES[it.rarity] || RARITIES.gray).mult), keep);
+}
 function convertOldBook(it) {
   if (!it || it.type !== 'orb' || it.slot !== 'offhand') return;
   it.slot = 'weapon';

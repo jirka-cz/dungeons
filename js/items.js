@@ -208,8 +208,8 @@ const LEGENDARIES = [
   // Válečník
   { id: 'bloodmoon',   cls: ['warrior'],                     slot: 'weapon',  type: 'axe',     name: 'Sekera Krvavého měsíce',  stats: { ls: 0.05, doubleChance: 0.2 } },
   { id: 'vigil',       cls: ['warrior'],                     slot: 'offhand', type: 'shield',  name: 'Štít Věčné hlídky',       stats: { block: 0.1, thorns: 0.15 } },
-  { id: 'phoenix',     cls: ['warrior', 'druid'],            slot: 'chest',   type: 'plate',   name: 'Fénixova zbroj',          stats: { regen: 0.004, rebirth: 1 } },
-  { id: 'stoneskin',   cls: ['warrior', 'druid'],            slot: 'legs',    type: 'greaves', name: 'Nohavice Kamenné kůže',   stats: { dmgRed: 0.08, resAll: 0.05 } },
+  { id: 'phoenix',     cls: ['warrior', 'druid'],            slot: 'chest',   type: 'mail',    name: 'Fénixova zbroj',          stats: { regen: 0.004, rebirth: 1 } },
+  { id: 'stoneskin',   cls: ['warrior', 'druid'],            slot: 'legs',    type: 'pants',   name: 'Nohavice Kamenné kůže',   stats: { dmgRed: 0.08, resAll: 0.05 } },
   { id: 'headsman',    cls: ['warrior', 'hunter'],           slot: 'neck',    type: 'amulet',  name: 'Amulet Popravčího',       stats: { critDmg: 0.25, execPct: 0.5 } },
   // Mág
   { id: 'eternalfire', cls: ['mage'],                        slot: 'weapon',  type: 'orb',     name: 'Kniha věčného ohně',      stats: { firePct: 0.3, resPen: 0.1 } },
@@ -539,10 +539,19 @@ function baseDefsFor(kind, type) {
 }
 
 // Může třída předmět nosit? Zbraně a levá ruka podle třídy, legendárky a sety podle cls, ostatní všichni.
+// Smí třída nosit tenhle typ zbroje? (lehká všichni, těžká podle heavyArmor v CLASSES)
+function canWearArmorType(cls, type) {
+  if (!ITEM_TYPES[type] || ITEM_TYPES[type].armor !== 'heavy') return true;
+  const h = CLASSES[cls].heavyArmor;
+  return h === true || (Array.isArray(h) && h.includes(type));
+}
+function heavyArmorText(cls) {
+  return 'Těžkou zbroj nosí jen válečník, druid jen kroužkovou zbroj';
+}
 function canClassUse(it, cls) {
   const only = itemClasses(it);
   if (only && !only.includes(cls)) return false;
-  if (armorWeight(it) === 'heavy' && !CLASSES[cls].heavyArmor) return false;   // těžká zbroj jen válečník a druid
+  if (!canWearArmorType(cls, it.type)) return false;   // těžká zbroj: válečník celá, druid jen kroužková
   if (it.slot !== 'weapon' && it.slot !== 'offhand') return true;
   return CLASSES[cls].weapons.includes(it.type);
 }
@@ -561,9 +570,13 @@ function makeItem(ilvl, rarity, uid, forceKind, cls) {
     if (kind === 'weapon' || kind === 'offhand') {
       const pool = ITEM_KINDS[kind].types.filter(t => allowed.includes(t));
       type = pool[Math.floor(Math.random() * pool.length)];
-    } else if (CLASSES[cls].armor && (!CLASSES[cls].heavyArmor || Math.random() < SMART_ARMOR)) {
+    } else if (CLASSES[cls].armor && (CLASSES[cls].heavyArmor !== true || Math.random() < SMART_ARMOR)) {
       // třída bez těžké zbroje dostane z chytré kořisti vždy lehkou
       const pool = ITEM_KINDS[kind].types.filter(t => ITEM_TYPES[t].armor === CLASSES[cls].armor);
+      if (pool.length) type = pool[Math.floor(Math.random() * pool.length)];
+    } else if (CLASSES[cls].heavyArmor !== true) {
+      // druid: jen typy, které smí nosit (lehká + kroužková zbroj)
+      const pool = ITEM_KINDS[kind].types.filter(t => canWearArmorType(cls, t));
       if (pool.length) type = pool[Math.floor(Math.random() * pool.length)];
     }
   }

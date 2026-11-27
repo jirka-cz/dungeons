@@ -4,7 +4,7 @@
 - **Sloty výbavy:** hlavní ruka, druhá ruka, hlava, krk, plášť, hruď, rukavice, nohy, boty, 2 prsteny (`EQUIP_ORDER` v `js/items.js`).
 - **Zbraně:** obouruční zbraň dává ≈ 1,9× útoku jednoruční. Zbraň v druhé ruce dává 70 % útoku (dvě zbraně).
 - Třída smí nosit jen své typy zbraní a jen legendárky a sety určené pro ni (`canClassUse`).
-- **Od v1.18: těžkou zbroj smí nosit jen válečník a druid** (`heavyArmor` v `CLASSES`). Mág, černokněžník a lovec nosí jen lehkou.
+- **Od v1.18: těžkou zbroj smí nosit jen válečník** (`heavyArmor: true`), **druid z ní jen kroužkovou zbroj** (`heavyArmor: ['mail']`, od v1.18.1). Mág, černokněžník a lovec nosí jen lehkou. Kontroluje `canWearArmorType`.
 - **Od v1.18 drží mág a černokněžník jen Knihu kouzel** – obouruční zbraň v pravé ruce (útok jako hůl + síla dovedností). Magii sesílají sami, hůl, meč ani dýku nedrží. **Hůlka je vyřazená** (nepadá, typ zůstává jen kvůli starým předmětům).
 - **Batoh** má 40 míst, **truhla** 60 (sdílená).
 
@@ -44,7 +44,7 @@
 | Lehká | kápě, čelenka, róba, kožená vesta, rukavice, kalhoty, sandály | všechny odolnosti (1 % + 0,02 % za úroveň, max 3 %) |
 
 - Róba a vesta mají na hrudi méně obrany než kyrys (róba nejméně).
-- Těžkou zbroj nosí jen válečník a druid (od v1.18), lehkou všichni. Popisek ukazuje „těžká zbroj“ / „lehká zbroj“, u nevhodné postavy červeně „Těžkou zbroj nosí jen válečník a druid“.
+- Těžkou zbroj nosí jen válečník, druid jen kroužkovou zbroj (v1.18.1), lehkou všichni. Popisek ukazuje „těžká zbroj“ / „lehká zbroj“, u nevhodné postavy červeně proč ji nosit nesmí.
 - Plášť, šperky a zbraně váhu nemají.
 
 ### Afixy (`AFFIXES`) – 60 druhů + rodiny
@@ -87,13 +87,13 @@ Nepřátelé mají druh `fam` v `MONSTERS` a `BOSSES`: nemrtví (zombie, kostliv
 ### Chytrá kořist (`makeItem` s parametrem třídy)
 - 80 % padajících předmětů je „chytrých“ (pro třídu hráče), obchodník prodává vždy chytré.
 - Chytrá legendárka/set: 85 % šance, že je pro tvou třídu (jako Diablo 3). Zbytek jde do truhly pro jinou postavu nebo na prodej.
-- Chytrá zbroj: válečník dostane v 70 % těžkou, druid bez preference; mág, černokněžník a lovec vždy lehkou (těžkou nosit nesmí).
+- Chytrá zbroj: válečník dostane v 70 % těžkou; druid jen lehkou nebo kroužkovou zbroj; mág, černokněžník a lovec vždy lehkou.
 - Chytrý předmět s afixy: 40 % šance, že jeden afix nahradí hlavní atribut třídy.
 - **Porovnání předmětů** (`itemScore`, `statWeight`) počítá s třídou, drženou zbraní a dovednostmi na liště: hlavní atribut a bonus k držené zbrani nebo dovednosti na liště mají plnou váhu, cizí málo; rychlost sesílání se počítá jen kouzelníkům, rychlost útoku zbraní jen válečníkovi a lovci.
 
 ### Zásady balancu (research Diablo 3/4 a WoW, listopad 2026)
 - Diablo 3: každý atribut má obranný účinek pro všechny (síla → zbroj, obratnost → úhyb, intelekt → odolnosti, vitalita → život) a hlavní atribut navíc zvyšuje poškození své třídy o 1 % za bod. Převzato, jen obratnost dává krit. šanci místo úhybu.
-- WoW: těžká zbroj má víc obrany, látková ji má malou a kouzelníci spoléhají na intelekt. Převzato zjednodušeně na 2 váhy; od v1.18 těžkou nosí jen válečník a druid.
+- WoW: těžká zbroj má víc obrany, látková ji má malou a kouzelníci spoléhají na intelekt. Převzato zjednodušeně na 2 váhy; od v1.18 těžkou nosí jen válečník (druid jen kroužkovou zbroj).
 - Chytrá kořist 85/15 % podle Diabla 3, aby legendárky pro jiné třídy nebyly otravně časté.
 - Válečník: síla, výdrž, obrana (těžká zbroj, štít). Kouzelníci: intelekt, odolnosti (lehká zbroj), síla elementu, přebíjení, rychlost sesílání, léčení.
 - v1.3 (Grim Dawn, D3, WoW): Moudrost (ve WoW a Grim Dawnu „Spirit“) jako ve WoW a Grim Dawnu zrychluje obnovu many. Rychlost sesílání je oddělená od rychlosti útoku (WoW spell haste vs. attack haste, Grim Dawn casting speed). Bonusy k typu zbraně a ke konkrétní dovednosti podle Diabla 3/4, poškození elitám a od elit podle D3, poškození proti druhům nepřátel podle Grim Dawnu, rychlost pohybu jen na botách podle D3.
@@ -156,7 +156,7 @@ Většinu vzácných předmětů dává boss. Čísla jsou spočítaná z herní
 - **Očarování** (O1): kulatý znak živlu vpravo dole podle nejsilnějšího statu (`ENCHANTS`, `itemEnchant`): oheň, mráz, jed (příroda), stín, magie, zlato (zlato a lepší kořist), krev (vysávání). Šedé předměty očarování nemají. V popisku řádek „Očarování: …“.
 - **Sety** (S1): znak setu v jeho barvě vlevo nahoře (`color`, `glyph` v `SETS`): Titán bronzový štít, Arcimág modrá hvězda, Stínový lovec zelená kápě, Pakt Prázdnoty fialový pentagram, Strážce Hvozdu zelený list.
 - **Ohnisko** se od v1.12 jmenuje **Kniha kouzel** (starší předměty si název nechávají).
-- **v1.18:** Kniha kouzel je obouruční zbraň (dřív levá ruka). Sety upravené: Arcimág, Pakt Prázdnoty, Věčný plamen a Spálený král mají místo hole/hůlky/dýky knihu (Spálený král místo druhé knihy rukavice), Stínový lovec a Rudý měsíc lehké sandály a vestu místo těžkých kusů. Migrace `gearRules118`/`orbFix118`: staré knihy dostanou útok, nevhodné nasazené kusy jdou do batohu a kouzelník, který přišel o zbraň, dostane knihu stejné úrovně (nejvýš epickou).
+- **v1.18:** Kniha kouzel je obouruční zbraň (dřív levá ruka). Sety upravené: Arcimág, Pakt Prázdnoty, Věčný plamen a Spálený král mají místo hole/hůlky/dýky knihu (Spálený král místo druhé knihy rukavice), Stínový lovec a Rudý měsíc lehké sandály a vestu místo těžkých kusů. Fénixova zbroj je od v1.18.1 kroužková a Nohavice Kamenné kůže kalhoty (sdílí je válečník a druid). Legendárky a sety se změněným typem se při načtení převedou na nový typ, hlavní atribut zůstane (`syncUniqueType`). Migrace `gearRules118`/`gearRules1181`/`orbFix118`/`uniqFix1181`: staré knihy dostanou útok, nevhodné nasazené kusy jdou do batohu a kouzelník, který přišel o zbraň, dostane knihu stejné úrovně (nejvýš epickou).
 
 ### Mýtický tier (v1.12)
 - Nejvzácnější rarita (`mythic`, barva rudá). Nepadá losem rarity: **jen z bossů od podzemí 150, šance 1 %** na každého poraženého bosse (`MYTHIC_CHANCE`).
