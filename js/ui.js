@@ -882,7 +882,10 @@ function doImport(text) {
   try { G.save = importSave(text !== undefined ? text : $('save-code').value); delete G.save._notice; persist(); showMenu(); toast('Uložení načteno'); }
   catch (e) {
     const n = (e.len || 0).toLocaleString('cs-CZ');
-    toast(e.why === 'empty' ? 'Nejdřív vlož kód uložení' : `Kód je poškozený nebo neúplný (${n} znaků). Zkopíruj ho celý znovu, nebo použij přenos souborem.`);
+    toast(e.why === 'empty' ? 'Nejdřív vlož kód uložení'
+      : e.why === 'migrate' ? `Kód je celý v pořádku, ale uložení se nepodařilo převést (${e.detail}). Pošli tuhle hlášku do chatu s Claudem.`
+      : e.why === 'broken' ? `Kód je poškozený nebo neúplný (vloženo ${n} znaků). Porovnej s počtem znaků při kopírování, nebo použij přenos souborem.`
+      : `Uložení se nepodařilo načíst (${e && e.message}). Pošli tuhle hlášku do chatu s Claudem.`);
   }
 }
 // Přenos souborem: nic ho cestou nepoškodí (pošli si ho e-mailem, přes Disk Google, kabelem…)

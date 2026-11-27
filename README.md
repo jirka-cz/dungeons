@@ -52,6 +52,7 @@ Město (obchodník, kovář, truhla, obelisk) → rift zvolené úrovně → pln
 - `PROJEKT.md` a `docs/` – dokumentace pro další vývoj
 
 ## Verze
+- **1.17.3** – přenos postav: když je kód v pořádku, ale uložení se nepodaří převést, hra to řekne i s důvodem (dřív se to hlásilo jako neplatný kód).
 - **1.17.2** – přenos postav: dlouhý kód se načte i poškozený cestou (chybějící „WD5:“, rozdělení na řádky, mezery místo „+“, neviditelné znaky), u neúplného kódu srozumitelná hláška; nový přenos souborem (Stáhnout soubor / Načíst ze souboru).
 - **1.17.1** – oprava hry více hráčů: host se odpojil hned po vstupu do podzemí (knihovna PeerJS odmítá zprávy nad 16 kB a stav podzemí je teď větší) – dlouhé zprávy se posílají po kouscích. Připojování do místnosti ukazuje postup (server → spojení s hostitelem → hostitel) a při neúspěchu konkrétní důvod (špatný kód, nedostupný server, síť blokuje přímé spojení, hostitel neodpovídá); hostitel vidí, že se k němu někdo připojuje.
 - **1.17.0** – Přenos postav na jiné zařízení krátkým kódem (⇄ v hlavním menu nebo Nastavení → Přenos postav): na jednom zařízení Odeslat, na druhém zadat 5místný kód. Přenesou se postavy, zlato i truhla, před nahrazením existujících postav se hra zeptá. Dlouhý kód zůstává jako záloha.

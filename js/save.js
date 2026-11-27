@@ -106,5 +106,6 @@ function importSave(code) {
   let s;
   try { s = JSON.parse(decodeURIComponent(escape(atob(c)))); } catch (e) { throw bad('broken'); }
   if (typeof s !== 'object' || s === null || !Array.isArray(s.chars)) throw bad('broken');
-  return migrateSave(s);
+  try { return migrateSave(s); }
+  catch (e) { const err = bad('migrate'); err.detail = String(e && e.message || e); console.error('Převod uložení selhal', e); throw err; }
 }
