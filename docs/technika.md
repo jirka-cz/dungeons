@@ -12,7 +12,7 @@
 ## Ukládání (`js/save.js`)
 - `localStorage` klíč `wd_save`, `SAVE_VERSION = 5`.
 - Obsah: postavy, sdílené zlato a truhla, nastavení.
-- Export/import kódem `WD5:…` (base64 JSON) – záložní způsob přenosu (okno Přenos postav → Záložní dlouhý kód).
+- Export/import kódem `WD5:…` (base64 JSON) – záložní způsob přenosu (okno Přenos postav → záloha). `importSave` opraví poškození z e-mailu/chatu: chybějící `WD5:`, konce řádků, mezery místo `+`, neviditelné znaky, URL-safe base64; chyba má `e.why` (`empty`/`broken`) a `e.len`. Totéž jako soubor `.txt` (`doExportFile` / `doImportFile`).
 - **Přenos postav krátkým kódem** (od 1.17.0, konec `js/net.js`, objekt `Xfer`): odesílající zařízení si na serveru PeerJS zabere ID `wd-xfer-KÓD` (5 znaků jako u místností) a čeká až 10 minut, nebo dokud je otevřené okno Přenos postav (zavřením se kód zruší). Přijímající se připojí a dostane `head` (verze hry, přehled postav a zlata) a uložení ve formátu `WD5:` po kouscích 16 000 znaků (`part`). Uložení projde `importSave` (migrace). Má-li přijímající vlastní postavy, zeptá se (Přijmout = nahradit vše, Zrušit = odesílatel dostane `no` a kód dál platí). Když má přijímající starší verzi hry než odesílatel, přenos odmítne (`old`) a vyzve k obnovení stránky. Během hry v místnosti s přáteli příjem nejde.
 - **Migrace** v `migrateSave`:
   - verze < 5 (idle 0.x) začíná nově, zlato zůstane;
@@ -48,6 +48,7 @@ Předpoklady: Node.js a Python s Playwrightem (`pip install playwright` a `pytho
 | `tests/racecls.py`, `autosell.py`, `shrine.py` | omezení rasa/třída, automatický prodej, svatyně |
 | `tests/bossfight.py` | souboje s každým bossem dvěma styly – „stand“ (jen stojí) a „dodge“ (uhýbá); vypíše čas, smrti, lektvary. Volba `dbg` vypíše poškození podle útoků |
 | `tests/bosses_shots.py` | snímky všech bossů (nástup, velký útok, 2. fáze); `mobile` = telefon na výšku |
+| `tests/savecode.py` | dlouhý kód poškozený cestou (bez `WD5:`, řádky, mezery, neviditelné znaky) se načte, useknutý dá hlášku; přenos souborem. Snímek `savecode.png` |
 | `tests/transfer.py` | přenos postav krátkým kódem přes skutečné WebRTC (lokální server PeerJS jako u `net.py`): shoda dat i po obnovení, velké uložení po kouscích, potvrzení / zrušení, neplatný kód, zavření okna, dlouhý kód. Snímky `xfer_*.png` |
 | `tests/coop.py` | více hrdinů: zesílení nepřátel, XP a kořist zvlášť, útoky na spoluhráče, mazlíčci podle majitele (spoluhráče řídí bot) |
 | `tests/riftsel.py` | výběr riftu u obelisku (nejvyšší, poslední, libovolný), snímky počítač/mobil |

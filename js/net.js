@@ -913,7 +913,7 @@ function xferRecv(code) {
   Object.assign(Xfer, { role: 'recv', side: 'recv', peer, code });
   xferSet('wait', 'Připojuji se…');
   const fail = msg => { if (Xfer.peer === peer) xferFail('recv', msg); };
-  setTimeout(() => { if (Xfer.peer === peer && !Xfer.head) fail('Spojení se nepodařilo navázat. Zkontroluj kód a internet na obou zařízeních.'); }, 20000);
+  setTimeout(() => { if (Xfer.peer === peer && !Xfer.head) fail('Spojení se nepodařilo navázat. Zkontroluj kód. Pokud je jedno zařízení ve firemní síti nebo na VPN, síť přímé spojení blokuje – použij níže přenos souborem.'); }, 20000);
   peer.on('error', e => fail(e.type === 'peer-unavailable' ? `Kód ${code} neplatí. Zkontroluj ho, nebo na druhém zařízení klepni znovu na Odeslat.` : 'Připojení se nepodařilo. Zkontroluj kód a internet.'));
   peer.on('open', () => {
     const conn = peer.connect(XFER_PREFIX + code, { reliable: true, serialization: 'json' });
@@ -984,8 +984,11 @@ function showTransfer() {
         : `<p class="muted small">Zadej kód z druhého zařízení.</p>${side === 'recv' ? status : ''}
         <div class="net-join"><input id="xfer-in" maxlength="6" placeholder="KÓD" autocomplete="off" autocapitalize="characters" onkeydown="if(event.key==='Enter')xferRecv(this.value)">
         <button class="primary" id="xfer-recv" ${busy ? 'disabled' : ''} onclick="xferRecv($('xfer-in').value)">Přijmout</button></div>`}</div>
-    <details class="xfer-old"><summary class="small">Záložní dlouhý kód (když nejde přenos přes internet)</summary>
-      <p class="muted small">Zkopíruj kód, pošli si ho (e-mail, zpráva) a na druhém zařízení ho sem vlož a načti.</p>
+    <details class="xfer-old"><summary class="small">Záložně souborem nebo dlouhým kódem (když krátký kód nejde – firemní síť, VPN)</summary>
+      <p class="muted small"><b>Soubor</b> (nejspolehlivější): stáhni ho tady, pošli si ho (e-mail, Disk Google…) a na druhém zařízení ho načti.</p>
+      <div class="actions" style="justify-content:flex-start"><button onclick="doExportFile()">Stáhnout soubor</button>
+        <label class="btn-file"><input type="file" accept=".txt,text/plain" onchange="doImportFile(this)" hidden><span>Načíst ze souboru</span></label></div>
+      <p class="muted small"><b>Dlouhý kód</b>: zkopíruj, pošli si ho a na druhém zařízení ho sem vlož a načti.</p>
       <button onclick="doExport()">Zkopírovat kód uložení</button>
       <textarea id="save-code" rows="3" placeholder="Sem vlož kód uložení (WD5:...)"></textarea>
       <div class="actions"><button onclick="doImport()">Načíst z kódu</button></div></details>`, false, 'xfer');

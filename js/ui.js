@@ -873,13 +873,35 @@ function showSettings() {
 }
 function doExport() {
   persist();
-  const code = exportSave(G.save);
+  const code = exportSave(G.save), n = code.length.toLocaleString('cs-CZ');
   $('save-code').value = code; $('save-code').select();
-  if (navigator.clipboard) navigator.clipboard.writeText(code).then(() => toast('Kód zkopírován'), () => toast('Zkopíruj kód z pole'));
+  if (navigator.clipboard) navigator.clipboard.writeText(code).then(() => toast(`Kód zkopírován (${n} znaků)`), () => toast(`Zkopíruj kód z pole (${n} znaků)`));
+  else toast(`Zkopíruj kód z pole (${n} znaků)`);
 }
-function doImport() {
-  try { G.save = importSave($('save-code').value); delete G.save._notice; persist(); showMenu(); toast('Uložení načteno'); }
-  catch (e) { toast('Neplatný kód uložení'); }
+function doImport(text) {
+  try { G.save = importSave(text !== undefined ? text : $('save-code').value); delete G.save._notice; persist(); showMenu(); toast('Uložení načteno'); }
+  catch (e) {
+    const n = (e.len || 0).toLocaleString('cs-CZ');
+    toast(e.why === 'empty' ? 'Nejdřív vlož kód uložení' : `Kód je poškozený nebo neúplný (${n} znaků). Zkopíruj ho celý znovu, nebo použij přenos souborem.`);
+  }
+}
+// Přenos souborem: nic ho cestou nepoškodí (pošli si ho e-mailem, přes Disk Google, kabelem…)
+function doExportFile() {
+  persist();
+  const blob = new Blob([exportSave(G.save)], { type: 'text/plain' }), a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = `world-dungeons-ulozeni-${new Date().toISOString().slice(0, 10)}.txt`;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+  toast('Soubor s uložením se stahuje');
+}
+function doImportFile(input) {
+  const f = input.files && input.files[0];
+  if (!f) return;
+  const r = new FileReader();
+  r.onload = () => doImport(String(r.result || ''));
+  r.onerror = () => toast('Soubor se nepodařilo přečíst');
+  r.readAsText(f);
+  input.value = '';
 }
 
 function showLegend() {

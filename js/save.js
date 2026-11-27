@@ -92,10 +92,19 @@ function writeSave(s) {
 }
 
 function exportSave(s) { return 'WD5:' + btoa(unescape(encodeURIComponent(JSON.stringify(s)))); }
+// Kód se cestou (e-mail, chat) často poškodí: ztratí úvodní „WD5:“, rozdělí se na řádky, „+“ se změní na mezeru,
+// přibudou neviditelné znaky. Načítání proto tyhle drobnosti opraví. Chyba má e.why = 'empty' / 'broken' a e.len.
 function importSave(code) {
-  code = (code || '').trim();
-  if (!/^WD\d:/.test(code)) throw new Error('Neplatný kód');
-  const s = JSON.parse(decodeURIComponent(escape(atob(code.slice(4)))));
-  if (typeof s !== 'object' || s === null) throw new Error('Neplatný kód');
+  let c = String(code || '').trim().replace(/[\r\n\t\u200B-\u200D\u2060\uFEFF"'<>]/g, '');
+  const m = c.match(/WD\d:/i);
+  if (m) c = c.slice(m.index + m[0].length);
+  c = c.replace(/ /g, '+').replace(/-/g, '+').replace(/_/g, '/').replace(/=+$/, '');
+  const bad = e => { const err = new Error('Neplatný kód'); err.why = e; err.len = c.length; return err; };
+  if (c.length < 20) throw bad('empty');
+  if (/[^A-Za-z0-9+/]/.test(c)) throw bad('broken');
+  while (c.length % 4) c += '=';
+  let s;
+  try { s = JSON.parse(decodeURIComponent(escape(atob(c)))); } catch (e) { throw bad('broken'); }
+  if (typeof s !== 'object' || s === null || !Array.isArray(s.chars)) throw bad('broken');
   return migrateSave(s);
 }
