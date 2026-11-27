@@ -1,6 +1,6 @@
 // Herní data a balanc. Změna čísla = jiná obtížnost.
 
-const GAME_VERSION = '1.18.1';
+const GAME_VERSION = '1.18.2';
 const TILE = 16;                 // velikost dlaždice v px
 const VIEW_W = 460, VIEW_H = 260; // logické rozlišení světa (zvětšuje se pixelově)
 
@@ -28,9 +28,9 @@ const RACES = {
   elf:    { name: 'Elf',      hp: 85,  atk: 10, def: 2, spd: 1.08, ms: 1.14, crit: 0.10, bonus: { dodge: 0.08, elfDash: 1 },
             trait: 'Lesní mrštnost', desc: 'Nejrychlejší a nejmrštnější, ale křehký. +14 % pohyb, +8 % úhyb, +10 % krit. šance. Po pohybové dovednosti máš 2 s +30 % pohyb a +15 % úhyb.' },
   orc:    { name: 'Ork',      hp: 115, atk: 13, def: 2, spd: 0.97, ms: 1.00, crit: 0.05, bonus: { atkPct: 0.10, orcRage: 1 },
-            trait: 'Krvavý vztek', desc: 'Hrubá síla, slabší obrana. +10 % útok. Pod 50 % života +20 % útok a +10 % rychlost útoku.' },
-  undead: { name: 'Nemrtvý',  hp: 95,  atk: 10, def: 3, spd: 1.00, ms: 0.95, crit: 0.05, ls: 0.06, bonus: { shadowPct: 0.10, killHeal: 0.01 },
-            trait: 'Neživot', desc: 'Vysává 6 % poškození jako život a každé zabití ho vyléčí o 1 %. +10 % stínové poškození. Rasový strom: kostlivci.' }
+            trait: 'Krvavý vztek', desc: 'Hrubá síla, slabší obrana. +10 % útok. Pod 50 % života +15 % útok a +10 % rychlost útoku.' },
+  undead: { name: 'Nemrtvý',  hp: 95,  atk: 10, def: 3, spd: 1.00, ms: 0.95, crit: 0.05, ls: 0.04, bonus: { shadowPct: 0.10, killHeal: 0.005 },
+            trait: 'Neživot', desc: 'Vysává 4 % poškození jako život a každé zabití ho vyléčí o 0,5 %. +10 % stínové poškození. Rasový strom: kostlivci.' }
 };
 
 // Růst postavy s úrovní
@@ -144,7 +144,7 @@ const BOSS_EXPOSED_MUL = 1.5;       // vyčerpaný boss dostává +50 % poškoze
 // ---------- Škálování riftu ----------
 const RIFT = {
   // růst života, útoku a zkušeností podle úrovně: RIFT_HP_CURVE, RIFT_ATK_CURVE, RIFT_XP_CURVE níže
-  density: 0.03,                                // +3 % nepřátel za úroveň
+  density: 0.03, densityMax: 100,               // +3 % nepřátel za úroveň, jen do podzemí 100 (pak už jen sílí – jinak se skupiny slévají do jednoho davu)
   // „Jatka“ (od 1.10.0): skupiny běžných nepřátel jsou 3× větší. Každý z nich dává jen třetinu XP, zlata, postupu
   // a šance na předmět, takže za celé podzemí vychází odměny stejně jako dřív (sedí i ceny u obchodníka, riftRunGold).
   crowd: 3,
@@ -193,12 +193,12 @@ function levelGapMul(L, lvl) {
 // Nepřátelé: násobek života a útoku podle úrovně podzemí (bez rozdílu úrovní)
 // Hodnoty jsou nastavené podle simulace (tests/balance.py): hrdina na přirozené úrovni s výbavou z daného podzemí
 // zabije elitu zhruba za 2–3 s v podzemí 1, 7 s v podzemí 20, 13 s ve 100 a 18 s ve 300 a elita ho zabije
-// asi za 30 zásahů v podzemí 1, 17 ve 20 a 12 od podzemí 100 výš (válečník vydrží víc, mág méně). Mezi body se dopočítává plynule, za posledním bodem
+// asi za 30 zásahů v podzemí 1, 17 ve 20, 12–13 kolem podzemí 100 a ~15 od podzemí 150 výš (válečník vydrží víc, mág méně). Mezi body se dopočítává plynule, za posledním bodem
 // roste dál stejným tempem (život i útok ~+1,3 % za úroveň).
 const RIFT_HP_CURVE  = [[1, 1], [5, 2.4], [10, 6.5], [20, 42], [30, 180], [40, 750], [60, 3900], [80, 12000], [100, 26500],
   [150, 92000], [200, 207000], [250, 427000], [300, 865000], [400, 3540000]];
-const RIFT_ATK_CURVE = [[1, 1], [5, 1.9], [10, 3.9], [20, 11.5], [30, 34.5], [40, 100], [60, 510], [80, 1360], [100, 3000],
-  [150, 8900], [200, 19100], [250, 39000], [300, 74400], [400, 251000]];
+const RIFT_ATK_CURVE = [[1, 1], [5, 1.9], [10, 3.9], [20, 11.5], [30, 34.5], [40, 100], [60, 510], [80, 1360], [100, 2700],
+  [150, 7400], [200, 15300], [250, 31200], [300, 59500], [400, 200000]];
 // Zkušenosti za nepřítele (tempo: na přirozené úrovni dá jedno podzemí 30 → ½ úrovně, 100 → ⅕, 300 → 1/10 úrovně)
 const RIFT_XP_CURVE  = [[1, 1], [5, 1.63], [10, 3.0], [20, 10.2], [30, 29.7], [60, 245], [100, 1093], [150, 3100], [200, 6080],
   [300, 17900], [400, 51400]];

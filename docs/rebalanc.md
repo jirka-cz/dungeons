@@ -16,8 +16,8 @@ Cíl (zadání Jirky): aby rasa, třída i talenty měly **přímý a viditelný
 | Člověk | 105 | 11 | 3 | 100 % | 100 % | **Přizpůsobivost**: +10 % XP, +10 % lepší kořist, o 20 % kratší zmrazení a zpomalení | **Lidská vůle** – zruší zmrazení i ve zmrazení, 4 s imunita a +20 % útok |
 | Trpaslík | 135 | 9 | 7 | 92 % | **86 %** | **Horská výdrž**: +8 % odolnosti, +15 % zlata, Horský stisk | **Kamenná podoba** – 8 s -40 % poškození, imunita na zpomalení, ale -20 % pohyb |
 | Elf | 85 | 10 | 2 | 108 % | **114 %** | **Lesní mrštnost**: +8 % úhyb, +10 % krit; po pohybové dovednosti 2 s +30 % pohyb a +15 % úhyb | **Splynutí se stínem** – 3 s neviditelný (běžní nepřátelé neútočí), první útok kritický a ×2 |
-| Ork | 115 | 13 | 2 | 97 % | 100 % | **Krvavý vztek**: +10 % útok; pod 50 % života +20 % útok a +10 % rychlost útoku | **Krvavá zuřivost** – 12 s +30 % útok a +15 % rychlost, ale polovina léčení |
-| Nemrtvý | 95 | 10 | 3 | 100 % | 95 % | **Neživot**: vysává 6 %, zabití léčí 1 %, +10 % stín | **Povstání mrtvých** – 2 kostlivci na 15 s (najednou max. 4) |
+| Ork | 115 | 13 | 2 | 97 % | 100 % | **Krvavý vztek**: +10 % útok; pod 50 % života +15 % útok a +10 % rychlost útoku | **Krvavá zuřivost** – 12 s +30 % útok a +15 % rychlost, ale polovina léčení |
+| Nemrtvý | 95 | 10 | 3 | 100 % | 95 % | **Neživot**: vysává 4 %, zabití léčí 0,5 %, +10 % stín | **Povstání mrtvých** – 2 kostlivci na 15 s (najednou max. 4) |
 
 **Rasový strom** (čtvrtá záložka v Talentech, 12 uzlů / 18 úrovní, body ze stejné zásoby): rasová dovednost, její zesílení a volba, pasivky a dvě klíčové pasivky (smíš mít jednu). Nejdůležitější mechaniky:
 - **Nemrtví**: Kostěná armáda (+1 kostlivec), Kostěný mág (střílí ledové střely), **Vzkříšení padlých** (zabitý nepřítel s 10% šancí povstane jako tvůj kostlivec na 10 s), Kostěný štít (-3 % poškození za každého kostlivce), klíčové: *Armáda mrtvých* (+3 kostlivci, vzkříšení 25 %) nebo *Pán smrti* (+50 % síla, kostlivec při zániku vybuchne).

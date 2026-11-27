@@ -45,6 +45,9 @@ Klíčové pasivky specializací:
   - Rovnováha: Měsíční bohyně / Dokonalá bouře / Věčné zatmění
   - Divočina: Medvědí síla / Vlčí zuřivost / Krvavá divočina
 
+### Rozpočet čísel (od 1.18.2)
+- Všechny hodnoty talentů a dovedností jsou v mezích z `docs/herni-design.md` kap. 4b (jednotky procent; léčení z poškození jen pár procent). Výpis hodnot: `node tools/talent-audit.js`.
+
 ### Rasové stromy (od 1.13.0, `RACE_TALENTS`, rozložení `RACE_LAYOUT`)
 | Rasa | Rasová dovednost (R1) | Hlavní mechaniky | Klíčové pasivky |
 |---|---|---|---|

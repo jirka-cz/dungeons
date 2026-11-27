@@ -70,7 +70,7 @@ function heroEffects(h, st) {
       desc: `${C.trait.desc} Teď ${fmtBig(cur)} z ${fmtBig(Math.round(full))}. Na postavě je vidět jako modrá bublina.` });
   }
   if (M.orcRage && h.hp < st.maxHp * 0.5) out.push({ key: 'orcrage', name: R.trait, icon: gi('fire-punch', '#ff6040'), color: '#ff6040', time: '',
-    desc: `Pod 50 % života: +${M.orcRage2 ? 40 : 20} % útok a +${M.orcRage2 ? 20 : 10} % rychlost útoku.` });
+    desc: `Pod 50 % života: +${M.orcRage2 ? 30 : 15} % útok a +${M.orcRage2 ? 20 : 10} % rychlost útoku.` });
   if (h.stealth > 0 && !h.buffs.some(b => b.id === 'shadowmeld')) out.push({ key: 'stealth', name: 'Ve stínu', icon: gi('hood', '#8a7ac8'), color: '#8a7ac8', time: Math.ceil(h.stealth) + ' s',
     desc: 'Běžní nepřátelé tě nevidí. První útok bude kritický a silnější.' });
   const sk = typeof skeletonsOf === 'function' ? skeletonsOf(h).length : 0;

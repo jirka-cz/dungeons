@@ -33,8 +33,8 @@ const CLASSES = {
     weapons: ['orb'], starter: 'orb',
     colors: ['#2c3a86', '#11132a'],
     base: ['sbolt', 'drain'],
-    dotLeech: 0.10,
-    trait: { name: 'Temný pakt', desc: 'Vysává 4 % poškození jako život a jeho kletby (poškození v čase) ho léčí o 10 % svého poškození.' },
+    dotLeech: 0.04,
+    trait: { name: 'Temný pakt', desc: 'Vysává 4 % poškození jako život a jeho kletby (poškození v čase) ho léčí o 4 % svého poškození.' },
     desc: 'Pomalá smrt: prokleje celé skupiny a žije z jejich utrpení, nebo velí démonům. Kletby, nebo Démonologie.',
   },
   hunter: {
@@ -69,7 +69,7 @@ const SKILLS = {
   mortal:   { name: 'Smrtící úder', glyph: '✖', type: 'melee', elem: 'phys', range: 28, arc: 70, dmg: 3.2, cost: 30, dot: { elem: 'phys', pct: 0.5, dur: 5 }, color: '#ff5050', desc: 'Mohutný úder, který způsobí krvácení.' },
   cleave:   { name: 'Rozsekání', glyph: '◠', type: 'melee', elem: 'phys', range: 34, arc: 220, dmg: 1.8, cost: 20, dot: { elem: 'phys', pct: 0.3, dur: 4 }, color: '#ffb0a0', desc: 'Široký sek kolem sebe s krvácením.' },
   whirl:    { name: 'Vichřice', glyph: '🌀', type: 'whirl', elem: 'phys', r: 30, dmg: 0.55, dur: 3, cost: 40, cd: 5, color: '#e0e0e0', desc: 'Točíš se a sekáš vše kolem sebe, pohybuješ se rychleji.' },
-  shout:    { name: 'Bojový pokřik', glyph: '📯', type: 'buff', dur: 10, stats: { atkPct: 0.25, dmgRed: 0.1 }, cd: 20, gen: 40, color: '#ffd060', desc: '+25 % útok a -10 % přijatého poškození na 10 s.' },
+  shout:    { name: 'Bojový pokřik', glyph: '📯', type: 'buff', dur: 10, stats: { atkPct: 0.15, dmgRed: 0.1 }, cd: 20, gen: 40, color: '#ffd060', desc: '+15 % útok a -10 % přijatého poškození na 10 s.' },
   bash:     { name: 'Úder štítem', glyph: '🛡', type: 'dash', elem: 'phys', dist: 56, r: 24, dmg: 2.2, stun: 1.5, cost: 20, cd: 4, color: '#c9ced6', desc: 'Výpad vpřed, zasažené omráčí.' },
   quake:    { name: 'Zemětřesení', glyph: '⛰', type: 'nova', elem: 'phys', r: 64, dmg: 2.5, stun: 1.2, cost: 40, cd: 10, color: '#c8a060', desc: 'Otřes kolem tebe zraní a omráčí nepřátele.' },
   // Mág
@@ -83,7 +83,7 @@ const SKILLS = {
   aorb:     { name: 'Arkánní koule', glyph: '◉', type: 'projectile', elem: 'arcane', speed: 85, dmg: 1.2, size: 6, pierce: 99, range: 190, explode: { r: 42, dmg: 2.5 }, cost: 35, color: '#e070ff', desc: 'Pomalá koule prochází nepřáteli a na konci vybuchne.' },
   // Černokněžník
   sbolt:    { name: 'Stínový šíp', glyph: '➶', primary: true, type: 'projectile', elem: 'shadow', speed: 210, dmg: 1.0, size: 2, color: '#c77dff', desc: 'Základní stínové kouzlo.' },
-  drain:    { name: 'Vysátí', glyph: '❦', type: 'drain', elem: 'shadow', range: 130, dmg: 2.0, heal: 0.5, cost: 10, cd: 4, color: '#c040ff', desc: 'Vysaje nejbližšího nepřítele a vyléčí tě o polovinu poškození.' },
+  drain:    { name: 'Vysátí', glyph: '❦', type: 'drain', elem: 'shadow', range: 130, dmg: 2.0, heal: 0.15, cost: 10, cd: 4, color: '#c040ff', desc: 'Vysaje nejbližšího nepřítele a vyléčí tě o 15 % poškození.' },
   agony:    { name: 'Zkáza', glyph: '☠', type: 'ground', elem: 'shadow', r: 40, delay: 0.1, dmg: 0, dot: { elem: 'shadow', pct: 1.6, dur: 8 }, cost: 25, color: '#9a40ff', desc: 'Prokleje všechny nepřátele v oblasti silnou kletbou.' },
   plague:   { name: 'Mor', glyph: '☣', type: 'ground', elem: 'shadow', r: 46, delay: 0.1, dur: 6, tick: 0.5, dmg: 0.35, cost: 35, cd: 2, color: '#7a40c0', desc: 'Jedovatý mrak zraňuje vše uvnitř.' },
   imp:      { name: 'Vyvolej skřeta', glyph: '👹', type: 'summon', pet: 'imp', max: 2, cost: 40, cd: 2, color: '#ff6020', desc: 'Vyvolá skřeta, který střílí ohnivé koule (max. 2).' },

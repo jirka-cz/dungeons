@@ -12,8 +12,8 @@ Od 1.13.0 velký rebalanc – rasy mají rysy, pohyb a vlastní strom talentů, 
 | Člověk | 105 / 11 / 3 | 100 % | 100 % | Přizpůsobivost: +10 % XP, +10 % lepší kořist, -20 % trvání zmrazení/zpomalení | Lidská vůle | válečník, mág, lovec |
 | Trpaslík | 135 / 9 / 7 | 92 % | 86 % | Horská výdrž: +8 % odolnosti, +15 % zlata, Horský stisk, -15 % CC | Kamenná podoba | válečník, lovec |
 | Elf | 85 / 10 / 2, krit 10 % | 108 % | 114 % | Lesní mrštnost: +8 % úhyb; po pohybové dovednosti 2 s +30 % pohyb a +15 % úhyb (`elfDash`) | Splynutí se stínem | mág, lovec, druid |
-| Ork | 115 / 13 / 2 | 97 % | 100 % | Krvavý vztek: +10 % útok; pod 50 % života +20 % útok a +10 % rychlost útoku (`orcRage`) | Krvavá zuřivost | válečník, černokněžník, lovec |
-| Nemrtvý | 95 / 10 / 3 | 100 % | 95 % | Neživot: vysává 6 %, zabití léčí 1 %, +10 % stín | Povstání mrtvých (kostlivci) | válečník, mág, černokněžník |
+| Ork | 115 / 13 / 2 | 97 % | 100 % | Krvavý vztek: +10 % útok; pod 50 % života +15 % útok a +10 % rychlost útoku (`orcRage`) | Krvavá zuřivost | válečník, černokněžník, lovec |
+| Nemrtvý | 95 / 10 / 3 | 100 % | 95 % | Neživot: vysává 4 %, zabití léčí 0,5 %, +10 % stín | Povstání mrtvých (kostlivci) | válečník, mág, černokněžník |
 
 - `spd` = rychlost útoku a sesílání, `ms` = rychlost pohybu (dřív rasa měnila jen rychlost útoku).
 - **Rasový strom**: čtvrtá záložka v Talentech (`RACE_TALENTS` v `js/talents.js`), viz `docs/talenty.md`.

@@ -89,7 +89,7 @@ function heroStats(ch) {
     spd: 1.35 * r.spd * c.spd * (1 + m.spdPct),
     crit: Math.min(0.75, r.crit + m.crit),
     critMult: 2 + m.critDmg,
-    ls: Math.min(0.3, (r.ls || 0) + (c.ls || 0) + m.ls) * (1 + m.healPct),
+    ls: Math.min(0.15, (r.ls || 0) + (c.ls || 0) + m.ls) * (1 + m.healPct),
     dodge: Math.min(0.35, m.dodge),
     block: Math.min(0.5, m.block),
     dmgTaken: (1 - Math.min(0.6, m.dmgRed)) * (1 - (c.dr || 0)),   // válečník: Železná kůže (mimo strop 60 %)
@@ -235,7 +235,7 @@ function heroHit(m, mult, elem, o = {}) {
   if (M.burnBonus && hasFireDot(m)) mult *= 1 + M.burnBonus;
   if (M.slowedBonus && (m.slowT > 0 || (m.stunT > 0 && m.stunKind === 'freeze'))) mult *= 1 + M.slowedBonus;
   if (M.lowHpDmg && h.hp < st.maxHp * 0.5) mult *= 1 + M.lowHpDmg;
-  if (M.orcRage && h.hp < st.maxHp * 0.5) mult *= 1 + 0.2 * (M.orcRage2 ? 2 : 1);   // ork: Krvavý vztek
+  if (M.orcRage && h.hp < st.maxHp * 0.5) mult *= 1 + 0.15 * (M.orcRage2 ? 2 : 1);   // ork: Krvavý vztek
   if (st.rangeBonus && !o.dot) mult *= 1 + clamp((dist(h, m) - 40) / 1000, 0, st.rangeBonus);   // lovec: čím dál, tím víc
   let ambush = false;
   if (h.ambushT > G.time && !o.dot) { ambush = true; h.ambushT = 0; mult *= 2 + (M.stealthDmg || 0); }   // útok ze stínu (elf)

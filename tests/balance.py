@@ -102,8 +102,9 @@ BOT = r"""
     startRift(L);
     const R = G.rift;
     let state = 'rift', ticks = 0;
-    while (state === 'rift' && ticks < cfg.maxTicks) { state = step(300); ticks += 300; }
-    res.push({ L, lvl, done: R.done, prog: Math.round(R.progress), time: Math.round(R.time), bossT: R.bossT ? Math.round(R.bossT) : '-', deaths: R.deaths,
+    let dPre = null, bossName = null;
+    while (state === 'rift' && ticks < cfg.maxTicks) { state = step(300); ticks += 300; if (R.bossSpawned && dPre === null) dPre = R.deaths; if (R.boss) bossName = R.boss.name; }
+    res.push({ L, lvl, preBossDeaths: dPre, bossName, done: R.done, prog: Math.round(R.progress), time: Math.round(R.time), bossT: R.bossT ? Math.round(R.bossT) : '-', deaths: R.deaths,
       boss: R.boss ? R.boss.name + ' ' + Math.round(R.boss.hp / R.boss.maxHp * 100) + '%' : '-' });
     if (state === 'rift') enterTown();
   }
@@ -119,7 +120,10 @@ async def main():
         errs = []; pg.on('pageerror', lambda e: errs.append('PAGE:' + str(e)))
         await pg.goto(GAME); await pg.wait_for_timeout(400)
         await pg.evaluate(SETUP)
-        if mode == 'fit':
+        if mode == 'ratio':
+            rows = await pg.evaluate(TABLE, [10, 40, 100, 250])
+            for r in rows: print(r['cls'].ljust(8), r['L'], 'útok/život', round(r['atk']/r['hp'],2), 'DPS/život', round(r['dps']/r['hp'],2))
+        elif mode == 'fit':
             await pg.evaluate('() => { window.__reps = 4; }')
             rows = await pg.evaluate(TABLE, cfg.get('L', [1, 5, 10, 20, 30, 40, 60, 80, 100, 150, 200, 250, 300, 400]))
             import collections

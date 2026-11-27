@@ -78,7 +78,7 @@ function startRift(level) {
 
 function populateRift() {
   const W = G.world, T = THEMES[W.theme], L = G.rift.level;
-  const goal = RIFT.progressGoal * 1.45 * (1 + RIFT.density * L);
+  const goal = RIFT.progressGoal * 1.45 * (1 + RIFT.density * Math.min(L, RIFT.densityMax));
   const sp = { x: Math.floor(W.spawn.x / TILE), y: Math.floor(W.spawn.y / TILE) };
   const cand = floorTiles(W).filter(([x, y]) => isOpen(W, x, y) && Math.hypot(x - sp.x, y - sp.y) > 11);
   const centers = [];

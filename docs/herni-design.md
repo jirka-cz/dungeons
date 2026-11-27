@@ -78,9 +78,32 @@ Současné profily:
 3. `python3 tests/balance.py bot '{"cls":"…","race":"…","L":[3,15,40,100,200]}'` – bot musí podzemí dokončit s rozumným počtem smrtí (bot neuhýbá, jednotky smrtí jsou v pořádku, desítky ne).
 4. `python3 tests/rebalance.py`, `node tests/validate_talents.js`.
 
+## 4b. Rozpočet talentů a dovedností (od 1.18.2 – „jednotky procent“)
+Změřeno (`python3 tests/balance.py ratio`): hrdina s výbavou ze svého podzemí udělá na jeden cíl zhruba **tolik poškození za sekundu, kolik má sám života** (útok ≈ 0,3 × život). Proto:
+- **Léčení z poškození** je velmi silné (5 % vysávání ≈ 5 % života za sekundu, v davu násobně víc). Strop vysávání je 15 % (`heroStats`).
+
+| Co | Úroveň pasivky | Zesílení / volba | Klíčová pasivka |
+|---|---|---|---|
+| Vysávání (`ls`) | 0,5 % | – | max. 2 % |
+| Léčení dovedností z poškození (`healPct`, `skheal_`) | – | +3–5 % | základ dovednosti 8–15 % |
+| Léčení za zabití (`killHeal`) | 0,5 % | – | 1,5 % |
+| Obecné poškození (útok, živel, DoT, mazlíčci, krit. poškození) | 2–3,5 % (krit. pošk. 5–6 %) | 5–12 % | 10–20 % |
+| Krit. šance | 1 % | 1,5 % | 5–7,5 % |
+| Snížení poškození (`dmgRed`) | 1 % | – | 5–6 % |
+| Život (`hpPct`) | 3 % | – | 6–12 % |
+| Rychlost útoku | 2–3 % | – | – |
+| Poškození jedné dovednosti (`skd_`) | – | +10–25 % | +20–25 % (součet na jednu dovednost max. ~+50 %) |
+| Dočasné buffy dovedností | – | – | útok +10–20 %, krit +6–15 %, snížení poškození do 15 % (rasové/obranné do 40 %) |
+
+- Úprava 1.18.2 je v `tools/talent-budget.py` (jednorázový skript, znovu nespouštět). Nové talenty rovnou piš v těchto mezích.
+- Po změně čísel: `node tools/talent-audit.js` (všechny hodnoty podle klíče), pak `python3 tests/balance.py table` a `bot` (podzemí 5, 40, 120, 250).
+- Nepřátel přibývá +3 % za úroveň jen do podzemí 100 (`RIFT.densityMax`) – dál by se skupiny slily v jeden dav a bez velkého léčení by se nedalo přežít.
+
 ## 5. Čeho se vyvarovat (chyby, které už jednou nastaly)
 - Rasa měnila jen rychlost útoku, ne pohyb → „pomalý trpaslík“ nebyl cítit. Pohyb je `ms`.
 - Všechny klíčové pasivky byly „+60 % něčeho“ → hraní se nelišilo.
 - Simulace s nerealistickou výbavou (legendárky nahradily sloty) dala špatné křivky – výbavu v `tests/balance.py` nechat tak, jak je.
 - Testovací bot se u střelců občas zasekne v mapě (chyba bota, ne hry) – výsledek „0 smrtí, nízký postup“ ignorovat a spustit znovu.
 - Přátelské jednotky musí být vizuálně odlišené od nepřátel (kostlivci mají zelený kroužek a jiné barvy).
+- Talenty s desítkami procent (Krvežíznivost léčila 55 % poškození, klíčové pasivky +60 %) – hra se pak hraje sama a bot přežíval jen díky léčení. Drž rozpočet z kap. 4b.
+- Testovací bot neuhýbá; u některých strážců (Ysolda, Lich) umírá dokola. Výsledek s desítkami smrtí jen u strážce zopakuj s jiným strážcem, než začneš měnit čísla.

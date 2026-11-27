@@ -99,7 +99,7 @@ Náhodně v riftu, dotykem dají dočasný bonus:
 - bohatství: +100 % zlata a +50 % lepší kořist.
 
 ### Obtížnost a odměny (`RIFT` v `js/data.js`)
-- Od 1.13.0: život, útok a XP nepřátel podle tabulek `RIFT_HP_CURVE`, `RIFT_ATK_CURVE`, `RIFT_XP_CURVE` (`riftHpMul`, `riftAtkMul`, `riftXpMul`), zlato a výbava podle `goldPow`/`itemPow`; +3 % nepřátel za úroveň. Dřív ×1,24 / ×1,15 / ×1,13 za úroveň – od podzemí ~40 nehratelné. Podzemí má **doporučenou úroveň** (`recLevel`), za každou úroveň pod ní nepřátelé dávají hrdinovi +3 % a dostávají -3 % (`levelGapMul`). Podrobně `docs/rebalanc.md`.
+- Od 1.13.0: život, útok a XP nepřátel podle tabulek `RIFT_HP_CURVE`, `RIFT_ATK_CURVE`, `RIFT_XP_CURVE` (`riftHpMul`, `riftAtkMul`, `riftXpMul`), zlato a výbava podle `goldPow`/`itemPow`; +3 % nepřátel za úroveň, ale jen do podzemí 100 (`RIFT.densityMax`, od 1.18.2) – dál by se skupiny slévaly do jednoho obřího davu. Dřív ×1,24 / ×1,15 / ×1,13 za úroveň – od podzemí ~40 nehratelné. Podzemí má **doporučenou úroveň** (`recLevel`), za každou úroveň pod ní nepřátelé dávají hrdinovi +3 % a dostávají -3 % (`levelGapMul`). Podrobně `docs/rebalanc.md`.
 - Kořist: lepší kořist roste se zpomalením (`riftMf`: rift 10 ≈ +37 %, 20 ≈ +64 %, 50 ≈ +110 %, 100 ≈ +142 %, strop +200 %) a +1 % šance na předmět za úroveň. Úroveň předmětů = 2 × úroveň riftu + 1. Podrobná tabulka v `docs/predmety.md`.
 - Bot testy (v1.6.0): všechny třídy projdou rifty 1–8; souboje s bossy jsou delší a bot občas umře.
 
