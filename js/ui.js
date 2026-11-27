@@ -225,7 +225,7 @@ function itemHtml(it, actions) {
   const durTxt = it.dur !== undefined ? `<div class="dur ${broken ? 'broken' : it.dur < it.maxDur * 0.25 ? 'low' : ''}">Odolnost ${it.dur}/${it.maxDur}${broken ? ' – rozbitý, nedává staty' : ''}</div>` : '';
   const only = itemClasses(it), usable = canClassUse(it, G.char.cls);
   const cant = only ? `<div class="cls-only ${usable ? '' : 'broken'}">Pouze: ${only.map(c => CLASSES[c].name).join(', ')}</div>`
-    : !usable ? `<div class="broken">Nevhodné pro třídu ${CLASSES[G.char.cls].name}</div>` : '';
+    : !usable ? `<div class="broken">${armorWeight(it) === 'heavy' && !CLASSES[G.char.cls].heavyArmor ? 'Těžkou zbroj nosí jen válečník a druid' : 'Nevhodné pro třídu ' + CLASSES[G.char.cls].name}</div>` : '';
   return `<div class="item ${broken ? 'is-broken' : ''}" style="border-color:${r.color}">
     <div class="item-head"><b style="color:${r.color}">${it.name}</b><span class="muted small">${r.name} · ${kindLabel(it)} · úr. ${it.ilvl}</span>${(e => e ? `<span class="ench-line" style="color:${ENCHANTS[e].color}"><span class="ench inl" style="--e:${ENCHANTS[e].color}">${giIcon('ench_' + e, 'bi')}</span>Očarování: ${ENCHANTS[e].name}</span>` : '')(itemEnchant(it))}</div>
     <div class="item-stats">${lines}${durTxt}${cant}</div>${actions || ''}</div>`;

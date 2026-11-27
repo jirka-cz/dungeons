@@ -1,12 +1,13 @@
 // Třídy, zdroje, aktivní dovednosti a talentové stromy.
 //
 // main = hlavní atribut (+1 % útoku za bod; druid bere vyšší z intelektu a obratnosti),
-// armor = preferovaná zbroj pro chytrou kořist (heavy = těžká, light = lehká, null = obojí).
+// armor = preferovaná zbroj pro chytrou kořist (heavy = těžká, light = lehká, null = obojí);
+// heavyArmor = smí nosit těžkou zbroj (v1.18 jen válečník a druid, ostatní jen lehkou).
 // Každá třída má 2 výchozí dovednosti (základní útok + jednu další), ostatní odemykají talenty (js/talents.js).
 
 const CLASSES = {
   warrior: {
-    name: 'Válečník', hp: 1.2, atk: 1.0, def: 3, spd: 0.95, elem: 'phys', main: ['str'], armor: 'heavy',
+    name: 'Válečník', hp: 1.2, atk: 1.0, def: 3, spd: 0.95, elem: 'phys', main: ['str'], armor: 'heavy', heavyArmor: true,
     res: { name: 'Zuřivost', color: '#d8402a', max: 100, regen: -2, start: 0 },
     weapons: ['sword', 'axe', 'mace', 'greatsword', 'hammer', 'shield'], starter: 'sword',
     colors: ['#a9b2bd', '#646c77'],
@@ -18,7 +19,7 @@ const CLASSES = {
   mage: {
     name: 'Mág', hp: 0.92, atk: 1.25, def: -1, spd: 1.0, elem: 'arcane', main: ['int'], armor: 'light',
     res: { name: 'Mana', color: '#3a6ae0', max: 100, regen: 1.4, start: 100 },
-    weapons: ['wand', 'staff', 'orb', 'dagger', 'sword'], starter: 'wand',
+    weapons: ['orb'], starter: 'orb',   // v1.18: kouzelníci drží jen Knihu kouzel (obouruční), magii sesílají sami
     colors: ['#6a4ae0', '#43309a'],
     base: ['missile', 'blink'],
     barrier: 0.15,
@@ -28,7 +29,7 @@ const CLASSES = {
   warlock: {
     name: 'Černokněžník', hp: 1.0, atk: 1.1, def: 0, spd: 1.0, ls: 0.04, elem: 'shadow', main: ['int'], armor: 'light',
     res: { name: 'Mana', color: '#7a3ae0', max: 100, regen: 1.2, start: 100 },
-    weapons: ['wand', 'dagger', 'staff', 'orb'], starter: 'wand',
+    weapons: ['orb'], starter: 'orb',
     colors: ['#2c3a86', '#11132a'],
     base: ['sbolt', 'drain'],
     dotLeech: 0.10,
@@ -36,7 +37,7 @@ const CLASSES = {
     desc: 'Pomalá smrt: prokleje celé skupiny a žije z jejich utrpení, nebo velí démonům. Kletby, nebo Démonologie.',
   },
   hunter: {
-    name: 'Lovec', hp: 0.95, atk: 1.0, def: 0, spd: 1.15, elem: 'phys', pet: 'wolf', main: ['agi'], armor: null,
+    name: 'Lovec', hp: 0.95, atk: 1.0, def: 0, spd: 1.15, elem: 'phys', pet: 'wolf', main: ['agi'], armor: 'light',
     res: { name: 'Soustředění', color: '#d8a030', max: 100, regen: 1.6, start: 100 },
     weapons: ['bow', 'dagger', 'sword', 'axe'], starter: 'bow',
     colors: ['#4a7a3a', '#5a3a1e'],
@@ -46,7 +47,7 @@ const CLASSES = {
     desc: 'Mrštný střelec: drží si odstup, střílí v pohybu, klade pasti a má věrného vlka. Lučištník, nebo Pán šelem.',
   },
   druid: {
-    name: 'Druid', hp: 1.05, atk: 0.95, def: 2, spd: 1.0, regen: 0.004, elem: 'nature', main: ['int', 'agi'], armor: null,
+    name: 'Druid', hp: 1.05, atk: 0.95, def: 2, spd: 1.0, regen: 0.004, elem: 'nature', main: ['int', 'agi'], armor: null, heavyArmor: true,
     res: { name: 'Duch', color: '#3ab060', max: 100, regen: 1.2, start: 100 },
     weapons: ['staff', 'mace', 'orb', 'dagger'], starter: 'staff',
     colors: ['#7a5a2a', '#3e6a2a'],

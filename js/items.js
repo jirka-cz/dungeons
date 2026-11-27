@@ -3,8 +3,8 @@
 // Druh předmětu (item.slot) → typy, základní staty
 // base: [stat, v0, vl (za úroveň), grow (exponenciální růst), cap]
 const ITEM_KINDS = {
-  weapon:  { name: 'Zbraň',      weight: 2,   types: ['sword', 'axe', 'mace', 'dagger', 'wand', 'greatsword', 'hammer', 'staff', 'bow'] },
-  offhand: { name: 'Levá ruka',  weight: 1,   types: ['shield', 'orb'] },
+  weapon:  { name: 'Zbraň',      weight: 2,   types: ['sword', 'axe', 'mace', 'dagger', 'greatsword', 'hammer', 'staff', 'bow', 'orb'] },
+  offhand: { name: 'Levá ruka',  weight: 1,   types: ['shield'] },
   head:    { name: 'Hlava',      weight: 1,   types: ['helm', 'hood', 'circlet'], base: [['hp', 14, 0, true]] },
   chest:   { name: 'Hrudník',    weight: 1,   types: ['plate', 'robe', 'mail', 'vest'], base: [['def', 1, 0.25]] },
   gloves:  { name: 'Rukavice',   weight: 1,   types: ['gloves', 'gauntlets'], base: [['atk', 1.5, 0, true]] },
@@ -21,13 +21,13 @@ const ITEM_TYPES = {
   axe:        { noun: 'Sekera:f',           icon: 'axe',        hand: 1 },
   mace:       { noun: 'Palcát:m',           icon: 'mace',       hand: 1 },
   dagger:     { noun: 'Dýka:f',             icon: 'dagger',     hand: 1 },
-  wand:       { noun: 'Hůlka:f',            icon: 'wand',       hand: 1 },
+  wand:       { noun: 'Hůlka:f',            icon: 'wand',       hand: 1 },   // v1.18 vyřazeno (nepadá, nikdo ji nedrží), jen kvůli starým předmětům
   greatsword: { noun: 'Obouruční meč:m',    icon: 'greatsword', hand: 2 },
   hammer:     { noun: 'Válečné kladivo:n',  icon: 'hammer',     hand: 2 },
   staff:      { noun: 'Hůl:f',              icon: 'staff',      hand: 2 },
   bow:        { noun: 'Luk:m',              icon: 'bow',        hand: 2 },
   shield:     { noun: 'Štít:m',             icon: 'shield', base: [['block', 0.05, 0.0005, false, 0.2], ['def', 1, 0.15]] },
-  orb:        { noun: 'Kniha kouzel:f',          icon: 'orb',    base: [['skillPct', 0.06, 0.002, false, 0.4]] },
+  orb:        { noun: 'Kniha kouzel:f',     icon: 'orb',        hand: 2, base: [['skillPct', 0.06, 0.002, false, 0.4]] },   // v1.18: obouruční zbraň mága a černokněžníka (útok jako hůl + síla dovedností)
   helm:       { noun: 'Helma:f',            icon: 'helm', armor: 'heavy' },
   hood:       { noun: 'Kápě:f',             icon: 'hood', armor: 'light' },
   circlet:    { noun: 'Čelenka:f',          icon: 'helm', armor: 'light' },
@@ -71,9 +71,9 @@ const ATTR_FX = { mainAtk: 0.01, strDef: 0.5, agiCrit: 0.001, intRes: 0.002, sta
 // Druhy nepřátel pro bonusy „poškození nemrtvým/šelmám/démonům“ (fam v MONSTERS a BOSSES)
 const MONSTER_FAMS = { undead: 'nemrtvým', beast: 'šelmám', demon: 'démonům' };
 // 7. pád pro bonus „poškození se zbraní“
-const WEAPON_INSTR = { sword: 's mečem', axe: 'se sekerou', mace: 's palcátem', dagger: 's dýkou', wand: 's hůlkou',
+const WEAPON_INSTR = { sword: 's mečem', axe: 'se sekerou', mace: 's palcátem', dagger: 's dýkou', wand: 's hůlkou', orb: 's knihou kouzel',
   greatsword: 's obouručním mečem', hammer: 's válečným kladivem', staff: 's holí', bow: 's lukem' };
-const WEAPON_SUF = { sword: 'šermíře', axe: 'sekerníka', mace: 'drtiče', dagger: 'zabijáka', wand: 'kouzelníka',
+const WEAPON_SUF = { sword: 'šermíře', axe: 'sekerníka', mace: 'drtiče', dagger: 'zabijáka', wand: 'kouzelníka', orb: 'učence',
   greatsword: 'obra', hammer: 'kladiváře', staff: 'mudrce', bow: 'střelce' };
 
 const WEAPON_ATK = { 1: 3, 2: 5.7 };   // obouruční zbraň ≈ 1,9× jednoruční
@@ -212,16 +212,16 @@ const LEGENDARIES = [
   { id: 'stoneskin',   cls: ['warrior', 'druid'],            slot: 'legs',    type: 'greaves', name: 'Nohavice Kamenné kůže',   stats: { dmgRed: 0.08, resAll: 0.05 } },
   { id: 'headsman',    cls: ['warrior', 'hunter'],           slot: 'neck',    type: 'amulet',  name: 'Amulet Popravčího',       stats: { critDmg: 0.25, execPct: 0.5 } },
   // Mág
-  { id: 'eternalfire', cls: ['mage'],                        slot: 'weapon',  type: 'staff',   name: 'Hůl věčného plamene',     stats: { firePct: 0.3, resPen: 0.1 } },
+  { id: 'eternalfire', cls: ['mage'],                        slot: 'weapon',  type: 'orb',     name: 'Kniha věčného ohně',      stats: { firePct: 0.3, resPen: 0.1 } },
   { id: 'frostking',   cls: ['mage'],                        slot: 'head',    type: 'circlet', name: 'Koruna Mrazivého krále',  stats: { hpPct: 0.10, slowAura: 0.2, freezeChance: 0.05 } },
-  { id: 'starfall',    cls: ['mage'],                        slot: 'offhand', type: 'orb',     name: 'Kniha Hvězdného prachu', stats: { arcanePct: 0.25, skillCd: 1 } },
+  { id: 'starfall',    cls: ['mage'],                        slot: 'weapon',  type: 'orb',     name: 'Kniha Hvězdného prachu', stats: { arcanePct: 0.25, skillCd: 1 } },
   { id: 'runerobe',    cls: ['mage', 'warlock'],             slot: 'chest',   type: 'robe',    name: 'Róba Tisíce run',         stats: { resAll: 0.05, skillPct: 0.15, castPct: 0.12 } },
   // Černokněžník
   { id: 'void',        cls: ['warlock'],                     slot: 'ring',    type: 'signet',  name: 'Prsten Prázdnoty',        stats: { shadowPct: 0.25, dotPct: 0.25 } },
-  { id: 'soulreaper',  cls: ['warlock'],                     slot: 'weapon',  type: 'wand',    name: 'Hůlka Žnece duší',        stats: { shadowPct: 0.2, ls: 0.03, dotDur: 2 } },
+  { id: 'soulreaper',  cls: ['warlock'],                     slot: 'weapon',  type: 'orb',     name: 'Kniha Žnece duší',        stats: { shadowPct: 0.2, ls: 0.03, dotDur: 2 } },
   { id: 'shadowwalk',  cls: ['hunter', 'warlock'],           slot: 'cloak',   type: 'cloak',   name: 'Plášť Stínochodce',       stats: { dodge: 0.06, resShadow: 0.08 } },
   // Lovec
-  { id: 'windrunner',  cls: ['hunter'],                      slot: 'boots',   type: 'boots',   name: 'Boty Větrného běžce',     stats: { spdPct: 0.15, dodge: 0.05 } },
+  { id: 'windrunner',  cls: ['hunter'],                      slot: 'boots',   type: 'sandals', name: 'Boty Větrného běžce',     stats: { spdPct: 0.15, dodge: 0.05 } },
   { id: 'eagleeye',    cls: ['hunter'],                      slot: 'weapon',  type: 'bow',     name: 'Luk Orlího oka',          stats: { crit: 0.06, armorPen: 0.2 } },
   { id: 'summoner',    cls: ['hunter', 'warlock', 'druid'],  slot: 'ring',    type: 'ring',    name: 'Prsten Vyvolávače',       stats: { petPct: 0.30, petCount: 1 } },
   // Druid
@@ -240,19 +240,19 @@ const SETS = {
   },
   archmage: {
     name: 'Odkaz Arcimága', cls: ['mage'], color: '#6fa8ff', glyph: 'set_archmage',
-    pieces: { weapon: ['Hůl Arcimága', 'staff'], head: ['Kápě Arcimága', 'hood'], chest: ['Róba Arcimága', 'robe'],
+    pieces: { weapon: ['Kniha Arcimága', 'orb'], head: ['Kápě Arcimága', 'hood'], chest: ['Róba Arcimága', 'robe'],
               legs: ['Kalhoty Arcimága', 'pants'], cloak: ['Plášť Arcimága', 'cloak'], ring: ['Prsten Arcimága', 'ring'] },
     bonus: { 1: { skillPct: 0.20 }, 3: { skillCd: 1, critDmg: 0.30 }, 6: { atkPct: 0.30, doubleChance: 0.2, resPen: 0.15 } }
   },
   shadow: {
     name: 'Stínový lovec', cls: ['hunter'], color: '#4fd1a5', glyph: 'set_shadow',
     pieces: { weapon: ['Stínová čepel', 'dagger'], head: ['Stínová maska', 'hood'], chest: ['Stínová vesta', 'vest'],
-              boots: ['Stínové boty', 'boots'], cloak: ['Stínový plášť', 'cloak'], neck: ['Stínový amulet', 'amulet'] },
+              boots: ['Stínové sandály', 'sandals'], cloak: ['Stínový plášť', 'cloak'], neck: ['Stínový amulet', 'amulet'] },
     bonus: { 1: { crit: 0.05 }, 3: { dodge: 0.08, spdPct: 0.15 }, 6: { critDmg: 0.50, execPct: 1 } }
   },
   pact: {
     name: 'Pakt Prázdnoty', cls: ['warlock'], color: '#c050ff', glyph: 'set_pact',
-    pieces: { weapon: ['Dýka Paktu', 'dagger'], head: ['Kápě Paktu', 'hood'], chest: ['Róba Paktu', 'robe'],
+    pieces: { weapon: ['Kniha Paktu', 'orb'], head: ['Kápě Paktu', 'hood'], chest: ['Róba Paktu', 'robe'],
               gloves: ['Rukavice Paktu', 'gloves'], legs: ['Kalhoty Paktu', 'pants'], ring: ['Pečeť Paktu', 'signet'] },
     bonus: { 1: { shadowPct: 0.15 }, 3: { dotPct: 0.30, resAll: 0.05 }, 6: { atkPct: 0.30, ls: 0.05, petPct: 0.40 } }
   },
@@ -271,20 +271,20 @@ const SETS = {
   },
   m_mage: {
     name: 'Oko věčného plamene', cls: ['mage'], color: '#ff4a1a', glyph: 'set_m_mage', mythic: true,
-    pieces: { weapon: ['Hůl věčného plamene', 'staff'], head: ['Koruna věčného plamene', 'circlet'], chest: ['Róba věčného plamene', 'robe'],
+    pieces: { weapon: ['Kniha věčného plamene', 'orb'], head: ['Koruna věčného plamene', 'circlet'], chest: ['Róba věčného plamene', 'robe'],
               gloves: ['Rukavice věčného plamene', 'gloves'], legs: ['Kalhoty věčného plamene', 'pants'], ring: ['Prsten věčného plamene', 'signet'] },
     bonus: { 1: { skillPct: 0.20, firePct: 0.15 }, 3: { skillCd: 2, castPct: 0.15, critDmg: 0.30 }, 6: { atkPct: 0.50, resPen: 0.20, doubleChance: 0.20 } }
   },
   m_warlock: {
     name: 'Koruna spáleného krále', cls: ['warlock'], color: '#ff4a1a', glyph: 'set_m_warlock', mythic: true,
-    pieces: { weapon: ['Hůlka spáleného krále', 'wand'], offhand: ['Kniha spáleného krále', 'orb'], head: ['Koruna spáleného krále', 'circlet'],
+    pieces: { weapon: ['Kniha spáleného krále', 'orb'], gloves: ['Rukavice spáleného krále', 'gloves'], head: ['Koruna spáleného krále', 'circlet'],
               chest: ['Róba spáleného krále', 'robe'], legs: ['Kalhoty spáleného krále', 'pants'], neck: ['Amulet spáleného krále', 'amulet'] },
     bonus: { 1: { shadowPct: 0.20, ls: 0.02 }, 3: { dotPct: 0.40, dotDur: 2, resAll: 0.05 }, 6: { atkPct: 0.50, petPct: 0.60, ls: 0.04 } }
   },
   m_hunter: {
     name: 'Lov rudého měsíce', cls: ['hunter'], color: '#ff4a1a', glyph: 'set_m_hunter', mythic: true,
-    pieces: { weapon: ['Luk rudého měsíce', 'bow'], head: ['Kápě rudého měsíce', 'hood'], chest: ['Kroužková zbroj rudého měsíce', 'mail'],
-              gloves: ['Rukavice rudého měsíce', 'gloves'], boots: ['Boty rudého měsíce', 'boots'], cloak: ['Plášť rudého měsíce', 'cloak'] },
+    pieces: { weapon: ['Luk rudého měsíce', 'bow'], head: ['Kápě rudého měsíce', 'hood'], chest: ['Kožená vesta rudého měsíce', 'vest'],
+              gloves: ['Rukavice rudého měsíce', 'gloves'], boots: ['Sandály rudého měsíce', 'sandals'], cloak: ['Plášť rudého měsíce', 'cloak'] },
     bonus: { 1: { crit: 0.05, petPct: 0.15 }, 3: { critDmg: 0.40, wpnSpd: 0.12, armorPen: 0.15 }, 6: { atkPct: 0.50, execPct: 1, petPct: 0.40 } }
   },
   m_druid: {
@@ -532,7 +532,7 @@ function rollBase(defs, ilvl, mult) {
 // Základní staty podle druhu a typu (+ obrana nebo odolnosti podle váhy zbroje)
 function baseDefsFor(kind, type) {
   const T = ITEM_TYPES[type], K = ITEM_KINDS[kind];
-  if (kind === 'weapon') return [['atk', WEAPON_ATK[T.hand], 0, true]];
+  if (kind === 'weapon') return [['atk', WEAPON_ATK[T.hand], 0, true]].concat(T.base || []);
   const defs = (T.base || K.base || []).slice();
   if (T.armor) defs.push(...ARMOR_WEIGHT[T.armor].extra);
   return defs;
@@ -542,6 +542,7 @@ function baseDefsFor(kind, type) {
 function canClassUse(it, cls) {
   const only = itemClasses(it);
   if (only && !only.includes(cls)) return false;
+  if (armorWeight(it) === 'heavy' && !CLASSES[cls].heavyArmor) return false;   // těžká zbroj jen válečník a druid
   if (it.slot !== 'weapon' && it.slot !== 'offhand') return true;
   return CLASSES[cls].weapons.includes(it.type);
 }
@@ -560,7 +561,8 @@ function makeItem(ilvl, rarity, uid, forceKind, cls) {
     if (kind === 'weapon' || kind === 'offhand') {
       const pool = ITEM_KINDS[kind].types.filter(t => allowed.includes(t));
       type = pool[Math.floor(Math.random() * pool.length)];
-    } else if (CLASSES[cls].armor && Math.random() < SMART_ARMOR) {
+    } else if (CLASSES[cls].armor && (!CLASSES[cls].heavyArmor || Math.random() < SMART_ARMOR)) {
+      // třída bez těžké zbroje dostane z chytré kořisti vždy lehkou
       const pool = ITEM_KINDS[kind].types.filter(t => ITEM_TYPES[t].armor === CLASSES[cls].armor);
       if (pool.length) type = pool[Math.floor(Math.random() * pool.length)];
     }
