@@ -477,3 +477,7 @@ body.touch-ui #party { top: auto; bottom: 46%; width: 120px; }
 .xfer-old { margin-top: 10px; } .xfer-old summary { cursor: pointer; color: var(--muted, #aaa); padding: 4px 0; }
 .xfer-old textarea { width: 100%; margin-top: 6px; }
 .menu-empty-xfer { margin-top: 6px; }
+
+.net-err { color: #ffb0a0; background: rgba(200,60,40,0.15); border: 1px solid #7a3a30; border-radius: 6px; padding: 8px 10px; font-size: 13px; }
+.net-stages { margin: 8px 0 12px; padding-left: 20px; font-size: 13px; color: var(--muted); } .net-stages li { margin: 3px 0; }
+.net-stages li.ok { color: #4fd05a; } .net-stages li.now { color: var(--text); font-weight: 600; }

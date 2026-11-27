@@ -57,6 +57,7 @@ Hráč si postavu vyexpí sám a stejnou postavu pak použije ve společné hře
 - **Podzemí:** hostitel spustí `startRift` s `G.party` z členů, každý host dostane mapu (`netPackWorld`, dlaždice v base64). Hrdinu hosta u hostitele řídí `netControlFor` (poloha ze zpráv `in`, kouzla `cast`, lektvar `pot`).
 - **Snímek** (`netBuildSnap`, 15×/s pro každého hosta zvlášť, jen věci do ~440 px): hrdinové, nepřátelé (stálé údaje jen poprvé, `mb.sent`), boss a jeho objekty celé (`netSer`), střely, nebezpečí, plochy, pasti, mazlíčci, kořist hosta, otisky, svatyně, portál, postup, tma, stav vlastního hrdiny (`me`) a efekty (`fx`: burst, vfx, text, třesení, zvuky).
 - **Host:** `Net.clientRift = true`, herní smyčka = `guestUpdate` (vlastní ovládání + plynulé posouvání ostatního). `castSkill` → `netCast`, `usePotion` → `netPotion`, `goTown` → `netGuestLeaveRift`. Když mu chybí stálé údaje nepřítele, požádá o ně (`need`). Nepřátelé, kteří zmizeli ze snímku, se označí jako mrtví (aby na ně host neútočil dál).
+- **Dlouhé zprávy** (snímek stavu, mapa, postava) se posílají po kouscích (`netRaw` / `netUnchunk`, typ `ck`), protože PeerJS odmítne zprávu nad ~16 kB a spojení spadne.
 - **Odměny** (`netReward` u hostitele → `netApplyReward` u hosta): `xp`, `gold`, `item` (dostane nové `uid`; plný batoh → truhla), `maxRift`, `dur` (odolnost předmětu), `log` (záznam kořisti). Host posílá změny své postavy (`char`: úroveň, výbava, talenty, lišta) a hostitel podle nich přepočítá staty.
 
 ## Testy
@@ -65,6 +66,14 @@ Hráč si postavu vyexpí sám a stejnou postavu pak použije ve společné hře
 - `python3 tests/riftsel.py` – výběr podzemí u obelisku.
 
 Výsledek (v1.8.0, 3 hráči): zesílení ×1,2, podzemí 2 dokončeno, oba hosté úroveň 1 → 6, zlato a předměty uložené u každého zvlášť, další úroveň odemčená všem, žádné chyby.
+
+## Když se nedaří připojit (od 1.17.1)
+Okno „Hrát s přáteli“ ukazuje kroky připojení a důvod neúspěchu:
+- **Místnost neexistuje** – špatný kód, nebo hostitel místnost zavřel.
+- **Server nedostupný** – bez internetu, nebo firemní síť / VPN blokuje server PeerJS.
+- **Síť blokuje přímé spojení** – místnost se našla, ale prohlížeče se nespojily (typicky firemní síť: pouští ven jen porty 80/443, záložní TURN servery PeerJS jedou na portu 3478). Řešení: jeden hráč na mobilních datech / hotspotu / domácí Wi-Fi. Trvalé řešení by byl TURN server na portu 443 (např. Open Relay od Metered – zdarma 20 GB/měsíc, vyžaduje registraci a vložení přístupových údajů do hry).
+- **Hostitel neodpovídá** – hostitel má hru v pozadí nebo není ve městě.
+Test: `python3 tests/netfail.py` (špatný kód, zablokované spojení přes `?noice=1`).
 
 ## Známá omezení
 - **Hostitel musí mít hru na popředí.** Prohlížeč v pozadí herní smyčku zastaví → podzemí stojí všem. (Host v pozadí jen nevidí, hra u hostitele běží dál.)

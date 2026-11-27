@@ -43,6 +43,7 @@ BOT = r"""
 }
 """
 
+ERRS = {}
 async def main():
     cfg = {"secs": 150}
     if len(sys.argv) > 1: cfg.update(json.loads(sys.argv[1]))
@@ -54,7 +55,7 @@ async def main():
     try:
         async with async_playwright() as p:
             b = await p.chromium.launch()
-            errs = {'A': [], 'B': []}
+            errs = {'A': [], 'B': []}; global ERRS; ERRS = errs
             async def page(name, vp, mobile=False):
                 ctx = await b.new_context(viewport=vp, has_touch=mobile, is_mobile=mobile)
                 pg = await ctx.new_page()
@@ -115,7 +116,7 @@ async def main():
             out['start'] = {'mulA': await A.evaluate("G.partyMul"), 'levelB': await B.evaluate("G.rift.level"), 'heroesA': await A.evaluate("G.heroes.length")}
             # 4) společné podzemí s boty
             await A.evaluate(BOT, {'portal': False}); await B.evaluate(BOT, {'portal': False}); await C.evaluate(BOT, {'portal': False})
-            stats = []
+            stats = []; out['play'] = stats
             t0 = time.time(); shot = False
             while time.time() - t0 < cfg['secs']:
                 await A.wait_for_timeout(5000)
@@ -168,6 +169,11 @@ async def main():
     finally:
         for pr in procs: pr.terminate()
         if 'rejoinFail' in out: print('rejoinFail', json.dumps(out['rejoinFail'], ensure_ascii=False))
+        if 'errors' not in out:
+            for k, v in out.items():
+                if k != 'play': print('partial', k, json.dumps(v, ensure_ascii=False)[:300])
+            print('errs', json.dumps(ERRS, ensure_ascii=False)[:1500])
+            if out.get('play'): print('lastplay', json.dumps(out['play'][-1], ensure_ascii=False)[:400])
     for k, v in out.items():
         if k == 'play':
             for s in v: print('play', json.dumps(s, ensure_ascii=False))
