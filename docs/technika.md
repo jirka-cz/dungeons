@@ -61,6 +61,7 @@ Předpoklady: Node.js a Python s Playwrightem (`pip install playwright` a `pytho
 ## Hra více hráčů – testy a provoz
 - `js/net.js` + `js/lib/peerjs.min.js`. Prohlížeče se spojují přes bezplatný server PeerJS (`0.peerjs.com`) a jeho TURN servery. Hra sama žádný server nemá.
 - Test přes skutečné WebRTC: `python3 tests/net.py '{"secs":110}'` – spustí lokální server PeerJS (`tests/peer_server.js`, potřebuje `npm install peer`) a stránku přes `http.server`; hra se otevře s `?peer=127.0.0.1:9000`. Tři okna (počítač, mobil na šířku, mobil na výšku). Snímky `net_*.png`.
+- `python3 tests/netdrop.py` – výpadek spojení v podzemí a automatické znovupřipojení.
 - `python3 tests/netfail.py` – špatný kód a zablokované přímé spojení (`?noice=1` vypne zprostředkující servery).
 - Pokud `peer` není nainstalovaný globálně, spustit s `NODE_PATH=<složka>/node_modules`.
 

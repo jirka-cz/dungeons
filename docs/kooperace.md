@@ -34,6 +34,8 @@ Hráč si postavu vyexpí sám a stejnou postavu pak použije ve společné hře
 - **Svatyně** dá bonus tomu, kdo se jí dotkne.
 - **Odchod z podzemí:** host, který vejde do portálu nebo se teleportuje (T), jde do svého města; u obelisku pak může **„Připojit se k družině“** a vrátí se na začátek rozehraného podzemí. Když odejde **hostitel**, končí podzemí pro všechny (všichni do města).
 - **Odpojení:** bez zprávy 20 s = hráč odpojen. Odejde-li host, hostitel hraje dál. Odejde-li hostitel, ostatní se vrátí do města a místnost zanikne.
+- **Automatické znovupřipojení (od 1.17.4):** když hostovi spadne spojení (ne když hostitel místnost zavře nebo host sám odejde), hra ho pošle do města a sama se zkusí připojit znovu (5 pokusů, `NetRe`). Byl-li v podzemí a družina tam pořád je, vrátí ho rovnou do podzemí (na začátek). Hostitel starou relaci téže postavy nahradí. Typické příčiny výpadku: zhasnutá obrazovka nebo přepnutí aplikace na mobilu (prohlížeč pak nic neposílá), výpadek Wi-Fi.
+- **Záznam spojení** (`netLog`, okno Hrát s přáteli → Záznam spojení): připojení, stavy spojení, kdy a proč spadlo, pokusy o znovupřipojení.
 - **Různé verze hry** se nespojí (hláška „obnovte stránku“).
 - Ve hře více hráčů se hra s otevřeným oknem (batoh, talenty) **nezastavuje**.
 
@@ -62,6 +64,7 @@ Hráč si postavu vyexpí sám a stejnou postavu pak použije ve společné hře
 
 ## Testy
 - `python3 tests/net.py '{"secs":110}'` – **skutečné WebRTC**, 3 okna (hostitel + 2 hosté): založení, připojení, město, odmítnutí, vypršení, přijetí návrhu, společné podzemí s boty (XP, zlato, předměty, smrt), odchod a návrat do podzemí, konec podzemí, uložení hostů, odpojení hosta, zavření místnosti. Potřebuje `npm install peer`.
+- `python3 tests/netdrop.py` – výpadek uprostřed podzemí: náhlé přerušení spojení a 25 s ticha → host se sám vrátí do podzemí.
 - `python3 tests/coop.py` – více hrdinů bez sítě (spoluhráče řídí bot): zesílení, kořist zvlášť, útoky na spoluhráče, mazlíčci, **oživení u těla**.
 - `python3 tests/riftsel.py` – výběr podzemí u obelisku.
 

@@ -64,7 +64,7 @@ function netCreate() {
     if (e.type === 'unavailable-id' && !Net.role) { netDestroy(); netCreate(); return; }
     if (!Net.role) { netDestroy(); toast('Místnost se nepodařilo založit. Zkontroluj připojení k internetu.'); netUi(); }
   });
-  peer.on('disconnected', () => { try { peer.reconnect(); } catch (e) {} });
+  peer.on('disconnected', () => { netLog('Odpojeno od serveru pro spojení – obnovuji'); try { peer.reconnect(); } catch (e) {} });
 }
 
 // Připojení probíhá ve 3 krocích (Net.joinStage), aby bylo vidět, kde se zaseklo:
@@ -77,7 +77,8 @@ function netJoin(code) {
   if (G.scene !== 'town') { toast('K místnosti se můžeš připojit jen ve městě.'); return; }
   const peer = new Peer(netOpts());
   Net.peer = peer; Net.code = code; Net.joining = true; Net.joinStage = 'server'; Net.joinError = null; netUi();
-  const fail = why => { if (Net.peer !== peer || Net.role === 'guest') return; netJoinFail(why); };
+  let failed = false;   // zavření spojení během netDestroy vyvolá další událost – selhání vyhodnotit jen jednou
+  const fail = why => { if (failed || Net.peer !== peer || Net.role === 'guest') return; failed = true; netJoinFail(why); };
   setTimeout(() => fail(Net.joinStage === 'server' ? 'server' : Net.joinStage === 'peer' ? 'ice' : 'host'), 20000);
   peer.on('open', id => {
     Net.myId = id; Net.joinStage = 'peer'; netUi();
@@ -86,11 +87,12 @@ function netJoin(code) {
     conn.on('iceStateChanged', st => { if (st === 'failed' && Net.role !== 'guest') fail('ice'); });
     conn.on('open', () => { Net.joinStage = 'host'; netUi(); netRaw(conn, { t: 'hello', ver: GAME_VERSION, name: G.char.name, char: netCharFor(G.char), autoSell: G.save.settings.autoSell }); });
     conn.on('data', d => { Net.hostSeen = Date.now(); d = netUnchunk(conn, d); if (!d) return; try { netGuestMsg(d); } catch (e) { console.warn('Chybná zpráva od hostitele', e); } });
-    conn.on('close', () => { if (Net.role === 'guest') netHostLost(); else fail(Net.joinStage === 'host' ? 'host' : 'ice'); });
-    conn.on('error', () => { if (Net.role === 'guest') netHostLost(); else fail('ice'); });
+    conn.on('iceStateChanged', st => netLog('Stav spojení: ' + st));
+    conn.on('close', () => { if (Net.role === 'guest') netHostLost('spojení zavřeno'); else fail(Net.joinStage === 'host' ? 'host' : 'ice'); });
+    conn.on('error', e => { if (Net.role === 'guest') netHostLost('chyba spojení: ' + (e && (e.type || e.message))); else fail('ice'); });
   });
   peer.on('error', e => {
-    if (Net.role === 'guest') { const inClient = Net.clientRift; netDestroy(); if (inClient) netToLocalTown(); toast('Spojení s hostitelem se přerušilo'); netUi(); return; }
+    if (Net.role === 'guest') { netHostLost('chyba serveru: ' + e.type); return; }
     fail(e.type === 'peer-unavailable' ? 'nocode' : e.type === 'network' || e.type === 'server-error' || e.type === 'socket-error' || e.type === 'socket-closed' ? 'server' : 'other');
   });
 }
@@ -104,12 +106,15 @@ const NET_JOIN_ERR = {
 function netJoinFail(why) {
   const code = Net.code;
   netDestroy();
+  if (NetRe.code && why !== 'nocode' || NetRe.code && NetRe.n < 3) { netLog('Pokus o znovupřipojení nevyšel: ' + why); NetRe.timer = setTimeout(netReconnect, 4000); netUi(); return; }
+  if (NetRe.code) { netLog('Místnost už neexistuje'); netStopReconnect(); }
   Net.joinError = { why, code };
   if (UI.modalKind !== 'net') toast(NET_JOIN_ERR[why](code).replace(/<[^>]+>/g, ''));   // v otevřeném okně je hláška vidět přímo
   netUi();
 }
 
 function netLeave() {
+  netStopReconnect();
   if (!Net.role && !Net.peer) return;
   if (netIsHost()) { netBroadcast({ t: 'closed' }); if (G.scene === 'rift') netEndRiftForGuests(); }
   else if (Net.conn) { try { Net.conn.send({ t: 'bye' }); } catch (e) {} }
@@ -131,12 +136,40 @@ function netDestroy() {
   if (G.scene === 'rift' && G.heroes.length > 1) G.heroes = G.heroes.filter(h => !h.netId);
 }
 
-function netHostLost() {
+// Záznam událostí spojení (vidět v okně „Hrát s přáteli“) – aby šlo zjistit, proč spojení spadlo
+const NetLog = [];
+function netLog(msg) {
+  const d = new Date(), t = d.toTimeString().slice(0, 8);
+  NetLog.unshift({ t, msg }); if (NetLog.length > 30) NetLog.length = 30;
+  console.info('[síť]', t, msg);
+}
+
+// Automatické znovupřipojení hosta: když spojení spadne (ne když hostitel místnost zavře), hra se zkusí
+// připojit znovu (5 pokusů po ~4 s) a je-li družina v podzemí, vrátí se do něj.
+const NET_RE_TRIES = 5;
+const NetRe = { code: null, n: 0, timer: null, inRift: false };
+function netReconnect() {
+  clearTimeout(NetRe.timer);
+  if (!NetRe.code || Net.role) return;
+  if (NetRe.n >= NET_RE_TRIES) { netLog('Znovupřipojení se nepodařilo'); toast(`Znovu se připojit nepodařilo. Zadej kód ${NetRe.code} znovu v menu Hrát s přáteli.`); NetRe.code = null; netUi(); return; }
+  if (G.scene !== 'town') { NetRe.timer = setTimeout(netReconnect, 1000); return; }
+  NetRe.n++;
+  netLog(`Zkouším se znovu připojit (${NetRe.n}/${NET_RE_TRIES})`);
+  toast(`Spojení se přerušilo – připojuji znovu (${NetRe.n}/${NET_RE_TRIES})…`);
+  netJoin(NetRe.code);
+}
+function netStopReconnect() { clearTimeout(NetRe.timer); NetRe.code = null; NetRe.n = 0; }
+
+function netHostLost(why) {
   if (Net.role !== 'guest' && !Net.joining) return;
-  const inClient = Net.clientRift;
+  const inClient = Net.clientRift, code = Net.code, wasMember = Net.role === 'guest';
+  netLog('Spojení s hostitelem spadlo: ' + (why || 'neznámý důvod') + (inClient ? ' (v podzemí)' : ''));
   netDestroy();
   if (inClient) netToLocalTown();
-  toast('Spojení s hostitelem se přerušilo');
+  if (wasMember && code) {   // zkusit se vrátit
+    if (NetRe.code !== code) { NetRe.code = code; NetRe.n = 0; NetRe.inRift = inClient; }
+    NetRe.timer = setTimeout(netReconnect, 1500);
+  } else toast('Spojení s hostitelem se přerušilo');
   netUi();
 }
 
@@ -171,10 +204,10 @@ function netSend(msg) { netRaw(Net.conn, msg); }
 
 function netHostAccept(conn) {
   toast('Někdo se připojuje…');
-  conn.on('iceStateChanged', st => { if (st === 'failed' && !Net.mem[conn.peer]) toast('Připojení hráče se nezdařilo – síť blokuje přímé spojení (firemní síť, VPN?)'); });
+  conn.on('iceStateChanged', st => { netLog(`Spojení s ${(Net.mem[conn.peer] || {}).name || 'hráčem'}: ${st}`); if (st === 'failed' && !Net.mem[conn.peer]) toast('Připojení hráče se nezdařilo – síť blokuje přímé spojení (firemní síť, VPN?)'); });
   conn.on('data', d => { d = netUnchunk(conn, d); if (!d) return; try { netHostMsg(conn, d); } catch (e) { console.warn('Chybná zpráva od hráče', e); } });
-  conn.on('close', () => netRemoveMember(conn.peer, 'odešel'));
-  conn.on('error', () => netRemoveMember(conn.peer, 'odešel'));
+  conn.on('close', () => netRemoveMember(conn.peer, 'odešel (spojení zavřeno)'));
+  conn.on('error', e => netRemoveMember(conn.peer, 'odešel (chyba spojení: ' + (e && (e.type || e.message)) + ')'));
 }
 
 function netHostMsg(conn, d) {
@@ -183,12 +216,14 @@ function netHostMsg(conn, d) {
   switch (d.t) {
     case 'hello': {
       if (d.ver !== GAME_VERSION) { conn.send({ t: 'reject', why: `Máte různé verze hry (hostitel ${GAME_VERSION}, ty ${d.ver}). Obnovte stránku.` }); setTimeout(() => conn.close(), 300); return; }
+      const old = Object.values(Net.mem).find(m => m.char && d.char && m.char.id === d.char.id && m.id !== id);
+      if (old) netRemoveMember(old.id, 'se připojil znovu');   // stará relace téže postavy (po výpadku)
       if (Object.keys(Net.mem).length + 1 >= NET_MAX) { conn.send({ t: 'reject', why: `Místnost je plná (max. ${NET_MAX} hráči).` }); setTimeout(() => conn.close(), 300); return; }
       Net.mem[id] = { id, conn, name: d.name, char: d.char, autoSell: d.autoSell || {}, in: null, casts: [], pot: false, hero: null, scene: 'town', seen: Date.now(),
                       save: { gold: 0, nextUid: 1e9, settings: { autoSell: d.autoSell || {} } }, sent: {}, fxq: [] };
       conn.send({ t: 'welcome', id, code: Net.code, hostScene: G.scene === 'rift' ? 'rift' : 'town', level: G.rift.level || 0 });
       netRefreshMembers();
-      toast(`${d.name} se připojil`);
+      netLog(`${d.name} se připojil`); toast(`${d.name} se připojil`);
       return;
     }
     case 'char': if (mb) { mb.char = d.char; mb.autoSell = d.autoSell || mb.autoSell; mb.save.settings.autoSell = mb.autoSell; netApplyReplica(mb); netRefreshMembers(); } return;
@@ -208,6 +243,7 @@ function netHostMsg(conn, d) {
 function netRemoveMember(id, why) {
   const mb = Net.mem[id];
   if (!mb) return;
+  netLog(`${mb.name} ${why}${mb.hero ? ' (byl v podzemí)' : ''}`);
   netRemoveGuestHero(mb);
   delete Net.mem[id];
   try { mb.conn.close(); } catch (e) {}
@@ -376,8 +412,14 @@ function netGuestMsg(d) {
   switch (d.t) {
     case 'welcome':
       Net.role = 'guest'; Net.joining = false; Net.joinError = null; Net.myId = d.id; Net.hostScene = d.hostScene; Net.hostLevel = d.level; Net.hostSeen = Date.now();
-      toast(`Připojeno do místnosti ${d.code}`); netUi(); return;
-    case 'reject': toast(d.why); netDestroy(); netUi(); return;
+      if (NetRe.code) {
+        netLog('Znovu připojeno');
+        const back = d.hostScene === 'rift' && NetRe.inRift;
+        netStopReconnect();
+        if (back) { netSend({ t: 'rejoin' }); toast('Znovu připojeno – vracím tě do podzemí'); } else toast('Znovu připojeno');
+      } else { netLog('Připojeno do místnosti ' + d.code); toast(`Připojeno do místnosti ${d.code}`); }
+      netUi(); return;
+    case 'reject': netLog('Hostitel odmítl připojení: ' + d.why); netStopReconnect(); toast(d.why); netDestroy(); netUi(); return;
     case 'members':
       Net.members = d.list; Net.hostScene = d.hostScene; Net.hostLevel = d.level;
       netRemoveGhosts(null, d.list.map(m => m.id)); netUi(); return;
@@ -402,8 +444,8 @@ function netGuestMsg(d) {
     case 'r': netApplyReward(d); return;
     case 'toast': toast(d.msg); return;
     case 'banner': G[d.key] = d.v; return;
-    case 'end': if (Net.clientRift) { netToLocalTown(); toast('Družina se vrátila do města'); } return;
-    case 'closed': { const inClient = Net.clientRift; netDestroy(); if (inClient) netToLocalTown(); toast('Hostitel zavřel místnost'); netUi(); return; }
+    case 'end': netLog('Hostitel odešel z podzemí do města'); if (Net.clientRift) { netToLocalTown(); toast('Družina se vrátila do města'); } return;
+    case 'closed': { netLog('Hostitel zavřel místnost'); netStopReconnect(); const inClient = Net.clientRift; netDestroy(); if (inClient) netToLocalTown(); toast('Hostitel zavřel místnost'); netUi(); return; }
   }
 }
 
@@ -443,7 +485,7 @@ function netTick(dt) {
   const T = Net.t;
   if (netIsHost()) {
     const now = Date.now();
-    Object.values(Net.mem).forEach(mb => { if (now - mb.seen > NET_TIMEOUT) netRemoveMember(mb.id, 'ztratil spojení'); });
+    Object.values(Net.mem).forEach(mb => { if (now - mb.seen > NET_TIMEOUT) netRemoveMember(mb.id, `ztratil spojení (${NET_TIMEOUT / 1000} s bez zprávy)`); });
     if ((T.mem = (T.mem || 0) - dt) <= 0) {   // úroveň a místo hráčů se mění – obnovit seznam, když se něco změnilo
       T.mem = 2;
       const sig = JSON.stringify([netSelfInfo()].concat(Object.values(Net.mem).map(m => [m.char.level, m.scene])));
@@ -466,7 +508,7 @@ function netTick(dt) {
       Net.fxBuf = []; netAfterSnaps();
     }
   } else if (Net.role === 'guest') {
-    if (Date.now() - Net.hostSeen > NET_TIMEOUT) { netHostLost(); return; }
+    if (Date.now() - Net.hostSeen > NET_TIMEOUT) { netHostLost(`${NET_TIMEOUT / 1000} s žádná zpráva od hostitele`); return; }
     if ((T.in -= dt) <= 0 && G.me) {
       T.in = NET_IN_DT;
       const h = G.me;
@@ -636,6 +678,7 @@ function netRefreshGuestMembersScene() { netUi(); }
 
 // Host odchází z podzemí (portál, teleport) nebo podzemí skončilo → vlastní město
 function netGuestLeaveRift() {
+  netLog('Odešel jsi z podzemí do města');
   netSend({ t: 'town' });
   netToLocalTown();
 }
@@ -819,7 +862,8 @@ function showNetModal() {
   const inRoom = !!Net.role;
   let body;
   if (Net.creating && !Net.role) body = `<p>Zakládám místnost…</p><div class="actions"><button onclick="netDestroy();showNetModal()">Zrušit</button></div>`;
-  else if (Net.joining && !Net.role) body = `<p>Připojuji se k místnosti <b>${Net.code}</b>…</p>${netStageList()}<div class="actions"><button onclick="netDestroy();showNetModal()">Zrušit</button></div>`;
+  else if (Net.joining && !Net.role) body = `<p>${NetRe.code ? `Spojení se přerušilo – připojuji znovu (pokus ${NetRe.n}/${NET_RE_TRIES})` : 'Připojuji se k místnosti'} <b>${Net.code}</b>…</p>${netStageList()}<div class="actions"><button onclick="netStopReconnect();netDestroy();showNetModal()">Zrušit</button></div>`;
+  else if (NetRe.code && !Net.role) body = `<p>Spojení se přerušilo – za chvíli se zkusím připojit znovu do místnosti <b>${NetRe.code}</b>…</p><div class="actions"><button onclick="netStopReconnect();showNetModal()">Nepřipojovat</button></div>`;
   else if (!inRoom) {
     const can = G.scene === 'town';
     body = `<p class="muted small">Hrajte spolu podzemí (2–4 hráči). Každý hraje se svou postavou, zkušenosti, zlato a kořist se ukládají každému zvlášť.
@@ -839,7 +883,8 @@ function showNetModal() {
       <ul class="net-list">${rows}</ul>
       <div class="actions"><button class="danger" onclick="netLeave();closeMenu()">Opustit místnost</button></div>`;
   }
-  showModal(`<h2>Hrát s přáteli</h2>${body}`, false, 'net');
+  const log = NetLog.length ? `<details class="net-log"><summary class="small">Záznam spojení</summary><ul>${NetLog.slice(0, 15).map(l => `<li><span>${l.t}</span> ${l.msg}</li>`).join('')}</ul></details>` : '';
+  showModal(`<h2>Hrát s přáteli</h2>${body}${log}`, false, 'net');
 }
 function netStageList() {
   const order = ['server', 'peer', 'host'], cur = order.indexOf(Net.joinStage);
