@@ -7,7 +7,7 @@ Tohle je hlavní vstupní bod pro každý nový chat s Claudem. Popisuje, co hra
 - Hraje se na počítači i na mobilu (na výšku i na šířku).
 - Zdarma pro kamarády. Každý má vlastní uložené postavy v prohlížeči (localStorage) a může je přenést na jiné zařízení krátkým kódem (přímé spojení přes PeerJS) nebo záložním dlouhým kódem.
 - Autor (Jirka) neprogramuje. Všechno vzniká přes zadání v češtině, Claude píše kód, testuje ho a vysvětluje změny srozumitelně.
-- Aktuální verze: **1.18.2** (konstanta `GAME_VERSION` v `js/data.js`).
+- Aktuální verze: **1.19.0** (konstanta `GAME_VERSION` v `js/data.js`).
 
 ## Kde hra běží
 | Co | Kde |

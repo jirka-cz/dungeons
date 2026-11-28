@@ -5,11 +5,11 @@
 const ITEM_KINDS = {
   weapon:  { name: 'Zbraň',      weight: 2,   types: ['sword', 'axe', 'mace', 'dagger', 'greatsword', 'hammer', 'staff', 'bow', 'orb'] },
   offhand: { name: 'Levá ruka',  weight: 1,   types: ['shield'] },
-  head:    { name: 'Hlava',      weight: 1,   types: ['helm', 'hood', 'circlet'], base: [['hp', 14, 0, true]] },
-  chest:   { name: 'Hrudník',    weight: 1,   types: ['plate', 'robe', 'mail', 'vest'], base: [['def', 1, 0.25]] },
-  gloves:  { name: 'Rukavice',   weight: 1,   types: ['gloves', 'gauntlets'], base: [['atk', 1.5, 0, true]] },
-  legs:    { name: 'Kalhoty',    weight: 1,   types: ['pants', 'greaves'], base: [['hp', 10, 0, true]] },
-  boots:   { name: 'Boty',       weight: 1,   types: ['boots', 'sandals'], base: [['hp', 8, 0, true]] },
+  head:    { name: 'Hlava',      weight: 1,   types: ['helm', 'coif', 'cap', 'hood', 'circlet'], base: [['hp', 14, 0, true]] },
+  chest:   { name: 'Hrudník',    weight: 1,   types: ['plate', 'mail', 'vest', 'robe'], base: [['def', 1, 0.25]] },
+  gloves:  { name: 'Rukavice',   weight: 1,   types: ['gauntlets', 'chaingloves', 'leathergloves', 'gloves'], base: [['atk', 1.5, 0, true]] },
+  legs:    { name: 'Kalhoty',    weight: 1,   types: ['greaves', 'chainlegs', 'leatherpants', 'pants'], base: [['hp', 10, 0, true]] },
+  boots:   { name: 'Boty',       weight: 1,   types: ['boots', 'chainboots', 'leatherboots', 'sandals'], base: [['hp', 8, 0, true]] },
   cloak:   { name: 'Plášť',      weight: 1,   types: ['cloak', 'mantle'], base: [['resAll', 0.01, 0.0002, false, 0.03]] },
   neck:    { name: 'Náhrdelník', weight: 0.7, types: ['amulet', 'talisman'], base: [['critDmg', 0.08, 0.003, false, 0.5]] },
   ring:    { name: 'Prsten',     weight: 1.2, types: ['ring', 'signet'], base: [['crit', 0.01, 0.0005, false, 0.08]] }
@@ -28,19 +28,28 @@ const ITEM_TYPES = {
   bow:        { noun: 'Luk:m',              icon: 'bow',        hand: 2 },
   shield:     { noun: 'Štít:m',             icon: 'shield', base: [['block', 0.05, 0.0005, false, 0.2], ['def', 1, 0.15]] },
   orb:        { noun: 'Kniha kouzel:f',     icon: 'orb',        hand: 2, base: [['skillPct', 0.06, 0.002, false, 0.4]] },   // v1.18: obouruční zbraň mága a černokněžníka (útok jako hůl + síla dovedností)
-  helm:       { noun: 'Helma:f',            icon: 'helm', armor: 'heavy' },
-  hood:       { noun: 'Kápě:f',             icon: 'hood', armor: 'light' },
-  circlet:    { noun: 'Čelenka:f',          icon: 'helm', armor: 'light' },
-  plate:      { noun: 'Kyrys:m',            icon: 'chest', armor: 'heavy' },
-  robe:       { noun: 'Róba:f',             icon: 'robe',   armor: 'light', base: [['def', 0.4, 0.1]] },
-  mail:       { noun: 'Kroužková zbroj:f',  icon: 'chest', armor: 'heavy' },
-  vest:       { noun: 'Kožená vesta:f',     icon: 'robe',   armor: 'light', base: [['def', 0.7, 0.18]] },
-  gloves:     { noun: 'Rukavice:p',         icon: 'gloves', armor: 'light' },
-  gauntlets:  { noun: 'Kovové rukavice:p',  icon: 'gloves', armor: 'heavy' },
-  pants:      { noun: 'Kalhoty:p',          icon: 'legs', armor: 'light' },
-  greaves:    { noun: 'Nohavice:p',         icon: 'legs', armor: 'heavy' },
-  boots:      { noun: 'Boty:p',             icon: 'boots', armor: 'heavy' },
-  sandals:    { noun: 'Sandály:p',          icon: 'boots', armor: 'light' },
+  // Zbroj má 4 materiály (v1.19, jako WoW): látka < kůže < kroužky < plát. Třída nosí svůj materiál a všechny lehčí.
+  helm:       { noun: 'Helma:f',               icon: 'helm',   armor: 'plate' },
+  coif:       { noun: 'Kroužková kukla:f',     icon: 'helm',   armor: 'mail' },
+  cap:        { noun: 'Kožená čapka:f',        icon: 'hood',   armor: 'leather' },
+  hood:       { noun: 'Kápě:f',                icon: 'hood',   armor: 'cloth' },
+  circlet:    { noun: 'Čelenka:f',             icon: 'helm',   armor: 'cloth' },
+  plate:      { noun: 'Kyrys:m',               icon: 'chest',  armor: 'plate' },
+  mail:       { noun: 'Kroužková zbroj:f',     icon: 'chest',  armor: 'mail' },
+  vest:       { noun: 'Kožená vesta:f',        icon: 'robe',   armor: 'leather', base: [['def', 0.7, 0.18]] },
+  robe:       { noun: 'Róba:f',                icon: 'robe',   armor: 'cloth',   base: [['def', 0.4, 0.1]] },
+  gauntlets:  { noun: 'Kovové rukavice:p',     icon: 'gloves', armor: 'plate' },
+  chaingloves:{ noun: 'Kroužkové rukavice:p',  icon: 'gloves', armor: 'mail' },
+  leathergloves:{ noun: 'Kožené rukavice:p',   icon: 'gloves', armor: 'leather' },
+  gloves:     { noun: 'Látkové rukavice:p',    icon: 'gloves', armor: 'cloth' },
+  greaves:    { noun: 'Nohavice:p',            icon: 'legs',   armor: 'plate' },
+  chainlegs:  { noun: 'Kroužkové nohavice:p',  icon: 'legs',   armor: 'mail' },
+  leatherpants:{ noun: 'Kožené kalhoty:p',     icon: 'legs',   armor: 'leather' },
+  pants:      { noun: 'Látkové kalhoty:p',     icon: 'legs',   armor: 'cloth' },
+  boots:      { noun: 'Plátové boty:p',        icon: 'boots',  armor: 'plate' },
+  chainboots: { noun: 'Kroužkové boty:p',      icon: 'boots',  armor: 'mail' },
+  leatherboots:{ noun: 'Kožené boty:p',        icon: 'boots',  armor: 'leather' },
+  sandals:    { noun: 'Sandály:p',             icon: 'boots',  armor: 'cloth' },
   cloak:      { noun: 'Plášť:m',            icon: 'cloak' },
   mantle:     { noun: 'Pláštěnka:f',        icon: 'cloak' },
   amulet:     { noun: 'Amulet:m',           icon: 'amulet' },
@@ -48,10 +57,14 @@ const ITEM_TYPES = {
   ring:       { noun: 'Prsten:m',           icon: 'ring' },
   signet:     { noun: 'Pečetní prsten:m',   icon: 'ring' }
 };
-// Váha zbroje: těžká přidá obranu (válečník), lehká odolnosti (kouzelníci). Nosit smí každý.
+// Materiál zbroje (v1.19): čím těžší, tím víc obrany; látka místo obrany dává odolnosti proti živlům.
+// Třída smí nosit materiál CLASSES[].armor a všechny lehčí (ARMOR_ORDER).
+const ARMOR_ORDER = ['cloth', 'leather', 'mail', 'plate'];
 const ARMOR_WEIGHT = {
-  heavy: { name: 'Těžká zbroj', extra: [['def', 1, 0.12]] },
-  light: { name: 'Lehká zbroj', extra: [['resAll', 0.01, 0.0002, false, 0.03]] }
+  cloth:   { name: 'Látková zbroj',   who: 'mág, černokněžník (a všichni ostatní)', extra: [['resAll', 0.01, 0.0002, false, 0.03]] },
+  leather: { name: 'Kožená zbroj',    who: 'lovec, druid, válečník',                 extra: [['def', 0.5, 0.06], ['resAll', 0.005, 0.0001, false, 0.015]] },
+  mail:    { name: 'Kroužková zbroj', who: 'druid, válečník',                        extra: [['def', 0.8, 0.1]] },
+  plate:   { name: 'Plátová zbroj',   who: 'válečník',                               extra: [['def', 1, 0.12]] }
 };
 // Odolnost proti jednomu živlu na jednom předmětu (všechny odolnosti + konkrétní) je nejvýš 10 %, i u nejlepších kusů
 const RES_ITEM_CAP = 0.10;
@@ -221,7 +234,7 @@ const LEGENDARIES = [
   { id: 'soulreaper',  cls: ['warlock'],                     slot: 'weapon',  type: 'orb',     name: 'Kniha Žnece duší',        stats: { shadowPct: 0.2, ls: 0.03, dotDur: 2 } },
   { id: 'shadowwalk',  cls: ['hunter', 'warlock'],           slot: 'cloak',   type: 'cloak',   name: 'Plášť Stínochodce',       stats: { dodge: 0.06, resShadow: 0.08 } },
   // Lovec
-  { id: 'windrunner',  cls: ['hunter'],                      slot: 'boots',   type: 'sandals', name: 'Boty Větrného běžce',     stats: { spdPct: 0.15, dodge: 0.05 } },
+  { id: 'windrunner',  cls: ['hunter'],                      slot: 'boots',   type: 'leatherboots', name: 'Boty Větrného běžce',     stats: { spdPct: 0.15, dodge: 0.05 } },
   { id: 'eagleeye',    cls: ['hunter'],                      slot: 'weapon',  type: 'bow',     name: 'Luk Orlího oka',          stats: { crit: 0.06, armorPen: 0.2 } },
   { id: 'summoner',    cls: ['hunter', 'warlock', 'druid'],  slot: 'ring',    type: 'ring',    name: 'Prsten Vyvolávače',       stats: { petPct: 0.30, petCount: 1 } },
   // Druid
@@ -246,8 +259,8 @@ const SETS = {
   },
   shadow: {
     name: 'Stínový lovec', cls: ['hunter'], color: '#4fd1a5', glyph: 'set_shadow',
-    pieces: { weapon: ['Stínová čepel', 'dagger'], head: ['Stínová maska', 'hood'], chest: ['Stínová vesta', 'vest'],
-              boots: ['Stínové sandály', 'sandals'], cloak: ['Stínový plášť', 'cloak'], neck: ['Stínový amulet', 'amulet'] },
+    pieces: { weapon: ['Stínová čepel', 'dagger'], head: ['Stínová maska', 'cap'], chest: ['Stínová vesta', 'vest'],
+              boots: ['Stínové boty', 'leatherboots'], cloak: ['Stínový plášť', 'cloak'], neck: ['Stínový amulet', 'amulet'] },
     bonus: { 1: { crit: 0.05 }, 3: { dodge: 0.08, spdPct: 0.15 }, 6: { critDmg: 0.50, execPct: 1 } }
   },
   pact: {
@@ -259,7 +272,7 @@ const SETS = {
   grove: {
     name: 'Strážce Hvozdu', cls: ['druid'], color: '#7cd04a', glyph: 'set_grove',
     pieces: { weapon: ['Hůl Strážce', 'staff'], head: ['Parohy Strážce', 'circlet'], chest: ['Vesta Strážce', 'vest'],
-              gloves: ['Rukavice Strážce', 'gloves'], boots: ['Sandály Strážce', 'sandals'], neck: ['Talisman Strážce', 'talisman'] },
+              gloves: ['Rukavice Strážce', 'leathergloves'], boots: ['Boty Strážce', 'leatherboots'], neck: ['Talisman Strážce', 'talisman'] },
     bonus: { 1: { naturePct: 0.15 }, 3: { healPct: 0.30, regen: 0.003, resNature: 0.10 }, 6: { atkPct: 0.30, petPct: 0.40, hpPct: 0.20 } }
   },
   // ---- Mýtické sety (jeden pro každou třídu) ----
@@ -283,14 +296,14 @@ const SETS = {
   },
   m_hunter: {
     name: 'Lov rudého měsíce', cls: ['hunter'], color: '#ff4a1a', glyph: 'set_m_hunter', mythic: true,
-    pieces: { weapon: ['Luk rudého měsíce', 'bow'], head: ['Kápě rudého měsíce', 'hood'], chest: ['Kožená vesta rudého měsíce', 'vest'],
-              gloves: ['Rukavice rudého měsíce', 'gloves'], boots: ['Sandály rudého měsíce', 'sandals'], cloak: ['Plášť rudého měsíce', 'cloak'] },
+    pieces: { weapon: ['Luk rudého měsíce', 'bow'], head: ['Čapka rudého měsíce', 'cap'], chest: ['Kožená vesta rudého měsíce', 'vest'],
+              gloves: ['Rukavice rudého měsíce', 'leathergloves'], boots: ['Boty rudého měsíce', 'leatherboots'], cloak: ['Plášť rudého měsíce', 'cloak'] },
     bonus: { 1: { crit: 0.05, petPct: 0.15 }, 3: { critDmg: 0.40, wpnSpd: 0.12, armorPen: 0.15 }, 6: { atkPct: 0.50, execPct: 1, petPct: 0.40 } }
   },
   m_druid: {
     name: 'Srdce hořícího hvozdu', cls: ['druid'], color: '#ff4a1a', glyph: 'set_m_druid', mythic: true,
     pieces: { weapon: ['Hůl hořícího hvozdu', 'staff'], head: ['Parohy hořícího hvozdu', 'circlet'], chest: ['Vesta hořícího hvozdu', 'vest'],
-              legs: ['Kalhoty hořícího hvozdu', 'pants'], boots: ['Sandály hořícího hvozdu', 'sandals'], neck: ['Talisman hořícího hvozdu', 'talisman'] },
+              legs: ['Kalhoty hořícího hvozdu', 'leatherpants'], boots: ['Boty hořícího hvozdu', 'leatherboots'], neck: ['Talisman hořícího hvozdu', 'talisman'] },
     bonus: { 1: { naturePct: 0.20, healPct: 0.15 }, 3: { regen: 0.004, castPct: 0.12, resAll: 0.05 }, 6: { atkPct: 0.50, petPct: 0.60, hpPct: 0.25 } }
   }
 };
@@ -539,25 +552,26 @@ function baseDefsFor(kind, type) {
 }
 
 // Může třída předmět nosit? Zbraně a levá ruka podle třídy, legendárky a sety podle cls, ostatní všichni.
-// Smí třída nosit tenhle typ zbroje? (lehká všichni, těžká podle heavyArmor v CLASSES)
+// Smí třída nosit tenhle typ zbroje? Svůj materiál (CLASSES[].armor) a všechny lehčí.
 function canWearArmorType(cls, type) {
-  if (!ITEM_TYPES[type] || ITEM_TYPES[type].armor !== 'heavy') return true;
-  const h = CLASSES[cls].heavyArmor;
-  return h === true || (Array.isArray(h) && h.includes(type));
+  const a = ITEM_TYPES[type] && ITEM_TYPES[type].armor;
+  if (!a) return true;
+  return ARMOR_ORDER.indexOf(a) <= ARMOR_ORDER.indexOf(CLASSES[cls].armor || 'plate');
 }
-function heavyArmorText(cls) {
-  return 'Těžkou zbroj nosí jen válečník, druid jen kroužkovou zbroj';
+function armorRuleText(cls, type) {
+  const a = ITEM_TYPES[type].armor;
+  return `${ARMOR_WEIGHT[a].name} – nosí ${ARMOR_WEIGHT[a].who.replace(' (a všichni ostatní)', '')}. ${CLASSES[cls].name}: nejvýš ${ARMOR_WEIGHT[CLASSES[cls].armor].name.toLowerCase()}`;
 }
 function canClassUse(it, cls) {
   const only = itemClasses(it);
   if (only && !only.includes(cls)) return false;
-  if (!canWearArmorType(cls, it.type)) return false;   // těžká zbroj: válečník celá, druid jen kroužková
+  if (!canWearArmorType(cls, it.type)) return false;   // materiál zbroje: látka < kůže < kroužky < plát
   if (it.slot !== 'weapon' && it.slot !== 'offhand') return true;
   return CLASSES[cls].weapons.includes(it.type);
 }
 
 const SMART_UNIQUE = 0.85;   // šance, že legendárka/set padne pro vlastní třídu (jako Diablo 3)
-const SMART_ARMOR = 0.7;     // šance na preferovanou váhu zbroje třídy
+const SMART_ARMOR = 0.7;     // šance na nejtěžší materiál, který třída smí (jinak jakýkoli, který smí)
 const SMART_ATTR = 0.4;      // šance, že předmět s afixy dostane hlavní atribut třídy
 
 // cls = třída pro "chytrou kořist" (zbraně, zbroj, atributy a unikáty vhodné pro třídu)
@@ -570,13 +584,11 @@ function makeItem(ilvl, rarity, uid, forceKind, cls) {
     if (kind === 'weapon' || kind === 'offhand') {
       const pool = ITEM_KINDS[kind].types.filter(t => allowed.includes(t));
       type = pool[Math.floor(Math.random() * pool.length)];
-    } else if (CLASSES[cls].armor && (CLASSES[cls].heavyArmor !== true || Math.random() < SMART_ARMOR)) {
-      // třída bez těžké zbroje dostane z chytré kořisti vždy lehkou
-      const pool = ITEM_KINDS[kind].types.filter(t => ITEM_TYPES[t].armor === CLASSES[cls].armor);
-      if (pool.length) type = pool[Math.floor(Math.random() * pool.length)];
-    } else if (CLASSES[cls].heavyArmor !== true) {
-      // druid: jen typy, které smí nosit (lehká + kroužková zbroj)
-      const pool = ITEM_KINDS[kind].types.filter(t => canWearArmorType(cls, t));
+    } else if (ITEM_KINDS[kind].types.some(t => ITEM_TYPES[t].armor)) {
+      // zbroj: v 70 % nejtěžší materiál třídy, jinak jakýkoli, který smí nosit (nikdy nic, co nosit nesmí)
+      const best = ITEM_KINDS[kind].types.filter(t => ITEM_TYPES[t].armor === CLASSES[cls].armor);
+      const ok = ITEM_KINDS[kind].types.filter(t => canWearArmorType(cls, t));
+      const pool = best.length && Math.random() < SMART_ARMOR ? best : ok;
       if (pool.length) type = pool[Math.floor(Math.random() * pool.length)];
     }
   }

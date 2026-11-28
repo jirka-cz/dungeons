@@ -4,7 +4,7 @@
 - **Sloty výbavy:** hlavní ruka, druhá ruka, hlava, krk, plášť, hruď, rukavice, nohy, boty, 2 prsteny (`EQUIP_ORDER` v `js/items.js`).
 - **Zbraně:** obouruční zbraň dává ≈ 1,9× útoku jednoruční. Zbraň v druhé ruce dává 70 % útoku (dvě zbraně).
 - Třída smí nosit jen své typy zbraní a jen legendárky a sety určené pro ni (`canClassUse`).
-- **Od v1.18: těžkou zbroj smí nosit jen válečník** (`heavyArmor: true`), **druid z ní jen kroužkovou zbroj** (`heavyArmor: ['mail']`, od v1.18.1). Mág, černokněžník a lovec nosí jen lehkou. Kontroluje `canWearArmorType`.
+- **Od v1.19 má zbroj 4 materiály** (jako WoW): látka < kůže < kroužky < plát. Třída nosí svůj materiál (`armor` v `CLASSES`) a všechny lehčí: **mág a černokněžník jen látku, lovec kůži, druid kroužky, válečník plát.** Kontroluje `canWearArmorType`.
 - **Od v1.18 drží mág a černokněžník jen Knihu kouzel** – obouruční zbraň v pravé ruce (útok jako hůl + síla dovedností). Magii sesílají sami, hůl, meč ani dýku nedrží. **Hůlka je vyřazená** (nepadá, typ zůstává jen kvůli starým předmětům).
 - **Batoh** má 40 míst, **truhla** 60 (sdílená).
 
@@ -37,14 +37,16 @@
 - Orientačně: mág ve fialové výbavě na úrovni 35 ≈ 17 %, v samých legendárkách na úrovni 100 ≈ 50 %.
 - Starší předměty se jednou při načtení ořežou na 10 % (migrace `resCap14`).
 
-### Váha zbroje (`ARMOR_WEIGHT`, `armor` v `ITEM_TYPES`)
-| Váha | Typy | Navíc k základu slotu |
-|---|---|---|
-| Těžká | helma, kyrys, kroužková zbroj, kovové rukavice, nohavice, boty | obrana (1 + 0,12 za úroveň) |
-| Lehká | kápě, čelenka, róba, kožená vesta, rukavice, kalhoty, sandály | všechny odolnosti (1 % + 0,02 % za úroveň, max 3 %) |
+### Materiál zbroje (`ARMOR_WEIGHT`, `ARMOR_ORDER`, `armor` v `ITEM_TYPES`) – od v1.19
+| Materiál | Typy (hlava, hruď, ruce, nohy, boty) | Navíc k základu slotu | Nosí |
+|---|---|---|---|
+| Látková | kápě / čelenka, róba, látkové rukavice, látkové kalhoty, sandály | všechny odolnosti (1 % + 0,02 % za úroveň, max 3 %) | všichni |
+| Kožená | kožená čapka, kožená vesta, kožené rukavice, kožené kalhoty, kožené boty | obrana (0,5 + 0,06 za úroveň) + odolnosti (max 1,5 %) | lovec, druid, válečník |
+| Kroužková | kroužková kukla, kroužková zbroj, kroužkové rukavice, kroužkové nohavice, kroužkové boty | obrana (0,8 + 0,1 za úroveň) | druid, válečník |
+| Plátová | helma, kyrys, kovové rukavice, nohavice, plátové boty | obrana (1 + 0,12 za úroveň) | válečník |
 
 - Róba a vesta mají na hrudi méně obrany než kyrys (róba nejméně).
-- Těžkou zbroj nosí jen válečník, druid jen kroužkovou zbroj (v1.18.1), lehkou všichni. Popisek ukazuje „těžká zbroj“ / „lehká zbroj“, u nevhodné postavy červeně proč ji nosit nesmí.
+- Popisek ukazuje materiál („látková zbroj“ …), u nevhodné postavy červeně, kdo ho nosí a jaký materiál smí ona.
 - Plášť, šperky a zbraně váhu nemají.
 
 ### Afixy (`AFFIXES`) – 60 druhů + rodiny
@@ -87,15 +89,15 @@ Nepřátelé mají druh `fam` v `MONSTERS` a `BOSSES`: nemrtví (zombie, kostliv
 ### Chytrá kořist (`makeItem` s parametrem třídy)
 - 80 % padajících předmětů je „chytrých“ (pro třídu hráče), obchodník prodává vždy chytré.
 - Chytrá legendárka/set: 85 % šance, že je pro tvou třídu (jako Diablo 3). Zbytek jde do truhly pro jinou postavu nebo na prodej.
-- Chytrá zbroj: válečník dostane v 70 % těžkou; druid jen lehkou nebo kroužkovou zbroj; mág, černokněžník a lovec vždy lehkou.
+- Chytrá zbroj: v 70 % nejtěžší materiál, který třída smí, jinak jakýkoli z dovolených – nikdy nic, co nosit nesmí.
 - Chytrý předmět s afixy: 40 % šance, že jeden afix nahradí hlavní atribut třídy.
 - **Porovnání předmětů** (`itemScore`, `statWeight`) počítá s třídou, drženou zbraní a dovednostmi na liště: hlavní atribut a bonus k držené zbrani nebo dovednosti na liště mají plnou váhu, cizí málo; rychlost sesílání se počítá jen kouzelníkům, rychlost útoku zbraní jen válečníkovi a lovci.
 
 ### Zásady balancu (research Diablo 3/4 a WoW, listopad 2026)
 - Diablo 3: každý atribut má obranný účinek pro všechny (síla → zbroj, obratnost → úhyb, intelekt → odolnosti, vitalita → život) a hlavní atribut navíc zvyšuje poškození své třídy o 1 % za bod. Převzato, jen obratnost dává krit. šanci místo úhybu.
-- WoW: těžká zbroj má víc obrany, látková ji má malou a kouzelníci spoléhají na intelekt. Převzato zjednodušeně na 2 váhy; od v1.18 těžkou nosí jen válečník (druid jen kroužkovou zbroj).
+- WoW: těžká zbroj má víc obrany, látková ji má malou a kouzelníci spoléhají na intelekt. Od v1.19 převzaty všechny 4 materiály (WoW: mág látka, lovec kůže/kroužky, válečník plát); druid tu nosí kroužky.
 - Chytrá kořist 85/15 % podle Diabla 3, aby legendárky pro jiné třídy nebyly otravně časté.
-- Válečník: síla, výdrž, obrana (těžká zbroj, štít). Kouzelníci: intelekt, odolnosti (lehká zbroj), síla elementu, přebíjení, rychlost sesílání, léčení.
+- Válečník: síla, výdrž, obrana (plátová zbroj, štít). Kouzelníci: intelekt, odolnosti (látková zbroj), síla elementu, přebíjení, rychlost sesílání, léčení.
 - v1.3 (Grim Dawn, D3, WoW): Moudrost (ve WoW a Grim Dawnu „Spirit“) jako ve WoW a Grim Dawnu zrychluje obnovu many. Rychlost sesílání je oddělená od rychlosti útoku (WoW spell haste vs. attack haste, Grim Dawn casting speed). Bonusy k typu zbraně a ke konkrétní dovednosti podle Diabla 3/4, poškození elitám a od elit podle D3, poškození proti druhům nepřátel podle Grim Dawnu, rychlost pohybu jen na botách podle D3.
 
 ### Padání kořisti (v1.5)
@@ -156,6 +158,7 @@ Většinu vzácných předmětů dává boss. Čísla jsou spočítaná z herní
 - **Očarování** (O1): kulatý znak živlu vpravo dole podle nejsilnějšího statu (`ENCHANTS`, `itemEnchant`): oheň, mráz, jed (příroda), stín, magie, zlato (zlato a lepší kořist), krev (vysávání). Šedé předměty očarování nemají. V popisku řádek „Očarování: …“.
 - **Sety** (S1): znak setu v jeho barvě vlevo nahoře (`color`, `glyph` v `SETS`): Titán bronzový štít, Arcimág modrá hvězda, Stínový lovec zelená kápě, Pakt Prázdnoty fialový pentagram, Strážce Hvozdu zelený list.
 - **Ohnisko** se od v1.12 jmenuje **Kniha kouzel** (starší předměty si název nechávají).
+- **v1.19:** lovecké a druidí sety a Boty Větrného běžce jsou kožené (čapka, rukavice, kalhoty, boty). Staré kusy se převedou samy (`syncUniqueType`, migrace `gearRules119`/`uniqFix119`), nevhodné nasazené kusy jdou do batohu.
 - **v1.18:** Kniha kouzel je obouruční zbraň (dřív levá ruka). Sety upravené: Arcimág, Pakt Prázdnoty, Věčný plamen a Spálený král mají místo hole/hůlky/dýky knihu (Spálený král místo druhé knihy rukavice), Stínový lovec a Rudý měsíc lehké sandály a vestu místo těžkých kusů. Fénixova zbroj je od v1.18.1 kroužková a Nohavice Kamenné kůže kalhoty (sdílí je válečník a druid). Legendárky a sety se změněným typem se při načtení převedou na nový typ, hlavní atribut zůstane (`syncUniqueType`). Migrace `gearRules118`/`gearRules1181`/`orbFix118`/`uniqFix1181`: staré knihy dostanou útok, nevhodné nasazené kusy jdou do batohu a kouzelník, který přišel o zbraň, dostane knihu stejné úrovně (nejvýš epickou).
 
 ### Mýtický tier (v1.12)

@@ -8,7 +8,7 @@ function newSave() {
     v: SAVE_VERSION,
     chars: [], current: -1,
     gold: 0, stash: [], nextUid: 1,
-    resCap14: true, orbFix118: true, uniqFix1181: true,
+    resCap14: true, orbFix118: true, uniqFix1181: true, uniqFix119: true,
     settings: { autoSell: { gray: false, green: false, purple: false, orange: false, diamond: false }, dmgNumbers: true, sound: true, autoAttack: false, sellFix103: true },
     lastSeen: Date.now()
   };
@@ -16,7 +16,7 @@ function newSave() {
 
 function newChar(name, race, cls, save) {
   const ch = { id: Date.now() + Math.floor(Math.random() * 1000), name, race, cls, level: 1, xp: 0, talents: {}, equip: {}, inv: [], maxRift: 1,
-               bar: [CLASSES[cls].base[0], CLASSES[cls].base[1], null, null, null, null, null, null], talentVer: 3, classItems12: true, resCap14: true, gearRules118: true, gearRules1181: true, created: Date.now(),
+               bar: [CLASSES[cls].base[0], CLASSES[cls].base[1], null, null, null, null, null, null], talentVer: 3, classItems12: true, resCap14: true, gearRules118: true, gearRules1181: true, gearRules119: true, created: Date.now(),
                vendor: { lvl: 0, rolls: 0, stock: null } };
   const w = starterWeapon(cls, save.nextUid++);
   ch.equip[w.slot === 'weapon' ? 'main' : 'off'] = w;
@@ -51,7 +51,7 @@ function migrateSave(s) {
     }
     // v1.18: těžká zbroj jen válečník a druid, kouzelníci jen Knihu kouzel – nevhodné nasazené kusy do batohu,
     // mág/černokněžník, který přišel o zbraň, dostane Knihu kouzel stejné úrovně a rarity (legendární/set → epická)
-    if (!ch.gearRules118 || !ch.gearRules1181) {   // 1.18.1: druid jen kroužková zbroj (stejná kontrola znovu)
+    if (!ch.gearRules118 || !ch.gearRules1181 || !ch.gearRules119) {   // 1.18.1 druid jen kroužky, 1.19 materiály zbroje (stejná kontrola znovu)
       const moved = []; let lostWeapon = null;
       Object.values(ch.equip).concat(ch.inv, (ch.vendor && ch.vendor.stock) || []).forEach(it => { syncUniqueType(it); convertOldBook(it); });
       // kniha nasazená v levé ruce: do pravé, když je volná nebo v ní zůstat nesmí (hůlka, hůl, meč)
@@ -73,9 +73,9 @@ function migrateSave(s) {
         const rar = ['gray', 'green', 'purple'].includes(lostWeapon.rarity) ? lostWeapon.rarity : 'purple';
         given = ch.equip.main = makeItem(lostWeapon.ilvl, rar, out.nextUid++, 'weapon', ch.cls);
       }
-      ch.gearRules118 = ch.gearRules1181 = true;
+      ch.gearRules118 = ch.gearRules1181 = ch.gearRules119 = true;
       if (moved.length) {
-        if (!out._gear118) { out._gear118 = true; out._notice = (out._notice ? out._notice + ' ' : '') + 'Nová pravidla výbavy: těžkou zbroj nosí jen válečník (druid jen kroužkovou zbroj), mág a černokněžník drží jen Knihu kouzel.'; }
+        if (!out._gear118) { out._gear118 = true; out._notice = (out._notice ? out._notice + ' ' : '') + 'Nová pravidla výbavy: zbroj je látková, kožená, kroužková a plátová. Mág a černokněžník nosí jen látku, lovec kůži, druid kroužky, válečník plát (každý i lehčí materiály). Mág a černokněžník drží jen Knihu kouzel.'; }
         out._notice += ` ${ch.name}: do batohu přesunuto ${moved.join(', ')}.` + (given ? ` Náhradou dostává ${given.name}.` : '');
       }
     }
@@ -102,7 +102,7 @@ function migrateSave(s) {
     }
   });
   delete out._gear118;
-  if (!s.orbFix118 || !s.uniqFix1181) { out.stash.forEach(it => { syncUniqueType(it); convertOldBook(it); }); out.orbFix118 = out.uniqFix1181 = true; }
+  if (!s.orbFix118 || !s.uniqFix1181 || !s.uniqFix119) { out.stash.forEach(it => { syncUniqueType(it); convertOldBook(it); }); out.orbFix118 = out.uniqFix1181 = out.uniqFix119 = true; }
   if (!s.resCap14) { out.stash.forEach(it => { if (capItemRes(it)) out._resNotice = true; }); out.resCap14 = true; }
   if (out._resNotice) { out._notice = (out._notice ? out._notice + ' ' : '') + 'Odolnosti na předmětech byly vyváženy: nejvýš 10 % proti jednomu živlu na předmět.'; delete out._resNotice; }
   return out;

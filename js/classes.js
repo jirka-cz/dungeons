@@ -1,14 +1,13 @@
 // Třídy, zdroje, aktivní dovednosti a talentové stromy.
 //
 // main = hlavní atribut (+1 % útoku za bod; druid bere vyšší z intelektu a obratnosti),
-// armor = preferovaná zbroj pro chytrou kořist (heavy = těžká, light = lehká, null = obojí);
-// heavyArmor = smí nosit těžkou zbroj: true = všechnu (válečník), seznam typů = jen tyhle (druid jen kroužkovou zbroj),
-// chybí = jen lehkou (mág, černokněžník, lovec).
+// armor = nejtěžší materiál zbroje, který třída smí nosit (cloth látka < leather kůže < mail kroužky < plate plát);
+// smí i všechny lehčí. Chytrá kořist dává v 70 % právě tenhle materiál.
 // Každá třída má 2 výchozí dovednosti (základní útok + jednu další), ostatní odemykají talenty (js/talents.js).
 
 const CLASSES = {
   warrior: {
-    name: 'Válečník', hp: 1.2, atk: 1.0, def: 3, spd: 0.95, elem: 'phys', main: ['str'], armor: 'heavy', heavyArmor: true,
+    name: 'Válečník', hp: 1.2, atk: 1.0, def: 3, spd: 0.95, elem: 'phys', main: ['str'], armor: 'plate',
     res: { name: 'Zuřivost', color: '#d8402a', max: 100, regen: -2, start: 0 },
     weapons: ['sword', 'axe', 'mace', 'greatsword', 'hammer', 'shield'], starter: 'sword',
     colors: ['#a9b2bd', '#646c77'],
@@ -18,7 +17,7 @@ const CLASSES = {
     desc: 'Tank na blízko. Vydrží nejvíc, útočí jen zblízka a do boje skáče. Útoky generují zuřivost. Zuřivost (dvě zbraně) nebo Zbraně (obouručka).',
   },
   mage: {
-    name: 'Mág', hp: 0.92, atk: 1.25, def: -1, spd: 1.0, elem: 'arcane', main: ['int'], armor: 'light',
+    name: 'Mág', hp: 0.92, atk: 1.25, def: -1, spd: 1.0, elem: 'arcane', main: ['int'], armor: 'cloth',
     res: { name: 'Mana', color: '#3a6ae0', max: 100, regen: 1.4, start: 100 },
     weapons: ['orb'], starter: 'orb',   // v1.18: kouzelníci drží jen Knihu kouzel (obouruční), magii sesílají sami
     colors: ['#6a4ae0', '#43309a'],
@@ -28,7 +27,7 @@ const CLASSES = {
     desc: 'Skleněné dělo: obrovská plošná kouzla z dálky, ale málo života. Bariéra a teleport ho drží naživu. Oheň, nebo Mráz.',
   },
   warlock: {
-    name: 'Černokněžník', hp: 1.0, atk: 1.1, def: 0, spd: 1.0, ls: 0.04, elem: 'shadow', main: ['int'], armor: 'light',
+    name: 'Černokněžník', hp: 1.0, atk: 1.1, def: 0, spd: 1.0, ls: 0.04, elem: 'shadow', main: ['int'], armor: 'cloth',
     res: { name: 'Mana', color: '#7a3ae0', max: 100, regen: 1.2, start: 100 },
     weapons: ['orb'], starter: 'orb',
     colors: ['#2c3a86', '#11132a'],
@@ -38,7 +37,7 @@ const CLASSES = {
     desc: 'Pomalá smrt: prokleje celé skupiny a žije z jejich utrpení, nebo velí démonům. Kletby, nebo Démonologie.',
   },
   hunter: {
-    name: 'Lovec', hp: 0.95, atk: 1.0, def: 0, spd: 1.15, elem: 'phys', pet: 'wolf', main: ['agi'], armor: 'light',
+    name: 'Lovec', hp: 0.95, atk: 1.0, def: 0, spd: 1.15, elem: 'phys', pet: 'wolf', main: ['agi'], armor: 'leather',
     res: { name: 'Soustředění', color: '#d8a030', max: 100, regen: 1.6, start: 100 },
     weapons: ['bow', 'dagger', 'sword', 'axe'], starter: 'bow',
     colors: ['#4a7a3a', '#5a3a1e'],
@@ -48,7 +47,7 @@ const CLASSES = {
     desc: 'Mrštný střelec: drží si odstup, střílí v pohybu, klade pasti a má věrného vlka. Lučištník, nebo Pán šelem.',
   },
   druid: {
-    name: 'Druid', hp: 1.05, atk: 0.95, def: 2, spd: 1.0, regen: 0.004, elem: 'nature', main: ['int', 'agi'], armor: null, heavyArmor: ['mail'],
+    name: 'Druid', hp: 1.05, atk: 0.95, def: 2, spd: 1.0, regen: 0.004, elem: 'nature', main: ['int', 'agi'], armor: 'mail',
     res: { name: 'Duch', color: '#3ab060', max: 100, regen: 1.2, start: 100 },
     weapons: ['staff', 'mace', 'orb', 'dagger'], starter: 'staff',
     colors: ['#7a5a2a', '#3e6a2a'],

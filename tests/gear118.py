@@ -7,18 +7,18 @@ JS = r"""(() => { const r = {};
   const mk = (kind, type, rar, ilvl) => { const it = makeItem(ilvl || 30, rar || 'purple', G.save.nextUid++, kind, null); it.type = type; it.slot = kind;
     it.base = rollBase(baseDefsFor(kind, type), it.ilvl, RARITIES[it.rarity].mult); return it; };
   // stará postava mága: plátová zbroj, hůlka v pravé ruce, stará kniha (levá ruka, bez útoku)
-  const ch = newChar('Old', 'human', 'mage', G.save); delete ch.gearRules118;
+  const ch = newChar('Old', 'human', 'mage', G.save); delete ch.gearRules118; delete ch.gearRules119;
   ch.equip = { main: mk('weapon', 'wand'), chest: mk('chest', 'plate'), boots: mk('boots', 'boots'), gloves: mk('gloves', 'gloves'),
     off: { uid: G.save.nextUid++, rarity: 'green', ilvl: 30, slot: 'offhand', type: 'orb', base: { skillPct: 0.1 }, affixes: {}, name: 'Stará kniha' } };
   const ch2 = newChar('Old2', 'human', 'warlock', G.save); delete ch2.gearRules118;
-  ch2.equip = { main: mk('weapon', 'staff', 'purple'), head: mk('head', 'helm') };
-  const ch3 = newChar('Old3', 'human', 'warrior', G.save); delete ch3.gearRules118; ch3.equip = { chest: mk('chest', 'plate') };
+  ch2.equip = { main: mk('weapon', 'staff', 'purple'), head: mk('head', 'helm'), chest: mk('chest', 'vest'), legs: mk('legs', 'pants') }; delete ch2.gearRules119;
+  const ch3 = newChar('Old3', 'human', 'warrior', G.save); delete ch3.gearRules118; delete ch3.gearRules119; ch3.equip = { chest: mk('chest', 'plate') };
   // druid (1.18.1): plátová zbroj pryč, kroužková zůstane; stará Fénixova zbroj (plát) se změní na kroužkovou a zůstane nasazená
-  const ch4 = newChar('Old4', 'elf', 'druid', G.save); delete ch4.gearRules1181;
+  const ch4 = newChar('Old4', 'elf', 'druid', G.save); delete ch4.gearRules1181; delete ch4.gearRules119;
   const ph = makeItem(40, 'orange', G.save.nextUid++, 'chest', 'druid'); ph.leg = 'phoenix'; ph.type = 'plate'; ph.base = { def: 99, int: 50 };
   ch4.equip = { chest: ph, head: mk('head', 'helm'), legs: mk('legs', 'pants') };
-  const ch5 = newChar('Old5', 'elf', 'druid', G.save); delete ch5.gearRules1181; ch5.equip = { chest: mk('chest', 'mail') };
-  const raw = JSON.parse(JSON.stringify(G.save)); raw.chars = [ch, ch2, ch3, ch4, ch5]; delete raw.orbFix118;
+  const ch5 = newChar('Old5', 'elf', 'druid', G.save); delete ch5.gearRules1181; delete ch5.gearRules119; ch5.equip = { chest: mk('chest', 'mail') };
+  const raw = JSON.parse(JSON.stringify(G.save)); raw.chars = [ch, ch2, ch3, ch4, ch5]; delete raw.orbFix118; delete raw.uniqFix119;
   raw.stash = [{ uid: 9999, rarity: 'purple', ilvl: 40, slot: 'offhand', type: 'orb', base: { skillPct: 0.1 }, affixes: {}, name: 'Kniha v truhle' }];
   const s = migrateSave(raw); const m = s.chars[0], w = s.chars[1], wa = s.chars[2];
   r.mage = Object.fromEntries(Object.entries(m.equip).map(([k, v]) => [k, v.type + ':' + v.slot + ':' + (v.base.atk || 0)]));
@@ -34,7 +34,8 @@ JS = r"""(() => { const r = {};
     druidPlate: canClassUse(mk('chest', 'plate'), 'druid'), warriorPlate: canClassUse(mk('chest', 'plate'), 'warrior'),
     mageRobe: canClassUse(mk('chest', 'robe'), 'mage'), mageStaff: canClassUse(mk('weapon', 'staff'), 'mage'),
     mageSword: canClassUse(mk('weapon', 'sword'), 'mage'), mageOrb: canClassUse(mk('weapon', 'orb'), 'mage'),
-    druidMail: canClassUse(mk('chest', 'mail'), 'druid'), druidHelm: canClassUse(mk('head', 'helm'), 'druid'), druidHood: canClassUse(mk('head', 'hood'), 'druid') };
+    druidMail: canClassUse(mk('chest', 'mail'), 'druid'), druidHelm: canClassUse(mk('head', 'helm'), 'druid'), druidHood: canClassUse(mk('head', 'hood'), 'druid'),
+    mageVest: canClassUse(mk('chest', 'vest'), 'mage'), hunterVest: canClassUse(mk('chest', 'vest'), 'hunter'), hunterCoif: canClassUse(mk('head', 'coif'), 'hunter'), druidCoif: canClassUse(mk('head', 'coif'), 'druid') };
   let dBad = 0; for (let i = 0; i < 3000; i++) { const it = makeItem(30, 'purple', i, null, 'druid'); if (!canClassUse(it, 'druid')) dBad++; } r.druidBadDrops = dBad;
   // kořist: žádná hůlka, mág nedostane těžkou zbroj ani jinou zbraň než knihu
   let wand = 0, heavy = 0, nonBook = 0;
@@ -52,10 +53,10 @@ async def main():
         u = r['use']
         ok = (r['mage'].get('main', '').startswith('orb:weapon:') and 'off' not in r['mage'] and 'chest' not in r['mage'] and 'boots' not in r['mage']
               and 'gloves' in r['mage'] and set(['wand', 'plate', 'boots']) <= set(r['mageInv'])
-              and r['warlock'].get('main', '').startswith('orb:purple') and 'head' not in r['warlock'] and set(['staff', 'helm']) <= set(r['warlockInv'])
+              and r['warlock'].get('main', '').startswith('orb:purple') and 'head' not in r['warlock'] and 'chest' not in r['warlock'] and 'legs' in r['warlock'] and set(['staff', 'helm', 'vest']) <= set(r['warlockInv'])
               and r['warrior'] == ['chest'] and r['stash'][0].startswith('weapon:') and r['stash'][0] != 'weapon:0' and 'Nová pravidla' in r['notice']
               and r['druid'].get('chest') == 'mail:50' and 'head' not in r['druid'] and 'legs' in r['druid'] and 'helm' in r['druidInv'] and r['druid2'] == ['chest']
-              and u['druidMail'] and not u['druidHelm'] and u['druidHood'] and r['druidBadDrops'] == 0
+              and u['druidMail'] and not u['druidHelm'] and not u['mageVest'] and u['hunterVest'] and not u['hunterCoif'] and u['druidCoif'] and u['druidHood'] and r['druidBadDrops'] == 0
               and not u['magePlate'] and not u['hunterMail'] and not u['druidPlate'] and u['warriorPlate'] and u['mageRobe'] and not u['mageStaff'] and not u['mageSword'] and u['mageOrb']
               and r['drops'] == {'wand': 0, 'heavy': 0, 'nonBook': 0} and r['starter'] == 'orb:weapon:2')
         print('ok', ok, 'errors', errs[:5]); await b.close()

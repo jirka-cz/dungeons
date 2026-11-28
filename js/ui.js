@@ -225,7 +225,7 @@ function itemHtml(it, actions) {
   const durTxt = it.dur !== undefined ? `<div class="dur ${broken ? 'broken' : it.dur < it.maxDur * 0.25 ? 'low' : ''}">Odolnost ${it.dur}/${it.maxDur}${broken ? ' – rozbitý, nedává staty' : ''}</div>` : '';
   const only = itemClasses(it), usable = canClassUse(it, G.char.cls);
   const cant = only ? `<div class="cls-only ${usable ? '' : 'broken'}">Pouze: ${only.map(c => CLASSES[c].name).join(', ')}</div>`
-    : !usable ? `<div class="broken">${!canWearArmorType(G.char.cls, it.type) ? heavyArmorText(G.char.cls) : 'Nevhodné pro třídu ' + CLASSES[G.char.cls].name}</div>` : '';
+    : !usable ? `<div class="broken">${!canWearArmorType(G.char.cls, it.type) ? armorRuleText(G.char.cls, it.type) : 'Nevhodné pro třídu ' + CLASSES[G.char.cls].name}</div>` : '';
   return `<div class="item ${broken ? 'is-broken' : ''}" style="border-color:${r.color}">
     <div class="item-head"><b style="color:${r.color}">${it.name}</b><span class="muted small">${r.name} · ${kindLabel(it)} · úr. ${it.ilvl}</span>${(e => e ? `<span class="ench-line" style="color:${ENCHANTS[e].color}"><span class="ench inl" style="--e:${ENCHANTS[e].color}">${giIcon('ench_' + e, 'bi')}</span>Očarování: ${ENCHANTS[e].name}</span>` : '')(itemEnchant(it))}</div>
     <div class="item-stats">${lines}${durTxt}${cant}</div>${actions || ''}</div>`;
@@ -941,7 +941,7 @@ function showLegend() {
     <h3>Rarity</h3>${RARITY_ORDER.map(r => row(`<span style="color:${RARITIES[r].color}">■</span>`, `<b style="color:${RARITIES[r].color}">${RARITIES[r].name}</b> – od podzemí ${RARITIES[r].minRift}${r === 'mythic' ? ', jen z bossů (1 %), díly třídních setů: 3 díly = planoucí oči, 6 = hořící postava' : r === 'orange' || r === 'diamond' ? ', jen pro určité třídy' : ''}`)).join('')}
     <h3>Atributy a zbroj</h3>${ATTR_ORDER.map(k => row(`<b>${ATTRS[k].short}</b>`, `<b>${ATTRS[k].name}</b>: ${ATTRS[k].desc}`)).join('')}
     ${row('★', 'Hlavní atribut tvé třídy navíc přidá +1 % útoku za bod.')}
-    ${Object.values(ARMOR_WEIGHT).map(w => row('🛡', `<b>${w.name}</b>: ${w === ARMOR_WEIGHT.heavy ? 'víc obrany (válečník)' : 'méně obrany, ale odolnosti proti živlům (kouzelníci)'}. Nosit může každý.`)).join('')}
+    ${ARMOR_ORDER.map(k => row('🛡', `<b>${ARMOR_WEIGHT[k].name}</b>: ${{ cloth: 'nejméně obrany, ale odolnosti proti živlům', leather: 'trochu obrany i odolností', mail: 'víc obrany', plate: 'nejvíc obrany' }[k]}. Nosí ${ARMOR_WEIGHT[k].who}.`)).join('')}
     <div class="actions"><button onclick="closeMenu()">Zavřít</button></div>`, true);
 }
 
